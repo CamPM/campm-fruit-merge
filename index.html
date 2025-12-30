@@ -2,267 +2,329 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Fruit Merge 1.0</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Emoji Merge</title>
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 
 <style>
-html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background: #E6E6FA;
-    font-family: 'Segoe UI', sans-serif;
+html,body{
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  background:#E6E6FA;
+  font-family:system-ui,sans-serif;
 }
-
-canvas {
-    display: block;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
+canvas{
+  display:block;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
 }
-
-.btn-ui {
-    position: absolute;
-    z-index: 2000;
-    border: 2px solid #333;
-    font-weight: bold;
-    cursor: pointer;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+#header{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:110px;
+  background:rgba(255,255,255,0.96);
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  font-weight:bold;
 }
-
-#shop-btn { bottom: 10px; right: 10px; width: 60px; height: 40px; background: #3498db; border-radius: 8px; font-size: 11px; }
-#help-btn { bottom: 10px; right: 75px; width: 40px; height: 40px; background: #95a5a6; border-radius: 8px; font-size: 18px; }
-
-.pwr { bottom: 10px; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; }
-#p-bomb { left: 10px; background: #e67e22; }
-#p-wipe { left: 55px; background: #9b59b6; }
-#p-evo  { left: 100px; background: #f1c40f; }
-
-.modal {
-    display: none;
-    position: absolute;
-    inset: 20px;
-    background: white;
-    z-index: 5000;
-    padding: 15px;
-    border: 4px solid #3498db;
-    border-radius: 20px;
-    overflow-y: auto;
+#footer{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  height:60px;
+  background:rgba(255,255,255,0.96);
+  z-index:1000;
 }
-
-#game-over {
-    display: none;
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.9);
-    z-index: 6000;
-    color: white;
-    text-align: center;
-    padding-top: 35vh;
+.btn{
+  position:absolute;
+  bottom:10px;
+  height:40px;
+  border-radius:8px;
+  border:2px solid #333;
+  background:#3498db;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+  z-index:2000;
+}
+#shopBtn{ right:10px; width:70px; }
+#helpBtn{ right:90px; width:40px; }
+.modal{
+  display:none;
+  position:absolute;
+  inset:20px;
+  background:white;
+  border-radius:20px;
+  border:4px solid #3498db;
+  padding:16px;
+  z-index:5000;
+  overflow-y:auto;
+}
+.modal h2{ margin-top:0; }
+.store-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+  gap:10px;
+}
+.store-item{
+  border:2px solid #ccc;
+  border-radius:10px;
+  padding:6px;
+  text-align:center;
+  cursor:pointer;
+}
+.store-item.owned{ border-color:#2ecc71; }
+.store-item.equipped{ border-color:#f1c40f; }
+.death{
+  stroke:red;
+  stroke-dasharray:6,6;
 }
 </style>
 </head>
 
 <body>
 
-<button id="p-bomb" class="btn-ui pwr" onclick="prepPower('bomb')">💣</button>
-<button id="p-wipe" class="btn-ui pwr" onclick="prepPower('wipe')">🧹</button>
-<button id="p-evo"  class="btn-ui pwr" onclick="prepPower('evo')">✨</button>
-
-<button id="help-btn" class="btn-ui" onclick="openModal('help-menu')">?</button>
-<button id="shop-btn" class="btn-ui" onclick="openModal('shop-menu')">SHOP</button>
-
-<div id="shop-menu" class="modal">
-    <h2>Shop</h2>
-    <p>Wallet: <b id="bal-ui">0</b></p>
-    <button onclick="closeModal('shop-menu')">Close</button>
+<div id="header">
+  <div>Score<br><span id="score">0</span></div>
+  <div>Best<br><span id="best">0</span></div>
+  <div>Points<br><span id="points">0</span></div>
+  <div>Next<br><span id="nextEmoji">🍒</span></div>
 </div>
 
-<div id="help-menu" class="modal">
-    <h3>How To Play</h3>
-    <p>Drop items to merge them. Don’t let items stay above the red line.</p>
-    <button onclick="closeModal('help-menu')">Start</button>
+<div id="footer"></div>
+
+<button id="shopBtn" class="btn" onclick="openModal('shop')">SHOP</button>
+<button id="helpBtn" class="btn" onclick="openModal('help')">?</button>
+
+<div id="help" class="modal">
+  <h2>How to Play</h2>
+  <p>Drop emojis by tapping the screen.</p>
+  <p>When two identical emojis touch, they merge into the next tier.</p>
+  <p>Do not let items stay above the red dashed line for 3 seconds.</p>
+  <p>Merges earn score and points. Points can be spent in the shop.</p>
+  <button onclick="closeModal('help')">Close</button>
 </div>
 
-<div id="game-over">
-    <h1>GAME OVER</h1>
-    <p>Score: <span id="final-score">0</span></p>
-    <button onclick="restartGame()">Retry</button>
+<div id="shop" class="modal">
+  <h2>Skins</h2>
+  <div id="skinGrid" class="store-grid"></div>
+  <h2>Themes</h2>
+  <div id="themeGrid" class="store-grid"></div>
+  <button onclick="closeModal('shop')">Close</button>
 </div>
 
 <script>
-/* ───────── DATA ───────── */
-const SKINS = {
-    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"]
+/* ---------------- DATA ---------------- */
+const SKINS={
+ Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"],
+ Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"],
+ Retro:["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"],
+ Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"],
+ Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"],
+ Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"],
+ Plants:["🌿","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"]
 };
 
-const TIER_COLORS = ["#ff7979","#ffbe76","#f6e58d","#badc58","#7ed6df","#686de0","#4834d4","#f0932b","#eb4d4b","#6ab04c","#130f40","#222f3e"];
-const SIZES = [18,25,32,40,50,60,72,85,100,115,135,155];
+const THEMES={
+ Lilac:"#E6E6FA",Sunset:"#ff7675",Forest:"#55efc4",Midnight:"#2d3436",
+ Gold:"#fdcb6e",Slate:"#718093",Ocean:"#0984e3",Cherry:"#d63031",
+ Mint:"#00b894",Grape:"#6c5ce7",Pumpkin:"#e67e22",Coffee:"#634832",
+ Rose:"#fd79a8",Sky:"#81ecec",Grass:"#26de81",Charcoal:"#2f3640"
+};
 
-let state = { score:0, high:0, pts:0, over:false };
-let emojiCache = {};
-let currentIdx = 0, nextIdx = 1;
-let lastX = 200;
-let canDrop = true;
-let activePower = null;
+const COLORS=["#ff7979","#ffbe76","#f6e58d","#badc58","#7ed6df","#686de0","#4834d4","#f0932b","#eb4d4b","#6ab04c","#130f40","#222f3e"];
+const RADII=[18,25,32,40,50,60,72,85,100,115,135,155];
 
-/* ───────── EMOJI CACHE ───────── */
-function cacheEmojis() {
-    emojiCache = {};
-    const c = document.createElement('canvas');
-    const ctx = c.getContext('2d');
-    c.width = c.height = 120;
+/* ---------------- SAVE ---------------- */
+let save=JSON.parse(localStorage.getItem("mergeSave")||"{}");
+save.best||=0;
+save.points||=0;
+save.skin||="Fruit";
+save.ownedSkins||=["Fruit"];
+save.theme||="Lilac";
+save.ownedThemes||=["Lilac"];
+localStorage.setItem("mergeSave",JSON.stringify(save));
 
-    SKINS.Fruit.forEach((e,i)=>{
-        ctx.clearRect(0,0,120,120);
-        ctx.font = "90px serif";
-        ctx.textAlign="center";
-        ctx.textBaseline="middle";
-        ctx.fillText(e,60,60);
-        const img = new Image();
-        img.src = c.toDataURL();
-        emojiCache[i] = img;
-    });
+/* ---------------- EMOJI CACHE ---------------- */
+let emojiCache={};
+function buildCache(){
+  emojiCache={};
+  const c=document.createElement("canvas");
+  c.width=c.height=120;
+  const x=c.getContext("2d");
+  x.textAlign="center";
+  x.textBaseline="middle";
+  x.font="90px serif";
+  SKINS[save.skin].forEach((e,i)=>{
+    x.clearRect(0,0,120,120);
+    x.fillText(e,60,60);
+    const img=new Image();
+    img.src=c.toDataURL();
+    emojiCache[i]=img;
+  });
 }
+buildCache();
 
-/* ───────── MATTER ───────── */
-const { Engine, Render, Runner, Bodies, Composite, Events, Bounds } = Matter;
-const engine = Engine.create();
-
-const render = Render.create({
-    element: document.body,
-    engine,
-    options: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        wireframes: false,
-        background: 'transparent'
-    }
+/* ---------------- MATTER ---------------- */
+const {Engine,Render,Runner,Bodies,Composite,Events}=Matter;
+const engine=Engine.create();
+const render=Render.create({
+  element:document.body,
+  engine,
+  options:{ width:innerWidth, height:innerHeight, wireframes:false, background:"transparent"}
 });
 
-function setupWalls() {
-    Composite.clear(engine.world,false);
-    const w = render.options.width;
-    const h = render.options.height;
-
-    Composite.add(engine.world, [
-        Bodies.rectangle(w/2, h-50, w, 20, { isStatic:true }),
-        Bodies.rectangle(-10, h/2, 20, h, { isStatic:true }),
-        Bodies.rectangle(w+10, h/2, 20, h, { isStatic:true })
-    ]);
+function walls(){
+  Composite.clear(engine.world,false);
+  const w=render.options.width,h=render.options.height;
+  Composite.add(engine.world,[
+    Bodies.rectangle(w/2,h-40,w,20,{isStatic:true}),
+    Bodies.rectangle(-10,h/2,20,h,{isStatic:true}),
+    Bodies.rectangle(w+10,h/2,20,h,{isStatic:true})
+  ]);
 }
-
-setupWalls();
+walls();
 Render.run(render);
-Runner.run(Runner.create(), engine);
+Runner.run(Runner.create(),engine);
 
-/* ───────── RENDER LOOP ───────── */
-Events.on(render, 'afterRender', () => {
-    const ctx = render.context;
-    const w = render.options.width;
-    const h = render.options.height;
+/* ---------------- GAME ---------------- */
+let score=0,current=0,next=Math.floor(Math.random()*4),lastX=200,canDrop=true;
 
-    ctx.fillStyle = "rgba(255,255,255,0.96)";
-    ctx.fillRect(0,0,w,110);
-    ctx.fillRect(0,h-60,w,60);
+function updateUI(){
+  score=Math.floor(score);
+  save.best=Math.max(save.best,score);
+  localStorage.setItem("mergeSave",JSON.stringify(save));
+  scoreEl.textContent=score;
+  bestEl.textContent=save.best;
+  pointsEl.textContent=save.points;
+  nextEmoji.textContent=SKINS[save.skin][next];
+}
 
-    ctx.setLineDash([6,6]);
-    ctx.strokeStyle = "red";
-    ctx.beginPath();
-    ctx.moveTo(0,110);
-    ctx.lineTo(w,110);
-    ctx.stroke();
-    ctx.setLineDash([]);
+const scoreEl=document.getElementById("score");
+const bestEl=document.getElementById("best");
+const pointsEl=document.getElementById("points");
+const nextEmoji=document.getElementById("nextEmoji");
 
-    ctx.strokeStyle = "rgba(0,0,0,0.15)";
-    ctx.beginPath();
-    ctx.moveTo(lastX,110);
-    ctx.lineTo(lastX,h-60);
-    ctx.stroke();
-
-    if (emojiCache[currentIdx]) {
-        ctx.drawImage(emojiCache[currentIdx], lastX-20, 85, 40, 40);
+Events.on(render,"afterRender",()=>{
+  const ctx=render.context,w=render.options.width,h=render.options.height;
+  ctx.setLineDash([6,6]);
+  ctx.strokeStyle="red";
+  ctx.beginPath();
+  ctx.moveTo(0,110);
+  ctx.lineTo(w,110);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle="rgba(0,0,0,0.2)";
+  ctx.beginPath();
+  ctx.moveTo(lastX,110);
+  ctx.lineTo(lastX,h-60);
+  ctx.stroke();
+  Composite.allBodies(engine.world).forEach(b=>{
+    if(b.plugin?.t!==undefined){
+      ctx.save();
+      ctx.translate(b.position.x,b.position.y);
+      ctx.rotate(b.angle);
+      ctx.fillStyle=COLORS[b.plugin.t];
+      ctx.beginPath();
+      ctx.arc(0,0,b.circleRadius,0,Math.PI*2);
+      ctx.fill();
+      ctx.drawImage(emojiCache[b.plugin.t],-b.circleRadius,-b.circleRadius,b.circleRadius*2,b.circleRadius*2);
+      ctx.restore();
     }
-
-    Composite.allBodies(engine.world).forEach(b=>{
-        if(b.plugin?.t!==undefined){
-            ctx.save();
-            ctx.translate(b.position.x,b.position.y);
-            ctx.rotate(b.angle);
-            ctx.fillStyle = TIER_COLORS[b.plugin.t];
-            ctx.beginPath();
-            ctx.arc(0,0,b.circleRadius,0,Math.PI*2);
-            ctx.fill();
-            if(emojiCache[b.plugin.t]){
-                ctx.drawImage(emojiCache[b.plugin.t], -b.circleRadius, -b.circleRadius, b.circleRadius*2, b.circleRadius*2);
-            }
-            ctx.restore();
-        }
-    });
+  });
 });
 
-/* ───────── COLLISIONS ───────── */
-Events.on(engine,'collisionStart',e=>{
-    e.pairs.forEach(p=>{
-        const a=p.bodyA, b=p.bodyB;
-        if(a.plugin?.t===b.plugin?.t && a.plugin.t<11){
-            const t=a.plugin.t;
-            Composite.remove(engine.world,[a,b]);
-            Composite.add(engine.world,
-                Bodies.circle(
-                    (a.position.x+b.position.x)/2,
-                    (a.position.y+b.position.y)/2,
-                    SIZES[t+1],
-                    { restitution:.3, plugin:{t:t+1,s:Date.now()} }
-                )
-            );
-            state.score+=(t+1)*10;
-            state.pts+=(t+1);
-        }
-    });
+Events.on(engine,"collisionStart",e=>{
+  e.pairs.forEach(p=>{
+    const a=p.bodyA,b=p.bodyB;
+    if(a.plugin?.t===b.plugin?.t && a.plugin.t<11){
+      Composite.remove(engine.world,[a,b]);
+      const t=a.plugin.t+1;
+      Composite.add(engine.world,Bodies.circle(
+        (a.position.x+b.position.x)/2,
+        (a.position.y+b.position.y)/2,
+        RADII[t],
+        {restitution:.3,plugin:{t,s:Date.now()}}
+      ));
+      score+=t*10;
+      save.points+=t;
+      updateUI();
+    }
+  });
 });
 
-/* ───────── INPUT (CANVAS ONLY) ───────── */
-const canvas = render.canvas;
-
-canvas.addEventListener('pointermove', e=>{
-    lastX = e.clientX;
+/* ---------------- INPUT ---------------- */
+render.canvas.addEventListener("pointermove",e=>lastX=e.clientX);
+render.canvas.addEventListener("pointerup",e=>{
+  if(!canDrop||e.clientY<110||e.clientY>innerHeight-60)return;
+  Composite.add(engine.world,Bodies.circle(lastX,110,RADII[current],{restitution:.3,plugin:{t:current,s:Date.now()}}));
+  current=next;
+  next=Math.floor(Math.random()*4);
+  canDrop=false;
+  setTimeout(()=>canDrop=true,400);
+  updateUI();
 });
+render.canvas.addEventListener("touchstart",e=>e.preventDefault(),{passive:false});
 
-canvas.addEventListener('pointerup', e=>{
-    if(state.over || !canDrop) return;
-    if(e.clientY < 110 || e.clientY > render.options.height-60) return;
+/* ---------------- STORE ---------------- */
+function openModal(id){document.getElementById(id).style.display="block";}
+function closeModal(id){document.getElementById(id).style.display="none";}
 
-    Composite.add(engine.world,
-        Bodies.circle(lastX,110,SIZES[currentIdx],
-            { restitution:.3, plugin:{t:currentIdx,s:Date.now()} })
-    );
+const skinGrid=document.getElementById("skinGrid");
+const themeGrid=document.getElementById("themeGrid");
 
-    currentIdx = nextIdx;
-    nextIdx = Math.floor(Math.random()*4);
-    canDrop=false;
-    setTimeout(()=>canDrop=true,500);
-});
-
-canvas.addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
-canvas.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
-canvas.addEventListener('contextmenu', e=>e.preventDefault());
-
-/* ───────── UI ───────── */
-function openModal(id){ document.getElementById(id).style.display='block'; }
-function closeModal(id){ document.getElementById(id).style.display='none'; }
-function prepPower(t){ activePower=t; alert("Power ready"); }
-function restartGame(){ location.reload(); }
-
-cacheEmojis();
+function buildStore(){
+  skinGrid.innerHTML="";
+  Object.keys(SKINS).forEach(k=>{
+    const d=document.createElement("div");
+    d.className="store-item "+(save.skin===k?"equipped":save.ownedSkins.includes(k)?"owned":"");
+    d.innerHTML=k;
+    d.onclick=()=>{
+      if(!save.ownedSkins.includes(k)){
+        if(save.points<500)return;
+        save.points-=500;
+        save.ownedSkins.push(k);
+      }
+      save.skin=k;
+      buildCache();
+      buildStore();
+      updateUI();
+    };
+    skinGrid.appendChild(d);
+  });
+  themeGrid.innerHTML="";
+  Object.entries(THEMES).forEach(([k,v])=>{
+    const d=document.createElement("div");
+    d.className="store-item "+(save.theme===k?"equipped":save.ownedThemes.includes(k)?"owned":"");
+    d.style.background=v;
+    d.innerHTML=k;
+    d.onclick=()=>{
+      if(!save.ownedThemes.includes(k)){
+        if(save.points<300)return;
+        save.points-=300;
+        save.ownedThemes.push(k);
+      }
+      save.theme=k;
+      document.body.style.background=v;
+      buildStore();
+      updateUI();
+    };
+    themeGrid.appendChild(d);
+  });
+}
+document.body.style.background=THEMES[save.theme];
+buildStore();
+updateUI();
 </script>
 
 </body>
 </html>
-
