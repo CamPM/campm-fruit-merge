@@ -1,294 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Fruit Merge – Mobile Safe</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fruit Merge 1.0</title>
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 
 <style>
-/* ───────── GLOBAL SAFETY (iOS FIXES) ───────── */
-html, body, canvas {
+html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+    background: #E6E6FA;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+canvas {
+    display: block;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
-    background: #E6E6FA;
-    font-family: system-ui, sans-serif;
 }
 
-/* ───────── UI ───────── */
-.btn {
+.btn-ui {
     position: absolute;
-    z-index: 10;
-    padding: 8px 10px;
-    border-radius: 8px;
+    z-index: 2000;
     border: 2px solid #333;
-    background: #2ecc71;
-    color: #fff;
     font-weight: bold;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-#shopBtn { right: 10px; bottom: 10px; }
-#helpBtn { right: 80px; bottom: 10px; }
-.pwr { left: 10px; bottom: 10px; background:#e67e22; }
-#p2 { left: 55px; background:#9b59b6; }
-#p3 { left: 100px; background:#f1c40f; }
+#shop-btn { bottom: 10px; right: 10px; width: 60px; height: 40px; background: #3498db; border-radius: 8px; font-size: 11px; }
+#help-btn { bottom: 10px; right: 75px; width: 40px; height: 40px; background: #95a5a6; border-radius: 8px; font-size: 18px; }
 
-/* ───────── MODALS ───────── */
+.pwr { bottom: 10px; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; }
+#p-bomb { left: 10px; background: #e67e22; }
+#p-wipe { left: 55px; background: #9b59b6; }
+#p-evo  { left: 100px; background: #f1c40f; }
+
 .modal {
-    display:none;
-    position:fixed;
-    inset:20px;
-    background:#fff;
-    z-index:50;
-    border-radius:16px;
-    padding:12px;
-    overflow:auto;
+    display: none;
+    position: absolute;
+    inset: 20px;
+    background: white;
+    z-index: 5000;
+    padding: 15px;
+    border: 4px solid #3498db;
+    border-radius: 20px;
+    overflow-y: auto;
 }
 
-.grid {
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(70px,1fr));
-    gap:8px;
-}
-
-.card {
-    border:2px solid #ccc;
-    border-radius:10px;
-    padding:6px;
-    text-align:center;
-    font-size:12px;
-}
-
-.card.active {
-    border-color:#2ecc71;
-    background:#f0fff4;
-}
-
-#gameOver {
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.85);
-    color:white;
-    z-index:100;
-    text-align:center;
-    padding-top:40vh;
+#game-over {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 6000;
+    color: white;
+    text-align: center;
+    padding-top: 35vh;
 }
 </style>
 </head>
 
 <body>
 
-<button id="helpBtn" class="btn" onclick="openModal('help')">?</button>
-<button id="shopBtn" class="btn" onclick="openModal('shop')">SHOP</button>
+<button id="p-bomb" class="btn-ui pwr" onclick="prepPower('bomb')">💣</button>
+<button id="p-wipe" class="btn-ui pwr" onclick="prepPower('wipe')">🧹</button>
+<button id="p-evo"  class="btn-ui pwr" onclick="prepPower('evo')">✨</button>
 
-<button class="btn pwr" onclick="prepPower('bomb')">💣</button>
-<button class="btn pwr" id="p2" onclick="prepPower('wipe')">🧹</button>
-<button class="btn pwr" id="p3" onclick="prepPower('evo')">✨</button>
+<button id="help-btn" class="btn-ui" onclick="openModal('help-menu')">?</button>
+<button id="shop-btn" class="btn-ui" onclick="openModal('shop-menu')">SHOP</button>
 
-<div id="help" class="modal">
-<h3>How To Play</h3>
-<p>Drop items. Merge identical tiers. Don’t let items stay above the red line.</p>
-<button onclick="closeModal('help')">START</button>
+<div id="shop-menu" class="modal">
+    <h2>Shop</h2>
+    <p>Wallet: <b id="bal-ui">0</b></p>
+    <button onclick="closeModal('shop-menu')">Close</button>
 </div>
 
-<div id="shop" class="modal">
-<h3>Shop</h3>
-<p>Wallet: <b id="walletUI">0</b></p>
-<h4>Skins</h4><div id="skins" class="grid"></div>
-<h4>Themes</h4><div id="themes" class="grid"></div>
-<button onclick="closeModal('shop')">CLOSE</button>
+<div id="help-menu" class="modal">
+    <h3>How To Play</h3>
+    <p>Drop items to merge them. Don’t let items stay above the red line.</p>
+    <button onclick="closeModal('help-menu')">Start</button>
 </div>
 
-<div id="gameOver">
-<h1>GAME OVER</h1>
-<p>Score: <span id="finalScore">0</span></p>
-<button onclick="restart()">RETRY</button>
+<div id="game-over">
+    <h1>GAME OVER</h1>
+    <p>Score: <span id="final-score">0</span></p>
+    <button onclick="restartGame()">Retry</button>
 </div>
 
 <script>
-/* ───────── CONTENT ───────── */
+/* ───────── DATA ───────── */
 const SKINS = {
-Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"],
-Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"],
-Retro:["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"],
-Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"],
-Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"],
-Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"],
-Plants:["🌿","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"]
+    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"]
 };
 
-const THEMES = {
-Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436",
-Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3", Cherry:"#d63031",
-Mint:"#00b894", Grape:"#6c5ce7", Pumpkin:"#e67e22", Coffee:"#634832",
-Rose:"#fd79a8", Sky:"#81ecec", Grass:"#26de81", Charcoal:"#2f3640"
-};
+const TIER_COLORS = ["#ff7979","#ffbe76","#f6e58d","#badc58","#7ed6df","#686de0","#4834d4","#f0932b","#eb4d4b","#6ab04c","#130f40","#222f3e"];
+const SIZES = [18,25,32,40,50,60,72,85,100,115,135,155];
 
-const SIZES=[18,24,30,38,46,55,65,76,88,101,115,130];
+let state = { score:0, high:0, pts:0, over:false };
+let emojiCache = {};
+let currentIdx = 0, nextIdx = 1;
+let lastX = 200;
+let canDrop = true;
+let activePower = null;
 
-/* ───────── STATE ───────── */
-let state={
-score:0, high:0, pts:0,
-skin:"Fruit", theme:"Lilac",
-owned:["Fruit","Lilac"],
-over:false
-};
+/* ───────── EMOJI CACHE ───────── */
+function cacheEmojis() {
+    emojiCache = {};
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    c.width = c.height = 120;
 
-/* ───────── MATTER SETUP ───────── */
-const {Engine,Render,Runner,Bodies,Composite,Events,Vector} = Matter;
-let engine=Engine.create();
-let render=Render.create({
-element:document.body,
-engine,
-options:{
-width:window.innerWidth,
-height:window.innerHeight,
-wireframes:false,
-background:"transparent"
+    SKINS.Fruit.forEach((e,i)=>{
+        ctx.clearRect(0,0,120,120);
+        ctx.font = "90px serif";
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        ctx.fillText(e,60,60);
+        const img = new Image();
+        img.src = c.toDataURL();
+        emojiCache[i] = img;
+    });
 }
+
+/* ───────── MATTER ───────── */
+const { Engine, Render, Runner, Bodies, Composite, Events, Bounds } = Matter;
+const engine = Engine.create();
+
+const render = Render.create({
+    element: document.body,
+    engine,
+    options: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        wireframes: false,
+        background: 'transparent'
+    }
 });
 
-function buildWalls(){
-Composite.clear(engine.world,false);
-const w=render.options.width;
-const h=render.options.height;
-Composite.add(engine.world,[
-Bodies.rectangle(w/2,h-40,w,20,{isStatic:true}),
-Bodies.rectangle(-10,h/2,20,h,{isStatic:true}),
-Bodies.rectangle(w+10,h/2,20,h,{isStatic:true})
-]);
+function setupWalls() {
+    Composite.clear(engine.world,false);
+    const w = render.options.width;
+    const h = render.options.height;
+
+    Composite.add(engine.world, [
+        Bodies.rectangle(w/2, h-50, w, 20, { isStatic:true }),
+        Bodies.rectangle(-10, h/2, 20, h, { isStatic:true }),
+        Bodies.rectangle(w+10, h/2, 20, h, { isStatic:true })
+    ]);
 }
 
-buildWalls();
+setupWalls();
 Render.run(render);
-Runner.run(Runner.create(),engine);
+Runner.run(Runner.create(), engine);
 
-/* ───────── GAME LOGIC ───────── */
-let current=0,next=Math.floor(Math.random()*4),canDrop=true,activePower=null;
+/* ───────── RENDER LOOP ───────── */
+Events.on(render, 'afterRender', () => {
+    const ctx = render.context;
+    const w = render.options.width;
+    const h = render.options.height;
 
-Events.on(render,"afterRender",()=>{
-const ctx=render.context;
-const w=render.options.width;
-const h=render.options.height;
+    ctx.fillStyle = "rgba(255,255,255,0.96)";
+    ctx.fillRect(0,0,w,110);
+    ctx.fillRect(0,h-60,w,60);
 
-document.body.style.background=THEMES[state.theme];
+    ctx.setLineDash([6,6]);
+    ctx.strokeStyle = "red";
+    ctx.beginPath();
+    ctx.moveTo(0,110);
+    ctx.lineTo(w,110);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-ctx.fillStyle="white";
-ctx.fillRect(0,0,w,110);
-ctx.fillRect(0,h-60,w,60);
+    ctx.strokeStyle = "rgba(0,0,0,0.15)";
+    ctx.beginPath();
+    ctx.moveTo(lastX,110);
+    ctx.lineTo(lastX,h-60);
+    ctx.stroke();
 
-ctx.strokeStyle="red";
-ctx.setLineDash([6,6]);
-ctx.beginPath();
-ctx.moveTo(0,110);ctx.lineTo(w,110);ctx.stroke();
-ctx.setLineDash([]);
+    if (emojiCache[currentIdx]) {
+        ctx.drawImage(emojiCache[currentIdx], lastX-20, 85, 40, 40);
+    }
 
-ctx.fillStyle="#333";
-ctx.font="bold 14px sans-serif";
-ctx.fillText("Score "+state.score,10,30);
-ctx.fillText("Best "+state.high,w-100,30);
-
-ctx.font="32px serif";
-ctx.fillText(SKINS[state.skin][next],w/2-16,60);
-
-Composite.allBodies(engine.world).forEach(b=>{
-if(b.plugin?.t!=null){
-ctx.save();
-ctx.translate(b.position.x,b.position.y);
-ctx.rotate(b.angle);
-ctx.font=`${SIZES[b.plugin.t]*1.4}px serif`;
-ctx.textAlign="center";
-ctx.textBaseline="middle";
-ctx.fillText(SKINS[state.skin][b.plugin.t],0,0);
-ctx.restore();
-}
-});
+    Composite.allBodies(engine.world).forEach(b=>{
+        if(b.plugin?.t!==undefined){
+            ctx.save();
+            ctx.translate(b.position.x,b.position.y);
+            ctx.rotate(b.angle);
+            ctx.fillStyle = TIER_COLORS[b.plugin.t];
+            ctx.beginPath();
+            ctx.arc(0,0,b.circleRadius,0,Math.PI*2);
+            ctx.fill();
+            if(emojiCache[b.plugin.t]){
+                ctx.drawImage(emojiCache[b.plugin.t], -b.circleRadius, -b.circleRadius, b.circleRadius*2, b.circleRadius*2);
+            }
+            ctx.restore();
+        }
+    });
 });
 
 /* ───────── COLLISIONS ───────── */
-Events.on(engine,"collisionStart",e=>{
-e.pairs.forEach(p=>{
-const a=p.bodyA,b=p.bodyB;
-if(a.plugin?.t===b.plugin?.t && a.plugin.t<11){
-const t=a.plugin.t;
-Composite.remove(engine.world,[a,b]);
-Composite.add(engine.world,
-Bodies.circle(
-(a.position.x+b.position.x)/2,
-(a.position.y+b.position.y)/2,
-SIZES[t+1],
-{restitution:.3,plugin:{t:t+1,s:Date.now()}}
-));
-state.score+=(t+1)*10;
-state.pts+=(t+1);
-state.high=Math.max(state.high,state.score);
-}
-});
-});
-
-/* ───────── GAME OVER CHECK ───────── */
-Events.on(engine,"afterUpdate",()=>{
-if(state.over)return;
-Composite.allBodies(engine.world).forEach(b=>{
-if(!b.isStatic && b.position.y<110 &&
-Date.now()-(b.plugin?.s||0)>3000){
-state.over=true;
-document.getElementById("finalScore").textContent=state.score;
-document.getElementById("gameOver").style.display="block";
-}
-});
+Events.on(engine,'collisionStart',e=>{
+    e.pairs.forEach(p=>{
+        const a=p.bodyA, b=p.bodyB;
+        if(a.plugin?.t===b.plugin?.t && a.plugin.t<11){
+            const t=a.plugin.t;
+            Composite.remove(engine.world,[a,b]);
+            Composite.add(engine.world,
+                Bodies.circle(
+                    (a.position.x+b.position.x)/2,
+                    (a.position.y+b.position.y)/2,
+                    SIZES[t+1],
+                    { restitution:.3, plugin:{t:t+1,s:Date.now()} }
+                )
+            );
+            state.score+=(t+1)*10;
+            state.pts+=(t+1);
+        }
+    });
 });
 
-/* ───────── INPUT ───────── */
-const canvas=render.canvas;
-canvas.addEventListener("pointerup",e=>{
-if(state.over||!canDrop)return;
-const rect=canvas.getBoundingClientRect();
-const x=e.clientX-rect.left;
-const y=e.clientY-rect.top;
-if(y<110||y>render.options.height-60)return;
+/* ───────── INPUT (CANVAS ONLY) ───────── */
+const canvas = render.canvas;
 
-Composite.add(engine.world,
-Bodies.circle(x,110,SIZES[current],
-{restitution:.3,plugin:{t:current,s:Date.now()}})
-);
-current=next;
-next=Math.floor(Math.random()*4);
-canDrop=false;
-setTimeout(()=>canDrop=true,400);
+canvas.addEventListener('pointermove', e=>{
+    lastX = e.clientX;
 });
+
+canvas.addEventListener('pointerup', e=>{
+    if(state.over || !canDrop) return;
+    if(e.clientY < 110 || e.clientY > render.options.height-60) return;
+
+    Composite.add(engine.world,
+        Bodies.circle(lastX,110,SIZES[currentIdx],
+            { restitution:.3, plugin:{t:currentIdx,s:Date.now()} })
+    );
+
+    currentIdx = nextIdx;
+    nextIdx = Math.floor(Math.random()*4);
+    canDrop=false;
+    setTimeout(()=>canDrop=true,500);
+});
+
+canvas.addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
+canvas.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
 
 /* ───────── UI ───────── */
-function openModal(id){document.getElementById(id).style.display="block";renderShop();}
-function closeModal(id){document.getElementById(id).style.display="none";}
-function prepPower(p){activePower=p;}
-function restart(){location.reload();}
+function openModal(id){ document.getElementById(id).style.display='block'; }
+function closeModal(id){ document.getElementById(id).style.display='none'; }
+function prepPower(t){ activePower=t; alert("Power ready"); }
+function restartGame(){ location.reload(); }
 
-function renderShop(){
-document.getElementById("walletUI").textContent=state.pts;
-document.getElementById("skins").innerHTML=
-Object.keys(SKINS).map(k=>`
-<div class="card ${state.skin===k?"active":""}"
-onclick="state.skin='${k}'">${SKINS[k][0]}<br>${k}</div>`).join("");
-document.getElementById("themes").innerHTML=
-Object.keys(THEMES).map(k=>`
-<div class="card ${state.theme===k?"active":""}"
-style="background:${THEMES[k]}"
-onclick="state.theme='${k}'">${k}</div>`).join("");
-}
-
-/* ───────── HARD iOS SAFETY ───────── */
-document.addEventListener("touchstart",e=>e.preventDefault(),{passive:false});
-document.addEventListener("contextmenu",e=>e.preventDefault());
+cacheEmojis();
 </script>
 
 </body>
 </html>
+
