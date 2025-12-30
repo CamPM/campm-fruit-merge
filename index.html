@@ -3,23 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v51 - iPad Edition</title>
+    <title>Fruit Merge v52</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: system-ui, -apple-system, sans-serif; touch-action: none; }
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #E6E6FA; overflow: hidden; }
+        body { margin: 0; overflow: hidden; background: #222; font-family: system-ui, sans-serif; touch-action: none; }
+        #game-wrapper { 
+            position: relative; width: 100vw; height: 100vh; 
+            display: flex; justify-content: center; align-items: center; 
+        }
+        #game-container { 
+            position: relative; width: 100%; height: 100%; 
+            background: #E6E6FA; border: 4px solid #333; box-sizing: border-box; 
+            overflow: hidden;
+        }
         
-        /* Fixed UI Layers */
-        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: rgba(255,255,255,0.9); border-bottom: 2px solid #333; z-index: 10; display: flex; flex-direction: column; justify-content: center; padding: 0 15px; box-sizing: border-box; }
-        #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: #fff; border-top: 3px solid #333; z-index: 10; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: rgba(255,255,255,0.9); border-bottom: 2px solid #333; z-index: 100; display: flex; flex-direction: column; justify-content: center; padding: 0 15px; box-sizing: border-box; }
+        #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 85px; background: #fff; border-top: 3px solid #333; z-index: 100; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
         
-        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #333; }
-        .btn { width: 50px; height: 50px; border-radius: 12px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
-        #status-bar { position: absolute; bottom: 90px; width: 100%; text-align: center; font-weight: bold; color: #3498db; pointer-events: none; z-index: 5; text-shadow: 1px 1px 0 #fff; }
+        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #333; }
+        .btn { width: 45px; height: 45px; border-radius: 10px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; }
+        #status-bar { position: absolute; bottom: 95px; width: 100%; text-align: center; font-weight: bold; color: #3498db; pointer-events: none; z-index: 50; }
 
         .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 1000; border: 4px solid #3498db; border-radius: 20px; padding: 20px; overflow-y: auto; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-        .card { border: 2px solid #eee; padding: 10px; border-radius: 10px; text-align: center; cursor: pointer; font-size: 11px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .card { border: 2px solid #eee; padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 10px; }
         .card.owned { border-color: #2ecc71; background: #f0fff4; }
 
         canvas { display: block; width: 100%; height: 100%; }
@@ -27,28 +34,30 @@
 </head>
 <body>
 
-<div id="game-container">
-    <div id="top-ui">
-        <div class="stats"><span>SCORE: <span id="s-val">0</span></span><span>BEST: <span id="h-val">0</span></span></div>
-        <div id="next-disp" style="text-align:center; font-size:28px; margin: 5px 0;"></div>
-        <div class="stats"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer">🔊</span></div>
-    </div>
+<div id="game-wrapper">
+    <div id="game-container">
+        <div id="top-ui">
+            <div class="stats"><span>SCORE: <span id="s-val">0</span></span><span>BEST: <span id="h-val">0</span></span></div>
+            <div id="next-disp" style="text-align:center; font-size:26px; margin: 3px 0;"></div>
+            <div class="stats"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer">🔊</span></div>
+        </div>
 
-    <div id="status-bar">READY</div>
+        <div id="status-bar">READY</div>
 
-    <div id="bottom-ui">
-        <div class="btn" style="background:#e67e22" onclick="startPwr('bomb')">💣</div>
-        <div class="btn" style="background:#9b59b6" onclick="startPwr('wipe')">🧹</div>
-        <div class="btn" style="background:#f1c40f" onclick="startPwr('evo')">✨</div>
-        <div class="btn" style="background:#3498db; width: 70px; font-size: 12px; font-weight: bold; color:white; text-align:center;" onclick="openShop()">MARKET</div>
-    </div>
+        <div id="bottom-ui">
+            <div class="btn" style="background:#e67e22" onclick="startPwr('bomb')">💣</div>
+            <div class="btn" style="background:#9b59b6" onclick="startPwr('wipe')">🧹</div>
+            <div class="btn" style="background:#f1c40f" onclick="startPwr('evo')">✨</div>
+            <div class="btn" style="background:#3498db; width: 80px; font-size: 11px; font-weight: bold; color:white; text-align:center;" onclick="openShop()">MARKET</div>
+        </div>
 
-    <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas"></canvas>
 
-    <div id="shopModal" class="modal">
-        <div style="display:flex; justify-content:space-between"><h3>Market</h3><button onclick="closeModal()">X</button></div>
-        <h4>Skins ($500)</h4><div id="skin-grid" class="grid"></div>
-        <h4>Themes ($300)</h4><div id="theme-grid" class="grid"></div>
+        <div id="shopModal" class="modal">
+            <div style="display:flex; justify-content:space-between"><h3>Market</h3><button onclick="closeModal()">X</button></div>
+            <h4>Skins ($500)</h4><div id="skin-grid" class="grid"></div>
+            <h4>Themes ($300)</h4><div id="theme-grid" class="grid"></div>
+        </div>
     </div>
 </div>
 
@@ -62,33 +71,208 @@ const SKINS = {
     Cars: ["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"],
     Plants: ["🌿","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"]
 };
-const THEMES = { Lilac: "#E6E6FA", Sunset: "#ff7675", Forest: "#55efc4", Midnight: "#2d3436", Gold: "#fdcb6e", Ocean: "#0984e3", Rose: "#fd79a8", Charcoal: "#2f3640" };
+const THEMES = { 
+    Lilac: "#E6E6FA", Sunset: "#ff7675", Forest: "#55efc4", Midnight: "#2d3436", 
+    Gold: "#fdcb6e", Slate: "#718093", Ocean: "#0984e3", Cherry: "#d63031",
+    Mint: "#00b894", Grape: "#6c5ce7", Pumpkin: "#e67e22", Coffee: "#634832",
+    Rose: "#fd79a8", Sky: "#81ecec", Grass: "#26de81", Charcoal: "#2f3640"
+};
+
 const SIZES = [20, 28, 36, 46, 58, 72, 86, 102, 120, 138, 158, 180];
 const COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
 
 let state = { score: 0, best: 0, pts: 0, skin: 'Fruit', theme: 'Lilac', owned: ['Fruit', 'Lilac'], muted: false, activePwr: null };
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-let engine, render, runner, currentIdx = 0, nextIdx = 1, lastX = 200, isDragging = false, canDrop = true;
+let engine, runner, currentIdx = 0, nextIdx = 1, lastX = 200, isDragging = false, canDrop = true;
 let ground, leftWall, rightWall;
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playPop(freq = 400) {
+
+function playSound(type, freq = 400) {
     if(state.muted) return;
-    try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    if (type === 'pop') {
+        osc.type = 'sine';
         gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
-        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-    } catch(e) {}
+    } else if (type === 'thud') {
+        osc.type = 'triangle';
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+        // Frequency based on skin
+        const skinBase = { Fruit: 100, Animals: 250, Retro: 150, Space: 80, Desserts: 300, Cars: 60, Plants: 200 };
+        osc.frequency.setValueAtTime(skinBase[state.skin] || 100, audioCtx.currentTime);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+    osc.connect(gain); gain.connect(audioCtx.destination);
 }
 
 function init() {
-    const saved = localStorage.getItem('fm_v51');
+    const saved = localStorage.getItem('fm_v52');
     if(saved) Object.assign(state, JSON.parse(saved));
     
     engine = Matter.Engine.create();
+    setupDimensions();
+
+    Matter.Events.on(engine, 'collisionStart', (e) => {
+        e.pairs.forEach(p => {
+            const a = p.bodyA, b = p.bodyB;
+            // Merge Logic
+            if(a.plugin && b.plugin && a.plugin.t === b.plugin.t && a.plugin.t < 11) {
+                const nt = a.plugin.t + 1;
+                const pos = { x: (a.position.x+b.position.x)/2, y: (a.position.y+b.position.y)/2 };
+                Matter.Composite.remove(engine.world, [a, b]);
+                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { plugin: {t: nt} }));
+                state.score += nt * 10; state.pts += nt;
+                playSound('pop', 300 + (nt * 40));
+                updateUI();
+            }
+            // Thud Logic
+            if(p.collision.speed > 2) {
+                playSound('thud');
+            }
+        });
+    });
+
+    runner = Matter.Runner.create();
+    Matter.Runner.run(runner, engine);
+    window.addEventListener('resize', setupDimensions);
+    requestAnimationFrame(renderLoop);
+    updateUI();
+}
+
+function setupDimensions() {
+    const container = document.getElementById('game-container');
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    canvas.width = w;
+    canvas.height = h;
+
+    if (ground) Matter.Composite.remove(engine.world, [ground, leftWall, rightWall]);
     
+    const floorHeight = 100; // Thick floor to prevent tunneling
+    ground = Matter.Bodies.rectangle(w/2, h - 85 + (floorHeight/2), w, floorHeight, { isStatic: true });
+    leftWall = Matter.Bodies.rectangle(-25, h/2, 50, h, { isStatic: true });
+    rightWall = Matter.Bodies.rectangle(w+25, h/2, 50, h, { isStatic: true });
+    
+    Matter.Composite.add(engine.world, [ground, leftWall, rightWall]);
+}
+
+function renderLoop() {
+    ctx.fillStyle = THEMES[state.theme]; 
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+    
+    if(isDragging && !state.activePwr) {
+        ctx.strokeStyle = "rgba(0,0,0,0.2)"; ctx.setLineDash([5,5]);
+        ctx.beginPath(); ctx.moveTo(lastX, 100); ctx.lineTo(lastX, canvas.height - 85); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = "40px Arial"; ctx.textAlign = "center";
+        ctx.fillText(SKINS[state.skin][currentIdx], lastX, 135);
+    }
+
+    // Border/Death Line
+    ctx.strokeStyle = "red"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, 150); ctx.lineTo(canvas.width, 150); ctx.stroke();
+
+    const bodies = Matter.Composite.allBodies(engine.world);
+    bodies.forEach(b => {
+        if(b.plugin && b.plugin.t !== undefined) {
+            ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+            ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
+            ctx.font = (b.circleRadius * 1.4) + "px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
+
+            if(b.position.y < 150 && !b.isStatic) {
+                if(!b.plugin.dT) b.plugin.dT = Date.now();
+                if(Date.now() - b.plugin.dT > 3000) { alert("Game Over!"); location.reload(); }
+            } else { b.plugin.dT = null; }
+        }
+    });
+    requestAnimationFrame(renderLoop);
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+    if(e.clientY > canvas.height - 85) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    isDragging = true; lastX = e.clientX;
+});
+canvas.addEventListener('pointermove', (e) => { if(isDragging) lastX = e.clientX; });
+canvas.addEventListener('pointerup', (e) => {
+    if(!isDragging) return;
+    isDragging = false;
+    if(state.activePwr) { usePwr(e.clientX, e.clientY); return; }
+    if(!canDrop) return;
+
+    const fruit = Matter.Bodies.circle(lastX, 110, SIZES[currentIdx], { 
+        restitution: 0.3, 
+        friction: 0.1,
+        plugin: {t: currentIdx} 
+    });
+    Matter.Composite.add(engine.world, fruit);
+    currentIdx = nextIdx; nextIdx = Math.floor(Math.random() * 4);
+    updateUI();
+    canDrop = false; setTimeout(() => canDrop = true, 600);
+});
+
+function startPwr(type) {
+    const cost = {bomb:500, wipe:1000, evo:1500};
+    if(state.pts < cost[type]) return;
+    state.activePwr = type;
+    document.getElementById('status-bar').innerText = "TAP TARGET FRUIT";
+}
+
+function usePwr(x, y) {
+    const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin && b.plugin.t !== undefined);
+    const hit = bodies.find(b => Matter.Bounds.contains(b.bounds, {x, y}));
+    if(!hit) return;
+    
+    if(state.activePwr === 'bomb') {
+        bodies.forEach(b => { if(Math.hypot(b.position.x - hit.position.x, b.position.y - hit.position.y) < 150) Matter.Composite.remove(engine.world, b); });
+        state.pts -= 500;
+    } else if(state.activePwr === 'wipe') {
+        bodies.forEach(b => { if(b.plugin.t === hit.plugin.t) Matter.Composite.remove(engine.world, b); });
+        state.pts -= 1000;
+    } else if(state.activePwr === 'evo' && hit.plugin.t < 11) {
+        bodies.forEach(b => { if(b.plugin.t === hit.plugin.t) {
+            const nt = b.plugin.t + 1;
+            const nb = Matter.Bodies.circle(b.position.x, b.position.y, SIZES[nt], { plugin: {t: nt} });
+            Matter.Composite.remove(engine.world, b); Matter.Composite.add(engine.world, nb);
+        }});
+        state.pts -= 1500;
+    }
+    state.activePwr = null; document.getElementById('status-bar').innerText = "READY";
+    updateUI(); save();
+}
+
+function updateUI() {
+    document.getElementById('s-val').innerText = state.score;
+    document.getElementById('h-val').innerText = state.best;
+    document.getElementById('w-val').innerText = state.pts;
+    document.getElementById('next-disp').innerText = "NEXT: " + SKINS[state.skin][nextIdx];
+    document.getElementById('game-container').style.background = THEMES[state.theme];
+}
+
+window.toggleMute = () => { state.muted = !state.muted; document.getElementById('mute-btn').innerText = state.muted ? "🔇" : "🔊"; };
+window.openShop = () => {
+    document.getElementById('shopModal').style.display = 'block';
+    const sG = document.getElementById('skin-grid'); const tG = document.getElementById('theme-grid');
+    sG.innerHTML = ''; tG.innerHTML = '';
+    Object.keys(SKINS).forEach(s => sG.innerHTML += `<div class="card ${state.skin===s?'owned':''}" onclick="buy('${s}','skin',500)">${SKINS[s][0]}<br>${s}</div>`);
+    Object.keys(THEMES).forEach(t => tG.innerHTML += `<div class="card ${state.theme===t?'owned':''}" onclick="buy('${t}','theme',300)"><div style="width:15px;height:15px;background:${THEMES[t]};margin:2px auto;border:1px solid #333"></div>${t}</div>`);
+};
+window.buy = (id, type, cost) => {
+    if(!state.owned.includes(id) && state.pts >= cost) { state.pts -= cost; state.owned.push(id); }
+    if(state.owned.includes(id)) state[type === 'skin' ? 'skin' : 'theme'] = id;
+    save(); updateUI(); openShop();
+};
+window.closeModal = () => document.getElementById('shopModal').style.display = 'none';
+
+init();
+</script>
+</body>
+</html>
