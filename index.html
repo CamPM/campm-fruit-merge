@@ -3,48 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fruit Merge v49</title>
+    <title>Fruit Merge v49 - Official Build</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
-        :root { --accent: #3498db; }
-        body { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; -webkit-user-select: none; user-select: none; }
-        #game-container { position: relative; width: 100vw; height: 100vh; margin: 0 auto; background: #E6E6FA; transition: background 0.3s; }
+        :root { --primary: #3498db; --bg: #E6E6FA; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', system-ui, sans-serif; touch-action: none; }
+        #game-wrapper { position: relative; width: 100vw; height: 100vh; background: var(--bg); overflow: hidden; }
         
-        /* UI Header */
-        #header { position: absolute; top: 0; left: 0; width: 100%; height: 110px; background: rgba(255,255,255,0.9); border-bottom: 3px solid #333; z-index: 10; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
-        .stats-row { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #333; font-size: 14px; }
-        #next-preview { font-size: 32px; text-align: center; }
+        /* UI Layers */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 110px; background: rgba(255,255,255,0.95); border-bottom: 2px solid #333; z-index: 100; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+        .row { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #2c3e50; font-size: 14px; }
+        
+        #pwr-shelf { position: absolute; bottom: 75px; left: 0; width: 100%; display: flex; justify-content: center; gap: 12px; z-index: 100; }
+        .p-btn { width: 50px; height: 50px; border-radius: 12px; border: 2px solid #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 0 #222; transition: 0.1s; }
+        .p-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #222; }
+        .p-btn.active { animation: pulse 0.8s infinite; border-color: #fff; box-shadow: 0 0 15px #fff; }
 
-        /* Power Up Bar */
-        #pwr-bar { position: absolute; bottom: 70px; left: 0; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 10; }
-        .pwr-btn { width: 50px; height: 50px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #222; }
-        .pwr-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #222; }
-        #btn-bomb { background: #e67e22; } #btn-wipe { background: #9b59b6; } #btn-evo { background: #f1c40f; }
-        .pwr-active { animation: pulse 1s infinite; border-color: white; box-shadow: 0 0 15px white; }
-
-        /* Footer */
-        #footer { position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; background: rgba(255,255,255,0.8); display: flex; justify-content: space-around; align-items: center; z-index: 10; }
-        .footer-btn { padding: 8px 20px; background: var(--accent); color: white; border-radius: 20px; font-weight: bold; border: none; cursor: pointer; }
-
+        #shop-trigger { position: absolute; bottom: 15px; right: 15px; padding: 10px 20px; background: var(--primary); color: white; border: 2px solid #333; border-radius: 10px; font-weight: bold; z-index: 100; cursor: pointer; }
+        
         /* Modals */
-        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 100; border-radius: 20px; border: 4px solid var(--accent); padding: 20px; overflow-y: auto; }
+        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 1000; border-radius: 20px; border: 4px solid var(--primary); padding: 20px; overflow-y: auto; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
-        .item-card { border: 2px solid #eee; padding: 10px; border-radius: 12px; text-align: center; font-size: 12px; cursor: pointer; }
-        .item-card.equipped { border-color: #2ecc71; background: #f0fff4; }
+        .card { border: 2px solid #eee; padding: 8px; border-radius: 12px; text-align: center; font-size: 11px; cursor: pointer; }
+        .card.selected { border-color: #2ecc71; background: #f0fff4; }
 
-        @keyframes pulse { 0% { scale: 1; } 50% { scale: 1.1; } 100% { scale: 1; } }
-        canvas { display: block; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div id="header">
-        <div class="stats-row">
-            <div>SCORE: <span id="cur-score">0</span></div>
-            <div>BEST: <span id="hi-score">0</span></div>
+<div id="game-wrapper">
+    <div id="ui-layer">
+        <div class="row">
+            <span>SCORE: <span id="score-txt">0</span></span>
+            <span>BEST: <span id="best-txt">0</span></span>
         </div>
-        <div id="next-preview"></div>
-        <div class="stats-row" style="margin-top:5px">
-            <div>WALLET
-              
+        <div id="next-preview" style="font-size: 30px; text-align: center; margin: 2px 0;"></div>
+        <div class="row">
+            <span>WALLETS: $<span id="pts-txt">0</span></span>
+            <span id="hint-txt" style="color: var(--primary)">READY</span>
+        </div>
+    </div>
+
+    <div id="pwr-shelf">
+        <div id="p-bomb" class="p-btn" style="background: #e67e22" onclick="setPower('bomb')">💣</div>
+        <div id="p-wipe" class="p-btn" style="background: #9b59b6" onclick="setPower('wipe')">🧹</div>
+        <div id="p-evo" class="p-btn" style="background: #f1c40f" onclick="setPower('evo')">✨</div>
+    </div>
+
+    <button id="shop-trigger" onclick="openShop()">MARKET</button>
+
+    <div id="shop-modal" class="modal">
+        <div style="display:flex; justify-content:space-between"><h2>Store</h2><button onclick="closeShop()">X</button></div>
+        <h4>Skins ($500)</h4><div id="skin-grid" class="grid"></div>
+        <h4>Themes ($300)</h4><div id="theme-grid" class="grid"></div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+</div>
+
+<script>
+const SKINS = {
+    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"],
+    Animals: ["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"],
+    Retro: ["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"],
+    Space: ["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"],
+    Desserts: ["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"],
+    Cars: ["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"],
+    Plants: ["🌿","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"]
+};
+
+const THEMES = {
+    Lilac: "#E6E6FA", Sunset: "#ff7675", Forest: "#55efc4", Midnight: "#2d3436", 
+    Gold: "#fdcb6e", Slate: "#718093", Ocean: "#0984e3", Cherry: "#d63031",
+    Mint: "#00b894", Grape: "#6c5ce7", Pumpkin: "#e67e22", Coffee: "#634832",
+    Rose: "#fd79a8", Sky: "#81ecec", Grass: "#26de81", Charcoal: "#2f3640"
+};
+
+const SIZES = [20, 28, 36, 46, 58, 72, 86, 102, 120, 138, 158, 180];
+const COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
+
+let state = { score: 0, best: 0, pts: 0, skin: 'Fruit', theme: 'Lilac', owned: ['Fruit', 'Lilac'], pwr: null };
+let engine, render, runner, currentIdx = 0, nextIdx = 1, lastX = 200, canDrop = true;
+
+function save() { localStorage.setItem('fm_v49_final', JSON.stringify(state)); }
+function load() { 
+    const d = localStorage.getItem('fm_v49_final'); 
+    if(d) Object.assign(state, JSON.parse(d)); 
+    document.getElementById('best-txt').innerText = state.best;
+    document.getElementById('pts-txt').innerText = state.pts;
+    document.getElementById('game-wrapper').style.backgroundColor = THEMES[state.theme];
+}
+
+function init() {
+    load();
+    const canvas = document.getElementById('game-canvas');
+    engine = Matter.Engine.create();
+    render = Matter.Render.create({
+        canvas: canvas,
+        engine: engine,
+        options: { 
+            width: window.innerWidth, 
+            height: window.innerHeight, 
+            wireframes: false, 
+            background: 'transparent' 
+        }
+    });
+
+    const ground = Matter.Bodies.rectangle(window.innerWidth/2, window.innerHeight + 10, window.innerWidth, 40, { isStatic: true });
+    const leftWall = Matter.Bodies.rectangle(-10, window.innerHeight/2, 20, window.innerHeight, { isStatic: true });
+    const rightWall = Matter.Bodies.rectangle(window.innerWidth+10, window.innerHeight/2, 20, window.innerHeight, { isStatic: true });
+    Matter.Composite.add(engine.world, [ground, leftWall, rightWall]);
+
+    // Custom Render Loop (v48 Style)
+    Matter.Events.on(render, 'afterRender', () => {
+        const ctx = render.context;
+        // Crosshair
+        if(canDrop && !state.pwr) {
+            ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.setLineDash([5,5]);
+            ctx.beginPath(); ctx.moveTo(lastX, 110); ctx.lineTo(lastX, window.innerHeight); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.font = "40px Arial"; ctx.textAlign="center";
+            ctx.fillText(SKINS[state.skin][currentIdx], lastX, 95);
+        }
+
+        // Fruit Rendering
+        const bodies = Matter.Composite.allBodies(engine.world);
+        bodies.forEach(b => {
+            if(b.plugin && b.plugin.t !== undefined) {
+                ctx.save();
+                ctx.translate(b.position.x, b.position.y);
+                ctx.rotate(b.angle);
+                // Hitbox
+                ctx.fillStyle = COLORS[b.plugin.t];
+                ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
+                // Emoji
+                ctx.font = (b.circleRadius * 1.5) + "px Arial";
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0);
+                ctx.restore();
+
+                // Death Line Logic
+                if
+                    
