@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v57</title>
+    <title>Fruit Merge v58 - Persistence Update</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #222; font-family: system-ui, sans-serif; touch-action: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #E6E6FA; border: 8px solid #333; box-sizing: border-box; overflow: hidden; }
         
-        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 130px; background: rgba(255,255,255,0.95); border-bottom: 3px solid #333; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 135px; background: rgba(255,255,255,0.95); border-bottom: 3px solid #333; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
         #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 95px; background: #fff; border-top: 3px solid #333; z-index: 1000; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
         
-        #progress-wrap { width: 100%; height: 26px; background: #ddd; border-radius: 13px; margin-top: 5px; border: 2px solid #333; position: relative; overflow: hidden; }
+        /* THE 12-STEP PROGRESS BAR */
+        #progress-wrap { width: 100%; height: 32px; background: #ddd; border-radius: 16px; margin-top: 5px; border: 2px solid #333; position: relative; overflow: hidden; }
         #progress-bar { height: 100%; background: #2ecc71; width: 0%; transition: width 0.4s; }
-        #progress-icons { position: absolute; width: 100%; top: 0; display: flex; justify-content: space-between; padding: 0 10px; box-sizing: border-box; font-size: 14px; line-height: 22px; pointer-events: none; }
+        #progress-icons { position: absolute; width: 100%; top: 0; display: flex; justify-content: space-between; padding: 0 6px; box-sizing: border-box; font-size: 11px; line-height: 28px; pointer-events: none; }
 
         .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #333; }
         .btn { width: 52px; height: 52px; border-radius: 12px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #999; position: relative; }
-        .btn span { position: absolute; bottom: -12px; font-size: 10px; background: white; border: 1px solid #333; padding: 0 4px; border-radius: 4px; }
+        .btn span { position: absolute; bottom: -12px; font-size: 10px; background: white; border: 1px solid #333; padding: 0 4px; border-radius: 4px; z-index: 10; }
         
-        #controls-overlay { position: absolute; top: 140px; right: 15px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
+        #controls-overlay { position: absolute; top: 145px; right: 15px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
         .sub-btn { background: #3498db; color: white; border: 2px solid #333; padding: 8px; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
 
-        .modal { display: none; position: fixed; inset: 8%; background: white; z-index: 2000; border: 4px solid #333; border-radius: 20px; padding: 20px; overflow-y: auto; }
+        .modal { display: none; position: fixed; inset: 8%; background: white; z-index: 2000; border: 4px solid #333; border-radius: 20px; padding: 20px; overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
-        .item-card { border: 2px solid #ccc; padding: 10px; border-radius: 12px; text-align: center; position: relative; }
-        .item-card.selected { border-color: #2ecc71; background: #e8f8f0; }
-        .badge { font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: -8px; right: -5px; border: 1px solid #333; }
+        .item-card { border: 2px solid #ccc; padding: 10px; border-radius: 12px; text-align: center; position: relative; cursor: pointer; }
+        .item-card.selected { border-color: #2ecc71; background: #e8f8f0; border-width: 3px; }
+        .badge { font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: -8px; right: -5px; border: 1px solid #333; color: #fff; }
 
-        #status-msg { position: absolute; top: 180px; width: 100%; text-align: center; font-weight: bold; color: #e67e22; z-index: 500; font-size: 20px; display: none; text-shadow: 2px 2px 0 #fff; }
-
+        #status-msg { position: absolute; top: 185px; width: 100%; text-align: center; font-weight: bold; color: #e67e22; z-index: 500; font-size: 22px; display: none; text-shadow: 2px 2px 0 #fff; pointer-events: none; }
         canvas { display: block; width: 100%; height: 100%; }
     </style>
 </head>
@@ -39,7 +39,7 @@
 <div id="game-container">
     <div id="top-ui">
         <div class="stats"><span>SCORE: <span id="s-val">0</span></span><span>BEST: <span id="h-val">0</span></span></div>
-        <div id="next-disp" style="text-align:center; font-size:36px;"></div>
+        <div id="next-disp" style="text-align:center; font-size:38px; height: 45px; line-height: 45px;"></div>
         <div id="progress-wrap"><div id="progress-bar"></div><div id="progress-icons"></div></div>
         <div class="stats" style="margin-top:8px"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer">🔊</span></div>
     </div>
@@ -55,24 +55,24 @@
         <div class="btn" style="background:#e67e22" onclick="startPwr('bomb')">💣<span>$500</span></div>
         <div class="btn" style="background:#9b59b6" onclick="startPwr('wipe')">🧹<span>$1k</span></div>
         <div class="btn" style="background:#f1c40f" onclick="startPwr('evo')">✨<span>$1.5k</span></div>
-        <div class="btn" style="background:#3498db; width: 80px; font-size: 12px; font-weight: bold; color:white;" onclick="openShop()">STORE</div>
+        <div class="btn" style="background:#3498db; width: 85px; font-size: 13px; font-weight: bold; color:white; border-radius: 15px;" onclick="openShop()">STORE</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <div id="helpModal" class="modal">
         <h3>How to Play</h3>
-        <p>1. Drop items to merge.</p>
-        <p>2. Don't let items stay above the <b>RED LINE</b> for 3 seconds!</p>
-        <p>3. <b>Power-ups:</b> Tap the button, then tap a target on the board.</p>
-        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:10px;">CLOSE</button>
+        <p>Merge items to reach the end of the progress bar!</p>
+        <p><b>Red Line:</b> If items stay above for 3s, it's Game Over.</p>
+        <p><b>Wallet:</b> Cash saves automatically between games!</p>
+        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:10px;">PLAY</button>
     </div>
 
     <div id="shopModal" class="modal">
-        <div style="display:flex; justify-content:space-between"><h2>Store</h2><button onclick="closeModal()">X</button></div>
-        <p>Wallet: $<span id="shop-wallet">0</span></p>
-        <h4 style="margin:10px 0 5px">Skins ($500)</h4><div id="skin-grid" class="grid"></div>
-        <h4 style="margin:20px 0 5px">Themes ($300)</h4><div id="theme-grid" class="grid"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Store</h2><button onclick="closeModal()">X</button></div>
+        <p style="font-weight:bold; color:#2ecc71;">Current Balance: $<span id="shop-wallet">0</span></p>
+        <h4 style="margin:10px 0">Skins ($500)</h4><div id="skin-grid" class="grid"></div>
+        <h4 style="margin:20px 0 10px">Themes ($300)</h4><div id="theme-grid" class="grid"></div>
     </div>
 </div>
 
@@ -82,15 +82,28 @@ const THEMES = { Lilac: "#E6E6FA", Sunset: "#ff7675", Forest: "#55efc4", Midnigh
 const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185];
 const COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
 
-let state = { score: 0, best: 0, pts: 0, skin: 'Fruit', theme: 'Lilac', owned: ['Fruit', 'Lilac'], muted: false, activePwr: null, maxT: 0 };
+// MEMORY INITIALIZATION
+let state = { score: 0, best: 0, pts: 0, skin: 'Fruit', theme: 'Lilac', owned: ['Fruit', 'Lilac'], muted: false, maxT: 0 };
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-let engine, runner, currentIdx = 0, nextIdx = 1, lastX = 200, isDragging = false, canDrop = true;
+let engine, runner, currentIdx = 0, nextIdx = 1, lastX = 200, isDragging = false, canDrop = true, activePwr = null;
 let ground, leftWall, rightWall;
 
 function init() {
-    const saved = localStorage.getItem('fm_v57');
-    if(saved) Object.assign(state, JSON.parse(saved));
+    // LOAD SAVED DATA
+    const saved = localStorage.getItem('fm_v58_save');
+    if(saved) {
+        const parsed = JSON.parse(saved);
+        state.best = parsed.best || 0;
+        state.pts = parsed.pts || 0;
+        state.skin = parsed.skin || 'Fruit';
+        state.theme = parsed.theme || 'Lilac';
+        state.owned = parsed.owned || ['Fruit', 'Lilac'];
+        state.muted = parsed.muted || false;
+        state.maxT = parsed.maxT || 0;
+    }
+    
     engine = Matter.Engine.create();
     setupDimensions();
 
@@ -104,16 +117,28 @@ function init() {
                 Matter.Composite.remove(engine.world, [a, b]);
                 Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { plugin: {t: nt, dT: null} }));
                 state.score += nt * 10; state.pts += nt * 5;
-                updateUI();
+                save(); updateUI();
             }
         });
     });
 
     runner = Matter.Runner.create();
     Matter.Runner.run(runner, engine);
-    window.addEventListener('resize', () => { setupDimensions(); });
+    window.addEventListener('resize', setupDimensions);
     requestAnimationFrame(renderLoop);
     updateUI();
+}
+
+function save() { 
+    localStorage.setItem('fm_v58_save', JSON.stringify({
+        best: state.best,
+        pts: state.pts,
+        skin: state.skin,
+        theme: state.theme,
+        owned: state.owned,
+        muted: state.muted,
+        maxT: state.maxT
+    })); 
 }
 
 function setupDimensions() {
@@ -131,13 +156,13 @@ function renderLoop() {
     
     // Death Line
     ctx.strokeStyle = "red"; ctx.lineWidth = 3; ctx.setLineDash([10, 5]);
-    ctx.beginPath(); ctx.moveTo(0, 170); ctx.lineTo(canvas.width, 170); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 175); ctx.lineTo(canvas.width, 175); ctx.stroke();
     ctx.setLineDash([]);
 
-    if(isDragging && !state.activePwr) {
-        ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.beginPath(); ctx.moveTo(lastX, 130); ctx.lineTo(lastX, canvas.height - 95); ctx.stroke();
+    if(isDragging && !activePwr) {
+        ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.beginPath(); ctx.moveTo(lastX, 135); ctx.lineTo(lastX, canvas.height - 95); ctx.stroke();
         ctx.font = "40px Arial"; ctx.textAlign = "center";
-        ctx.fillText(SKINS[state.skin][currentIdx], lastX, 155);
+        ctx.fillText(SKINS[state.skin][currentIdx], lastX, 160);
     }
 
     const bodies = Matter.Composite.allBodies(engine.world);
@@ -149,11 +174,9 @@ function renderLoop() {
             ctx.font = (b.circleRadius * 1.4) + "px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
             ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
 
-            // Death Check Logic
-            if(b.position.y < 170 && !b.isStatic && !isDragging) {
+            if(b.position.y < 175 && !b.isStatic && !isDragging) {
                 if(!b.plugin.dT) b.plugin.dT = now;
-                if(now - b.plugin.dT > 3000) { alert("GAME OVER!"); location.reload(); }
-                // Visual Warning
+                if(now - b.plugin.dT > 3000) { save(); alert("GAME OVER! Final Score: " + state.score); location.reload(); }
                 ctx.fillStyle = "rgba(255,0,0,0.2)"; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, b.circleRadius+5, 0, Math.PI*2); ctx.fill();
             } else { b.plugin.dT = null; }
         }
@@ -163,7 +186,7 @@ function renderLoop() {
 
 canvas.addEventListener('pointerdown', (e) => {
     if(e.clientY > canvas.height - 95) return;
-    if(state.activePwr) { usePwr(e.clientX, e.clientY); return; }
+    if(activePwr) { usePwr(e.clientX, e.clientY); return; }
     isDragging = true; lastX = e.clientX;
 });
 canvas.addEventListener('pointermove', (e) => { if(isDragging) lastX = e.clientX; });
@@ -180,27 +203,25 @@ canvas.addEventListener('pointerup', () => {
 
 function startPwr(type) {
     const cost = {bomb:500, wipe:1000, evo:1500};
-    if(state.pts < cost[type]) { alert("Not enough cash!"); return; }
-    state.activePwr = type;
-    document.getElementById('status-msg').innerText = "TAP TARGET FOR " + type.toUpperCase();
+    if(state.pts < cost[type]) { alert("Insufficient funds!"); return; }
+    activePwr = type;
+    document.getElementById('status-msg').innerText = "TAP TARGET TO " + type.toUpperCase();
     document.getElementById('status-msg').style.display = 'block';
 }
 
 function usePwr(x, y) {
-    const cost = {bomb:500, wipe:1000, evo:1500}[state.activePwr];
-    if(state.pts < cost) { state.activePwr = null; return; }
-
+    const cost = {bomb:500, wipe:1000, evo:1500}[activePwr];
     const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin && b.plugin.t !== undefined);
-    const hit = bodies.find(b => Math.hypot(b.position.x - x, b.position.y - y) < b.circleRadius + 30);
+    const hit = bodies.find(b => Math.hypot(b.position.x - x, b.position.y - y) < b.circleRadius + 40);
     
-    if(state.activePwr === 'bomb') {
+    if(activePwr === 'bomb') {
         bodies.forEach(b => { if(Math.hypot(b.position.x-x, b.position.y-y) < 160) Matter.Composite.remove(engine.world, b); });
         state.pts -= 500;
-    } else if(state.activePwr === 'wipe' && hit) {
+    } else if(activePwr === 'wipe' && hit) {
         const type = hit.plugin.t;
         bodies.forEach(b => { if(b.plugin.t === type) Matter.Composite.remove(engine.world, b); });
         state.pts -= 1000;
-    } else if(state.activePwr === 'evo' && hit && hit.plugin.t < 11) {
+    } else if(activePwr === 'evo' && hit && hit.plugin.t < 11) {
         const targetType = hit.plugin.t;
         bodies.forEach(b => { if(b.plugin.t === targetType) {
             const nt = b.plugin.t + 1;
@@ -208,25 +229,27 @@ function usePwr(x, y) {
             Matter.Composite.remove(engine.world, b);
         }});
         state.pts -= 1500;
-    } else { return; } // Didn't hit anything, don't consume powerup
+    } else { activePwr = null; document.getElementById('status-msg').style.display = 'none'; return; }
 
-    state.activePwr = null; 
+    activePwr = null; 
     document.getElementById('status-msg').style.display = 'none';
     save(); updateUI();
 }
 
 function updateUI() {
+    state.best = Math.max(state.best, state.score);
     document.getElementById('s-val').innerText = state.score;
-    document.getElementById('h-val').innerText = state.best = Math.max(state.best, state.score);
+    document.getElementById('h-val').innerText = state.best;
     document.getElementById('w-val').innerText = state.pts;
     document.getElementById('next-disp').innerText = "NEXT: " + SKINS[state.skin][nextIdx];
     document.getElementById('game-container').style.background = THEMES[state.theme];
     
+    // PROGRESS BAR WITH ALL 12 EMOJIS
     const progress = (state.maxT / 11) * 100;
     document.getElementById('progress-bar').style.width = progress + "%";
     const pIcons = document.getElementById('progress-icons');
     const s = SKINS[state.skin];
-    pIcons.innerHTML = `<span>${s[0]}</span><span>${s[3]}</span><span>${s[6]}</span><span>${s[9]}</span><span>${s[11]}</span>`;
+    pIcons.innerHTML = s.map(emoji => `<span>${emoji}</span>`).join('');
 }
 
 function openShop() {
@@ -257,24 +280,23 @@ function openShop() {
 function buy(id, type, cost) {
     if(!state.owned.includes(id)) {
         if(state.pts >= cost) { state.pts -= cost; state.owned.push(id); } 
-        else { alert("Not enough money!"); return; }
+        else { return; } // Handled by CSS/Badge
     }
     state[type === 'skin' ? 'skin' : 'theme'] = id;
     save(); updateUI(); openShop();
 }
 
-function save() { localStorage.setItem('fm_v57', JSON.stringify(state)); }
-window.toggleMute = () => { state.muted = !state.muted; document.getElementById('mute-btn').innerText = state.muted ? "🔇" : "🔊"; };
-window.openHelp = () => document.getElementById('helpModal').style.display = 'block';
-window.closeModal = () => { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); };
-window.toggleFullScreen = () => {
+function toggleMute() { state.muted = !state.muted; save(); document.getElementById('mute-btn').innerText = state.muted ? "🔇" : "🔊"; };
+function openHelp() { document.getElementById('helpModal').style.display = 'block'; }
+function closeModal() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+function toggleFullScreen() {
     const el = document.documentElement;
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (el.requestFullscreen) el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     } else {
         if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
     }
-};
+}
 init();
 </script>
 </body>
