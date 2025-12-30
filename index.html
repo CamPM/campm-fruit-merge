@@ -3,30 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v56</title>
+    <title>Fruit Merge v57</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #222; font-family: system-ui, sans-serif; touch-action: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #E6E6FA; border: 8px solid #333; box-sizing: border-box; overflow: hidden; }
         
-        /* UI LAYERS */
-        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 125px; background: rgba(255,255,255,0.95); border-bottom: 3px solid #333; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 130px; background: rgba(255,255,255,0.95); border-bottom: 3px solid #333; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
         #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 95px; background: #fff; border-top: 3px solid #333; z-index: 1000; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
         
-        /* PROGRESS BAR */
-        #progress-wrap { width: 100%; height: 30px; background: #eee; border-radius: 15px; margin-top: 5px; display: flex; align-items: center; padding: 0 5px; box-sizing: border-box; border: 2px solid #333; position: relative; }
-        #progress-bar { height: 18px; background: #2ecc71; border-radius: 10px; width: 0%; transition: width 0.3s; }
-        #progress-icons { position: absolute; width: 100%; display: flex; justify-content: space-between; padding: 0 10px; box-sizing: border-box; pointer-events: none; font-size: 14px; }
+        #progress-wrap { width: 100%; height: 26px; background: #ddd; border-radius: 13px; margin-top: 5px; border: 2px solid #333; position: relative; overflow: hidden; }
+        #progress-bar { height: 100%; background: #2ecc71; width: 0%; transition: width 0.4s; }
+        #progress-icons { position: absolute; width: 100%; top: 0; display: flex; justify-content: space-between; padding: 0 10px; box-sizing: border-box; font-size: 14px; line-height: 22px; pointer-events: none; }
 
-        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 12px; color: #333; }
-        .btn { width: 48px; height: 48px; border-radius: 12px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #999; position: relative; }
-        .btn span { position: absolute; bottom: -12px; font-size: 9px; font-weight: bold; color: #333; background: #fff; padding: 0 3px; border: 1px solid #333; border-radius: 4px; }
+        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #333; }
+        .btn { width: 52px; height: 52px; border-radius: 12px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #999; position: relative; }
+        .btn span { position: absolute; bottom: -12px; font-size: 10px; background: white; border: 1px solid #333; padding: 0 4px; border-radius: 4px; }
         
-        #controls-overlay { position: absolute; top: 135px; right: 15px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
-        .sub-btn { background: #3498db; color: white; border: 2px solid #333; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; box-shadow: 0 3px 0 #2980b9; }
+        #controls-overlay { position: absolute; top: 140px; right: 15px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
+        .sub-btn { background: #3498db; color: white; border: 2px solid #333; padding: 8px; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
 
-        .modal { display: none; position: fixed; inset: 10%; background: white; z-index: 2000; border: 4px solid #333; border-radius: 20px; padding: 20px; overflow-y: auto; }
-        #status-msg { position: absolute; top: 140px; width: 100%; text-align: center; font-weight: bold; color: #e67e22; z-index: 500; font-size: 18px; text-shadow: 1px 1px 0 #fff; pointer-events: none; display: none; }
+        .modal { display: none; position: fixed; inset: 8%; background: white; z-index: 2000; border: 4px solid #333; border-radius: 20px; padding: 20px; overflow-y: auto; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .item-card { border: 2px solid #ccc; padding: 10px; border-radius: 12px; text-align: center; position: relative; }
+        .item-card.selected { border-color: #2ecc71; background: #e8f8f0; }
+        .badge { font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: -8px; right: -5px; border: 1px solid #333; }
+
+        #status-msg { position: absolute; top: 180px; width: 100%; text-align: center; font-weight: bold; color: #e67e22; z-index: 500; font-size: 20px; display: none; text-shadow: 2px 2px 0 #fff; }
 
         canvas { display: block; width: 100%; height: 100%; }
     </style>
@@ -36,18 +39,15 @@
 <div id="game-container">
     <div id="top-ui">
         <div class="stats"><span>SCORE: <span id="s-val">0</span></span><span>BEST: <span id="h-val">0</span></span></div>
-        <div id="next-disp" style="text-align:center; font-size:32px; margin: 2px 0;"></div>
-        <div id="progress-wrap">
-            <div id="progress-bar"></div>
-            <div id="progress-icons"><span>🍒</span><span>🍊</span><span>🍎</span><span>🍍</span><span>🍉</span><span>🎃</span></div>
-        </div>
-        <div class="stats" style="margin-top:5px"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer">🔊</span></div>
+        <div id="next-disp" style="text-align:center; font-size:36px;"></div>
+        <div id="progress-wrap"><div id="progress-bar"></div><div id="progress-icons"></div></div>
+        <div class="stats" style="margin-top:8px"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer">🔊</span></div>
     </div>
 
     <div id="status-msg">SELECT TARGET</div>
 
     <div id="controls-overlay">
-        <div class="sub-btn" onclick="openHelp()" style="background:#f1c40f; color:#333; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center">?</div>
+        <div class="sub-btn" onclick="openHelp()" style="background:#f1c40f; color:#333;">?</div>
         <div class="sub-btn" onclick="toggleFullScreen()">⛶</div>
     </div>
 
@@ -55,37 +55,29 @@
         <div class="btn" style="background:#e67e22" onclick="startPwr('bomb')">💣<span>$500</span></div>
         <div class="btn" style="background:#9b59b6" onclick="startPwr('wipe')">🧹<span>$1k</span></div>
         <div class="btn" style="background:#f1c40f" onclick="startPwr('evo')">✨<span>$1.5k</span></div>
-        <div class="btn" style="background:#3498db; width: 75px; font-size: 11px; font-weight: bold; color:white;" onclick="openShop()">MARKET</div>
+        <div class="btn" style="background:#3498db; width: 80px; font-size: 12px; font-weight: bold; color:white;" onclick="openShop()">STORE</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <div id="helpModal" class="modal">
         <h3>How to Play</h3>
-        <p>Combine identical items to reach the <b>final evolution!</b></p>
-        <p><b>Bomb:</b> Tap to destroy a group of items.</p>
-        <p><b>Broom:</b> Tap an item to remove ALL of that type.</p>
-        <p><b>Sparkle:</b> Tap an item to upgrade ALL of that type.</p>
-        <button class="sub-btn" onclick="closeModal()" style="width:100%">GOT IT</button>
+        <p>1. Drop items to merge.</p>
+        <p>2. Don't let items stay above the <b>RED LINE</b> for 3 seconds!</p>
+        <p>3. <b>Power-ups:</b> Tap the button, then tap a target on the board.</p>
+        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:10px;">CLOSE</button>
     </div>
 
     <div id="shopModal" class="modal">
-        <div style="display:flex; justify-content:space-between"><h3>Market</h3><button onclick="closeModal()">X</button></div>
-        <h4>Skins ($500)</h4><div id="skin-grid" class="grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;"></div>
-        <h4>Themes ($300)</h4><div id="theme-grid" class="grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+        <div style="display:flex; justify-content:space-between"><h2>Store</h2><button onclick="closeModal()">X</button></div>
+        <p>Wallet: $<span id="shop-wallet">0</span></p>
+        <h4 style="margin:10px 0 5px">Skins ($500)</h4><div id="skin-grid" class="grid"></div>
+        <h4 style="margin:20px 0 5px">Themes ($300)</h4><div id="theme-grid" class="grid"></div>
     </div>
 </div>
 
 <script>
-const SKINS = {
-    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"],
-    Animals: ["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"],
-    Retro: ["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"],
-    Space: ["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"],
-    Desserts: ["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"],
-    Cars: ["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"],
-    Plants: ["🌿","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"]
-};
+const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], Animals: ["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], Retro: ["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"], Space: ["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"], Desserts: ["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"], Cars: ["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"], Plants: ["🌿","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"] };
 const THEMES = { Lilac: "#E6E6FA", Sunset: "#ff7675", Forest: "#55efc4", Midnight: "#2d3436", Gold: "#fdcb6e", Slate: "#718093", Ocean: "#0984e3", Cherry: "#d63031", Mint: "#00b894", Grape: "#6c5ce7", Pumpkin: "#e67e22", Coffee: "#634832", Rose: "#fd79a8", Sky: "#81ecec", Grass: "#26de81", Charcoal: "#2f3640" };
 const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185];
 const COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
@@ -93,11 +85,11 @@ const COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0"
 let state = { score: 0, best: 0, pts: 0, skin: 'Fruit', theme: 'Lilac', owned: ['Fruit', 'Lilac'], muted: false, activePwr: null, maxT: 0 };
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-let engine, runner, currentIdx = 0, nextIdx = 1, lastX = 200, isDragging = false, canDrop = true, isPaused = false;
+let engine, runner, currentIdx = 0, nextIdx = 1, lastX = 200, isDragging = false, canDrop = true;
 let ground, leftWall, rightWall;
 
 function init() {
-    const saved = localStorage.getItem('fm_v56');
+    const saved = localStorage.getItem('fm_v57');
     if(saved) Object.assign(state, JSON.parse(saved));
     engine = Matter.Engine.create();
     setupDimensions();
@@ -110,7 +102,7 @@ function init() {
                 state.maxT = Math.max(state.maxT, nt);
                 const pos = { x: (a.position.x+b.position.x)/2, y: (a.position.y+b.position.y)/2 };
                 Matter.Composite.remove(engine.world, [a, b]);
-                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { plugin: {t: nt} }));
+                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { plugin: {t: nt, dT: null} }));
                 state.score += nt * 10; state.pts += nt * 5;
                 updateUI();
             }
@@ -119,104 +111,108 @@ function init() {
 
     runner = Matter.Runner.create();
     Matter.Runner.run(runner, engine);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', () => { setupDimensions(); });
     requestAnimationFrame(renderLoop);
     updateUI();
 }
 
-function handleResize() {
-    isPaused = true;
-    setTimeout(() => {
-        setupDimensions();
-        isPaused = false;
-    }, 250);
-}
-
 function setupDimensions() {
-    const w = window.innerWidth, h = window.innerHeight;
-    canvas.width = w; canvas.height = h;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     if (ground) Matter.Composite.remove(engine.world, [ground, leftWall, rightWall]);
-    const floorY = h - 95;
-    ground = Matter.Bodies.rectangle(w/2, floorY + 100, w, 200, { isStatic: true });
-    leftWall = Matter.Bodies.rectangle(-25, h/2, 50, h, { isStatic: true });
-    rightWall = Matter.Bodies.rectangle(w+25, h/2, 50, h, { isStatic: true });
+    const floorY = canvas.height - 95;
+    ground = Matter.Bodies.rectangle(canvas.width/2, floorY + 100, canvas.width, 200, { isStatic: true });
+    leftWall = Matter.Bodies.rectangle(-25, canvas.height/2, 50, canvas.height, { isStatic: true });
+    rightWall = Matter.Bodies.rectangle(canvas.width+25, canvas.height/2, 50, canvas.height, { isStatic: true });
     Matter.Composite.add(engine.world, [ground, leftWall, rightWall]);
 }
 
 function renderLoop() {
-    if(!isPaused) {
-        ctx.fillStyle = THEMES[state.theme]; 
-        ctx.fillRect(0,0,canvas.width, canvas.height);
-        
-        if(isDragging && !state.activePwr) {
-            ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.setLineDash([5,5]);
-            ctx.beginPath(); ctx.moveTo(lastX, 125); ctx.lineTo(lastX, canvas.height - 95); ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.font = "40px Arial"; ctx.textAlign = "center";
-            ctx.fillText(SKINS[state.skin][currentIdx], lastX, 155);
-        }
+    ctx.fillStyle = THEMES[state.theme]; ctx.fillRect(0,0,canvas.width, canvas.height);
+    
+    // Death Line
+    ctx.strokeStyle = "red"; ctx.lineWidth = 3; ctx.setLineDash([10, 5]);
+    ctx.beginPath(); ctx.moveTo(0, 170); ctx.lineTo(canvas.width, 170); ctx.stroke();
+    ctx.setLineDash([]);
 
-        const bodies = Matter.Composite.allBodies(engine.world);
-        bodies.forEach(b => {
-            if(b.plugin && b.plugin.t !== undefined) {
-                ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-                ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
-                ctx.font = (b.circleRadius * 1.4) + "px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
-                ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
-            }
-        });
+    if(isDragging && !state.activePwr) {
+        ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.beginPath(); ctx.moveTo(lastX, 130); ctx.lineTo(lastX, canvas.height - 95); ctx.stroke();
+        ctx.font = "40px Arial"; ctx.textAlign = "center";
+        ctx.fillText(SKINS[state.skin][currentIdx], lastX, 155);
     }
+
+    const bodies = Matter.Composite.allBodies(engine.world);
+    let now = Date.now();
+    bodies.forEach(b => {
+        if(b.plugin && b.plugin.t !== undefined) {
+            ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+            ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
+            ctx.font = (b.circleRadius * 1.4) + "px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
+
+            // Death Check Logic
+            if(b.position.y < 170 && !b.isStatic && !isDragging) {
+                if(!b.plugin.dT) b.plugin.dT = now;
+                if(now - b.plugin.dT > 3000) { alert("GAME OVER!"); location.reload(); }
+                // Visual Warning
+                ctx.fillStyle = "rgba(255,0,0,0.2)"; ctx.beginPath(); ctx.arc(b.position.x, b.position.y, b.circleRadius+5, 0, Math.PI*2); ctx.fill();
+            } else { b.plugin.dT = null; }
+        }
+    });
     requestAnimationFrame(renderLoop);
 }
 
 canvas.addEventListener('pointerdown', (e) => {
-    if(e.clientY > canvas.height - 95 || e.clientY < 125) return;
+    if(e.clientY > canvas.height - 95) return;
     if(state.activePwr) { usePwr(e.clientX, e.clientY); return; }
     isDragging = true; lastX = e.clientX;
 });
 canvas.addEventListener('pointermove', (e) => { if(isDragging) lastX = e.clientX; });
 canvas.addEventListener('pointerup', () => {
-    if(!isDragging || state.activePwr) return;
+    if(!isDragging) return;
     isDragging = false;
     if(!canDrop) return;
-    const b = Matter.Bodies.circle(lastX, 135, SIZES[currentIdx], { restitution: 0.3, plugin: {t: currentIdx} });
+    const b = Matter.Bodies.circle(lastX, 135, SIZES[currentIdx], { restitution: 0.3, plugin: {t: currentIdx, dT: null} });
     Matter.Composite.add(engine.world, b);
     currentIdx = nextIdx; nextIdx = Math.floor(Math.random() * 4);
-    canDrop = false; setTimeout(() => canDrop = true, 500);
+    canDrop = false; setTimeout(() => canDrop = true, 600);
     updateUI();
 });
 
 function startPwr(type) {
     const cost = {bomb:500, wipe:1000, evo:1500};
-    if(state.pts < cost[type]) return;
+    if(state.pts < cost[type]) { alert("Not enough cash!"); return; }
     state.activePwr = type;
+    document.getElementById('status-msg').innerText = "TAP TARGET FOR " + type.toUpperCase();
     document.getElementById('status-msg').style.display = 'block';
 }
 
 function usePwr(x, y) {
+    const cost = {bomb:500, wipe:1000, evo:1500}[state.activePwr];
+    if(state.pts < cost) { state.activePwr = null; return; }
+
     const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin && b.plugin.t !== undefined);
-    // Find body under tap using distance check for better mobile accuracy
-    const hit = bodies.find(b => Math.hypot(b.position.x - x, b.position.y - y) < b.circleRadius + 20);
+    const hit = bodies.find(b => Math.hypot(b.position.x - x, b.position.y - y) < b.circleRadius + 30);
     
     if(state.activePwr === 'bomb') {
-        bodies.forEach(b => { if(Math.hypot(b.position.x-x, b.position.y-y) < 150) Matter.Composite.remove(engine.world, b); });
+        bodies.forEach(b => { if(Math.hypot(b.position.x-x, b.position.y-y) < 160) Matter.Composite.remove(engine.world, b); });
         state.pts -= 500;
     } else if(state.activePwr === 'wipe' && hit) {
         const type = hit.plugin.t;
         bodies.forEach(b => { if(b.plugin.t === type) Matter.Composite.remove(engine.world, b); });
         state.pts -= 1000;
     } else if(state.activePwr === 'evo' && hit && hit.plugin.t < 11) {
-        const type = hit.plugin.t;
-        bodies.forEach(b => { if(b.plugin.t === type) {
+        const targetType = hit.plugin.t;
+        bodies.forEach(b => { if(b.plugin.t === targetType) {
             const nt = b.plugin.t + 1;
-            const nb = Matter.Bodies.circle(b.position.x, b.position.y, SIZES[nt], { plugin: {t: nt} });
-            Matter.Composite.remove(engine.world, b); Matter.Composite.add(engine.world, nb);
+            Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x, b.position.y, SIZES[nt], { plugin: {t: nt, dT: null} }));
+            Matter.Composite.remove(engine.world, b);
         }});
         state.pts -= 1500;
-    }
+    } else { return; } // Didn't hit anything, don't consume powerup
+
     state.activePwr = null; 
     document.getElementById('status-msg').style.display = 'none';
-    updateUI(); save();
+    save(); updateUI();
 }
 
 function updateUI() {
@@ -226,40 +222,59 @@ function updateUI() {
     document.getElementById('next-disp').innerText = "NEXT: " + SKINS[state.skin][nextIdx];
     document.getElementById('game-container').style.background = THEMES[state.theme];
     
-    // Progress Bar Logic
     const progress = (state.maxT / 11) * 100;
     document.getElementById('progress-bar').style.width = progress + "%";
     const pIcons = document.getElementById('progress-icons');
-    pIcons.innerHTML = `<span>${SKINS[state.skin][0]}</span><span>${SKINS[state.skin][2]}</span><span>${SKINS[state.skin][4]}</span><span>${SKINS[state.skin][7]}</span><span>${SKINS[state.skin][9]}</span><span>${SKINS[state.skin][11]}</span>`;
+    const s = SKINS[state.skin];
+    pIcons.innerHTML = `<span>${s[0]}</span><span>${s[3]}</span><span>${s[6]}</span><span>${s[9]}</span><span>${s[11]}</span>`;
 }
 
-function toggleFullScreen() {
-    const el = document.documentElement;
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    }
-}
-
-function save() { localStorage.setItem('fm_v56', JSON.stringify(state)); }
-window.openHelp = () => document.getElementById('helpModal').style.display = 'block';
-window.openShop = () => {
+function openShop() {
     document.getElementById('shopModal').style.display = 'block';
+    document.getElementById('shop-wallet').innerText = state.pts;
     const sG = document.getElementById('skin-grid'); const tG = document.getElementById('theme-grid');
     sG.innerHTML = ''; tG.innerHTML = '';
-    Object.keys(SKINS).forEach(s => sG.innerHTML += `<div style="border:2px solid #eee; padding:5px; border-radius:8px; text-align:center; cursor:pointer;" onclick="buy('${s}','skin',500)">${SKINS[s][0]}<br>${s}</div>`);
-    Object.keys(THEMES).forEach(t => tG.innerHTML += `<div style="border:2px solid #eee; padding:5px; border-radius:8px; text-align:center; cursor:pointer;" onclick="buy('${t}','theme',300)"><div style="width:15px;height:15px;background:${THEMES[t]};margin:0 auto;border:1px solid #333"></div>${t}</div>`);
-};
-window.buy = (id, type, cost) => {
-    if(!state.owned.includes(id) && state.pts >= cost) { state.pts -= cost; state.owned.push(id); }
-    if(state.owned.includes(id)) state[type === 'skin' ? 'skin' : 'theme'] = id;
-    save(); updateUI(); closeModal();
-};
-window.closeModal = () => { document.getElementById('shopModal').style.display = 'none'; document.getElementById('helpModal').style.display = 'none'; };
+    
+    Object.keys(SKINS).forEach(id => {
+        const owned = state.owned.includes(id);
+        const active = state.skin === id;
+        sG.innerHTML += `<div class="item-card ${active?'selected':''}" onclick="buy('${id}','skin',500)">
+            <span class="badge" style="background:${owned?'#2ecc71':'#f1c40f'}">${owned?'OWNED':'$500'}</span>
+            <div style="font-size:30px">${SKINS[id][0]}</div><div style="font-size:10px">${id}</div>
+        </div>`;
+    });
+    Object.keys(THEMES).forEach(id => {
+        const owned = state.owned.includes(id);
+        const active = state.theme === id;
+        tG.innerHTML += `<div class="item-card ${active?'selected':''}" onclick="buy('${id}','theme',300)">
+            <span class="badge" style="background:${owned?'#2ecc71':'#f1c40f'}">${owned?'OWNED':'$300'}</span>
+            <div style="width:30px;height:30px;background:${THEMES[id]};margin:0 auto;border:1px solid #333;border-radius:4px"></div>
+            <div style="font-size:10px">${id}</div>
+        </div>`;
+    });
+}
 
+function buy(id, type, cost) {
+    if(!state.owned.includes(id)) {
+        if(state.pts >= cost) { state.pts -= cost; state.owned.push(id); } 
+        else { alert("Not enough money!"); return; }
+    }
+    state[type === 'skin' ? 'skin' : 'theme'] = id;
+    save(); updateUI(); openShop();
+}
+
+function save() { localStorage.setItem('fm_v57', JSON.stringify(state)); }
+window.toggleMute = () => { state.muted = !state.muted; document.getElementById('mute-btn').innerText = state.muted ? "🔇" : "🔊"; };
+window.openHelp = () => document.getElementById('helpModal').style.display = 'block';
+window.closeModal = () => { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); };
+window.toggleFullScreen = () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (el.requestFullscreen) el.requestFullscreen(); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+};
 init();
 </script>
 </body>
