@@ -3,30 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v52</title>
+    <title>Fruit Merge v53 - iPad Anchor</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #222; font-family: system-ui, sans-serif; touch-action: none; }
-        #game-wrapper { 
-            position: relative; width: 100vw; height: 100vh; 
-            display: flex; justify-content: center; align-items: center; 
-        }
-        #game-container { 
-            position: relative; width: 100%; height: 100%; 
-            background: #E6E6FA; border: 4px solid #333; box-sizing: border-box; 
-            overflow: hidden;
-        }
+        #game-wrapper { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        #game-container { position: relative; width: 100%; height: 100%; background: #E6E6FA; border: 4px solid #333; box-sizing: border-box; overflow: hidden; }
         
-        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: rgba(255,255,255,0.9); border-bottom: 2px solid #333; z-index: 100; display: flex; flex-direction: column; justify-content: center; padding: 0 15px; box-sizing: border-box; }
-        #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 85px; background: #fff; border-top: 3px solid #333; z-index: 100; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+        /* UI layers with improved z-indexing and positioning */
+        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: rgba(255,255,255,0.9); border-bottom: 2px solid #333; z-index: 1000; display: flex; flex-direction: column; justify-content: center; padding: 0 15px; box-sizing: border-box; pointer-events: auto; }
+        #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 90px; background: #fff; border-top: 3px solid #333; z-index: 1000; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }
         
         .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #333; }
-        .btn { width: 45px; height: 45px; border-radius: 10px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; }
-        #status-bar { position: absolute; bottom: 95px; width: 100%; text-align: center; font-weight: bold; color: #3498db; pointer-events: none; z-index: 50; }
+        .btn { width: 50px; height: 50px; border-radius: 12px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 3px 0 #333; }
+        .btn:active { transform: translateY(2px); box-shadow: none; }
+        #status-bar { position: absolute; bottom: 100px; width: 100%; text-align: center; font-weight: bold; color: #3498db; pointer-events: none; z-index: 500; text-shadow: 1px 1px 0 #fff; }
 
-        .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 1000; border: 4px solid #3498db; border-radius: 20px; padding: 20px; overflow-y: auto; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-        .card { border: 2px solid #eee; padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 10px; }
+        .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 4px solid #3498db; border-radius: 20px; padding: 20px; overflow-y: auto; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .card { border: 2px solid #eee; padding: 10px; border-radius: 10px; text-align: center; cursor: pointer; font-size: 11px; }
         .card.owned { border-color: #2ecc71; background: #f0fff4; }
 
         canvas { display: block; width: 100%; height: 100%; }
@@ -38,7 +33,7 @@
     <div id="game-container">
         <div id="top-ui">
             <div class="stats"><span>SCORE: <span id="s-val">0</span></span><span>BEST: <span id="h-val">0</span></span></div>
-            <div id="next-disp" style="text-align:center; font-size:26px; margin: 3px 0;"></div>
+            <div id="next-disp" style="text-align:center; font-size:30px; margin: 2px 0;"></div>
             <div class="stats"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer">🔊</span></div>
         </div>
 
@@ -48,7 +43,7 @@
             <div class="btn" style="background:#e67e22" onclick="startPwr('bomb')">💣</div>
             <div class="btn" style="background:#9b59b6" onclick="startPwr('wipe')">🧹</div>
             <div class="btn" style="background:#f1c40f" onclick="startPwr('evo')">✨</div>
-            <div class="btn" style="background:#3498db; width: 80px; font-size: 11px; font-weight: bold; color:white; text-align:center;" onclick="openShop()">MARKET</div>
+            <div class="btn" style="background:#3498db; width: 80px; font-size: 12px; font-weight: bold; color:white;" onclick="openShop()">MARKET</div>
         </div>
 
         <canvas id="gameCanvas"></canvas>
@@ -93,36 +88,30 @@ function playSound(type, freq = 400) {
     if(state.muted) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    
-    if (type === 'pop') {
-        osc.type = 'sine';
+    if(type === 'pop') {
+        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-    } else if (type === 'thud') {
-        osc.type = 'triangle';
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
-        // Frequency based on skin
-        const skinBase = { Fruit: 100, Animals: 250, Retro: 150, Space: 80, Desserts: 300, Cars: 60, Plants: 200 };
-        osc.frequency.setValueAtTime(skinBase[state.skin] || 100, audioCtx.currentTime);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    } else {
+        osc.type = 'triangle'; 
+        const skinBase = { Fruit: 120, Animals: 200, Retro: 150, Space: 90, Desserts: 280, Cars: 70, Plants: 180 };
+        osc.frequency.setValueAtTime(skinBase[state.skin] || 120, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
     }
     osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.2);
 }
 
 function init() {
-    const saved = localStorage.getItem('fm_v52');
+    const saved = localStorage.getItem('fm_v53');
     if(saved) Object.assign(state, JSON.parse(saved));
-    
     engine = Matter.Engine.create();
     setupDimensions();
 
     Matter.Events.on(engine, 'collisionStart', (e) => {
         e.pairs.forEach(p => {
             const a = p.bodyA, b = p.bodyB;
-            // Merge Logic
             if(a.plugin && b.plugin && a.plugin.t === b.plugin.t && a.plugin.t < 11) {
                 const nt = a.plugin.t + 1;
                 const pos = { x: (a.position.x+b.position.x)/2, y: (a.position.y+b.position.y)/2 };
@@ -131,9 +120,7 @@ function init() {
                 state.score += nt * 10; state.pts += nt;
                 playSound('pop', 300 + (nt * 40));
                 updateUI();
-            }
-            // Thud Logic
-            if(p.collision.speed > 2) {
+            } else if(p.collision.speed > 2.5) {
                 playSound('thud');
             }
         });
@@ -147,16 +134,16 @@ function init() {
 }
 
 function setupDimensions() {
-    const container = document.getElementById('game-container');
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    canvas.width = w;
-    canvas.height = h;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w; canvas.height = h;
 
     if (ground) Matter.Composite.remove(engine.world, [ground, leftWall, rightWall]);
     
-    const floorHeight = 100; // Thick floor to prevent tunneling
-    ground = Matter.Bodies.rectangle(w/2, h - 85 + (floorHeight/2), w, floorHeight, { isStatic: true });
+    // THE FIX: Floor is placed exactly at height - 90 (the UI height)
+    // Thick floor (200px) prevents "falling through" during lag
+    const floorY = h - 90;
+    ground = Matter.Bodies.rectangle(w/2, floorY + 100, w, 200, { isStatic: true });
     leftWall = Matter.Bodies.rectangle(-25, h/2, 50, h, { isStatic: true });
     rightWall = Matter.Bodies.rectangle(w+25, h/2, 50, h, { isStatic: true });
     
@@ -167,16 +154,17 @@ function renderLoop() {
     ctx.fillStyle = THEMES[state.theme]; 
     ctx.fillRect(0,0,canvas.width, canvas.height);
     
+    // Boundary Guide Line
     if(isDragging && !state.activePwr) {
-        ctx.strokeStyle = "rgba(0,0,0,0.2)"; ctx.setLineDash([5,5]);
-        ctx.beginPath(); ctx.moveTo(lastX, 100); ctx.lineTo(lastX, canvas.height - 85); ctx.stroke();
+        ctx.strokeStyle = "rgba(0,0,0,0.15)"; ctx.setLineDash([5,5]);
+        ctx.beginPath(); ctx.moveTo(lastX, 100); ctx.lineTo(lastX, canvas.height - 90); ctx.stroke();
         ctx.setLineDash([]);
         ctx.font = "40px Arial"; ctx.textAlign = "center";
-        ctx.fillText(SKINS[state.skin][currentIdx], lastX, 135);
+        ctx.fillText(SKINS[state.skin][currentIdx], lastX, 130);
     }
 
-    // Border/Death Line
-    ctx.strokeStyle = "red"; ctx.lineWidth = 2;
+    // Death Line visual
+    ctx.strokeStyle = "rgba(255,0,0,0.5)"; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(0, 150); ctx.lineTo(canvas.width, 150); ctx.stroke();
 
     const bodies = Matter.Composite.allBodies(engine.world);
@@ -197,7 +185,7 @@ function renderLoop() {
 }
 
 canvas.addEventListener('pointerdown', (e) => {
-    if(e.clientY > canvas.height - 85) return;
+    if(e.clientY > canvas.height - 90) return;
     if(audioCtx.state === 'suspended') audioCtx.resume();
     isDragging = true; lastX = e.clientX;
 });
@@ -208,12 +196,8 @@ canvas.addEventListener('pointerup', (e) => {
     if(state.activePwr) { usePwr(e.clientX, e.clientY); return; }
     if(!canDrop) return;
 
-    const fruit = Matter.Bodies.circle(lastX, 110, SIZES[currentIdx], { 
-        restitution: 0.3, 
-        friction: 0.1,
-        plugin: {t: currentIdx} 
-    });
-    Matter.Composite.add(engine.world, fruit);
+    const b = Matter.Bodies.circle(lastX, 110, SIZES[currentIdx], { restitution: 0.3, plugin: {t: currentIdx} });
+    Matter.Composite.add(engine.world, b);
     currentIdx = nextIdx; nextIdx = Math.floor(Math.random() * 4);
     updateUI();
     canDrop = false; setTimeout(() => canDrop = true, 600);
@@ -223,7 +207,7 @@ function startPwr(type) {
     const cost = {bomb:500, wipe:1000, evo:1500};
     if(state.pts < cost[type]) return;
     state.activePwr = type;
-    document.getElementById('status-bar').innerText = "TAP TARGET FRUIT";
+    document.getElementById('status-bar').innerText = "TAP A TARGET";
 }
 
 function usePwr(x, y) {
@@ -232,7 +216,7 @@ function usePwr(x, y) {
     if(!hit) return;
     
     if(state.activePwr === 'bomb') {
-        bodies.forEach(b => { if(Math.hypot(b.position.x - hit.position.x, b.position.y - hit.position.y) < 150) Matter.Composite.remove(engine.world, b); });
+        bodies.forEach(b => { if(Math.hypot(b.position.x-hit.position.x, b.position.y-hit.position.y) < 150) Matter.Composite.remove(engine.world, b); });
         state.pts -= 500;
     } else if(state.activePwr === 'wipe') {
         bodies.forEach(b => { if(b.plugin.t === hit.plugin.t) Matter.Composite.remove(engine.world, b); });
@@ -257,13 +241,14 @@ function updateUI() {
     document.getElementById('game-container').style.background = THEMES[state.theme];
 }
 
+function save() { localStorage.setItem('fm_v53', JSON.stringify(state)); }
 window.toggleMute = () => { state.muted = !state.muted; document.getElementById('mute-btn').innerText = state.muted ? "🔇" : "🔊"; };
 window.openShop = () => {
     document.getElementById('shopModal').style.display = 'block';
     const sG = document.getElementById('skin-grid'); const tG = document.getElementById('theme-grid');
     sG.innerHTML = ''; tG.innerHTML = '';
     Object.keys(SKINS).forEach(s => sG.innerHTML += `<div class="card ${state.skin===s?'owned':''}" onclick="buy('${s}','skin',500)">${SKINS[s][0]}<br>${s}</div>`);
-    Object.keys(THEMES).forEach(t => tG.innerHTML += `<div class="card ${state.theme===t?'owned':''}" onclick="buy('${t}','theme',300)"><div style="width:15px;height:15px;background:${THEMES[t]};margin:2px auto;border:1px solid #333"></div>${t}</div>`);
+    Object.keys(THEMES).forEach(t => tG.innerHTML += `<div class="card ${state.theme===t?'owned':''}" onclick="buy('${t}','theme',300)"><div style="width:20px;height:20px;background:${THEMES[t]};margin:2px auto;border:1px solid #333"></div>${t}</div>`);
 };
 window.buy = (id, type, cost) => {
     if(!state.owned.includes(id) && state.pts >= cost) { state.pts -= cost; state.owned.push(id); }
