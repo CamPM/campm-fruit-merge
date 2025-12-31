@@ -2,66 +2,217 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Fruit Merge v1.17</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Fruit Merge – Fixed Audio & Physics</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
 <style>
-/* (UNCHANGED — your original styles) */
-:root{--bg:#FDF6E3;--bd:#657B83;--txt:#586E75;--acc:#2AA198;--err:#DC143C;--gold:#D4AF37;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-*{box-sizing:border-box;touch-action:none;user-select:none;-webkit-tap-highlight-color:transparent}
-body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--txt);height:100vh}
-#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:flex;flex-direction:column}
-.top-bar{height:115px;padding:10px 15px;background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);pointer-events:auto;border-bottom:3px solid var(--bd)}
-.bot-bar{margin-top:auto;height:100px;background:rgba(255,255,255,0.98);border-top:3px solid var(--bd);display:flex;align-items:center;padding:0 15px;pointer-events:auto;justify-content:space-between;padding-bottom:env(safe-area-inset-bottom)}
-/* (rest unchanged) */
+:root{
+--bg:#FDF6E3;--bd:#657B83;--txt:#586E75;
+--acc:#2AA198;--err:#DC143C;--gold:#D4AF37;
+--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif
+}
+*{box-sizing:border-box;touch-action:none;user-select:none}
+body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--txt)}
+canvas{display:block}
 </style>
 </head>
 
 <body>
-<div id="toast">INSUFFICIENT FUNDS</div>
 <canvas id="c"></canvas>
-<!-- UI HTML UNCHANGED -->
-<!-- (exact UI markup from your original file) -->
 
 <script>
-const M=Matter,E=M.Engine,B=M.Bodies,C=M.Composite,Ev=M.Events;
-const cv=document.getElementById('c'),cx=cv.getContext('2d');
-const eng=E.create({enableSleeping:true});
-eng.gravity.y=1.1;
+/* =========================================================
+   CORE SETUP
+========================================================= */
+const M = Matter;
+const Engine = M.Engine, Bodies = M.Bodies, Composite = M.Composite, Events = M.Events;
 
-let W,H,DL,FY, audioCtx;
+const engine = Engine.create({
+  positionIterations: 10,
+  velocityIterations: 8
+});
 
-/* ✅ FIX #1 — HARDENED RESIZE, NO DRIFT */
-function rsz(){
-  const dpr = window.devicePixelRatio || 1;
-  W = window.innerWidth;
-  H = window.innerHeight;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
 
-  cv.width = W * dpr;
-  cv.height = H * dpr;
-  cx.setTransform(dpr,0,0,dpr,0,0);
+const BOT_BAR = 95;
+let W,H,FLOOR_Y,DEATH_Y;
 
-  DL = 195;          // ✅ locked visual Y
-  FY = H - 100;
+/* =========================================================
+   AUDIO SYSTEM (FIXED)
+========================================================= */
+let audioCtx = null;
+let muted = false;
 
-  C.clear(eng.world,false);
-  C.add(eng.world,[
-    B.rectangle(W/2,FY+500,W,1000,{isStatic:1}),
-    B.rectangle(-250,H/2,500,H*2,{isStatic:1}),
-    B.rectangle(W+250,H/2,500,H*2,{isStatic:1})
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+}
+
+function playPop(){
+  if(!audioCtx || muted) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sine';
+  o.frequency.value = 520;
+  g.gain.setValueAtTime(0.08,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.12);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime+0.13);
+}
+
+function playThud(skinIndex,velocity){
+  if(!audioCtx || muted || velocity < 4) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'triangle';
+  o.frequency.value = 110 - skinIndex*4;
+  g.gain.setValueAtTime(0.12,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.18);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime+0.2);
+}
+
+/* =========================================================
+   GAME DATA
+========================================================= */
+const SKINS = ['🍒','🍓','🍇','🍊','🍎','🍐','🍑','🍍','🍈','🍉','🥥','🥝'];
+const COLORS = ['#F00','#F70','#FF0','#0F0','#00F','#4B0','#940','#F14','#0CE','#FD7','#F45','#32C'];
+
+let state = {
+  score:0,
+  next:0,
+  dragging:false,
+  x:0,y:0,
+  dropOK:true
+};
+
+/* =========================================================
+   RESIZE & WALLS (FIXED FLOOR)
+========================================================= */
+function resize(){
+  W = innerWidth;
+  H = innerHeight;
+  canvas.width = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+
+  FLOOR_Y = H - BOT_BAR;
+  DEATH_Y = 195;
+
+  Composite.clear(engine.world);
+
+  Composite.add(engine.world,[
+    Bodies.rectangle(W/2,FLOOR_Y+250,W,500,{isStatic:true,friction:0.8}),
+    Bodies.rectangle(-250,H/2,500,H*2,{isStatic:true}),
+    Bodies.rectangle(W+250,H/2,500,H*2,{isStatic:true})
   ]);
 }
-window.addEventListener('resize',rsz);
-rsz();
+resize();
+addEventListener('resize',resize);
 
-/* EVERYTHING BELOW IS YOUR ORIGINAL CODE — UNCHANGED */
-/* pointerdown, pointermove, pointerup */
-/* drop(), useTool(), resetGame(), shop, audio, rendering */
-/* death rule logic */
-/* progress bar */
-/* UI updates */
+/* =========================================================
+   COLLISIONS
+========================================================= */
+Events.on(engine,'collisionStart',e=>{
+  e.pairs.forEach(p=>{
+    const a=p.bodyA,b=p.bodyB;
 
+    if(a.tier!=null && b.tier!=null){
+      const v = Math.max(a.speed,b.speed);
+      playThud(a.tier,v);
+
+      if(a.tier===b.tier && a.tier<11){
+        playPop();
+        const n=a.tier+1;
+        const x=(a.position.x+b.position.x)/2;
+        const y=(a.position.y+b.position.y)/2;
+        Composite.remove(engine.world,[a,b]);
+        const nb=Bodies.circle(x,y,6+n*5.5,{restitution:0.2});
+        nb.tier=n;
+        Composite.add(engine.world,nb);
+        state.score+=(n+1)*10;
+      }
+    }
+  });
+});
+
+/* =========================================================
+   INPUT
+========================================================= */
+addEventListener('pointerdown',e=>{
+  initAudio();
+  state.dragging=true;
+  state.x=e.clientX;
+});
+addEventListener('pointermove',e=>{
+  state.x=e.clientX;
+});
+addEventListener('pointerup',()=>{
+  if(state.dragging && state.dropOK){
+    dropFruit();
+  }
+  state.dragging=false;
+});
+
+/* =========================================================
+   DROP
+========================================================= */
+function dropFruit(){
+  const x=Math.max(40,Math.min(W-40,state.x));
+  const b=Bodies.circle(x,DEATH_Y,6+state.next*5.5,{restitution:0.2});
+  b.tier=state.next;
+  Composite.add(engine.world,b);
+  state.next=Math.floor(Math.random()*5);
+  state.dropOK=false;
+  setTimeout(()=>state.dropOK=true,500);
+}
+
+/* =========================================================
+   LOOP
+========================================================= */
+function loop(){
+  Engine.update(engine,16);
+  ctx.clearRect(0,0,W,H);
+
+  // Floor
+  ctx.fillStyle='rgba(0,0,0,.05)';
+  ctx.fillRect(0,FLOOR_Y,W,BOT_BAR);
+
+  // Death line
+  ctx.setLineDash([8,8]);
+  ctx.strokeStyle='#F44';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(20,DEATH_Y);
+  ctx.lineTo(W-20,DEATH_Y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  Composite.allBodies(engine.world).forEach(b=>{
+    if(b.tier==null||b.isStatic) return;
+    ctx.save();
+    ctx.translate(b.position.x,b.position.y);
+    ctx.shadowColor=COLORS[b.tier];
+    ctx.shadowBlur=10;
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(0,0,b.circleRadius,0,Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.font=`bold ${b.circleRadius*1.4}px serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(SKINS[b.tier],0,0);
+    ctx.restore();
+  });
+
+  requestAnimationFrame(loop);
+}
+loop();
 </script>
 </body>
 </html>
