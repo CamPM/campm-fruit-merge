@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Fruit Merge v1.14</title>
+<title>Fruit Merge v1.15</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <style>
 :root{--bg:#FDF6E3;--bd:#657B83;--txt:#586E75;--acc:#2AA198;--err:#DC143C;--gold:#D4AF37;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
@@ -62,11 +62,15 @@ body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color
     </div>
 </div>
 
-<div class="modal" id="m-store"><div class="card"><div style="padding:15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee"><b>Fruit Shop</b><span onclick="toggleStore()" style="cursor:pointer;font-size:28px">✕</span></div><div class="shop-body" id="shop-container"></div></div></div>
-<div class="modal" id="m-info"><div class="card"><div style="padding:15px;border-bottom:1px solid #eee"><b>Help Guide</b></div><div class="shop-body" style="background:#fff">
-    <h4 style="color:var(--acc)">Controls</h4><p>Drag your finger to move the preview fruit. Let go to drop it. When two same fruits touch, they merge into a larger one!</p>
-    <h4 style="color:var(--gold)">Power-Ups</h4><p><b>Drag</b> a power-up icon from the bottom bar onto the board. Fruits that will be affected glow Gold. Release to activate. If you don't have enough money, an error will pop up.</p>
-    <button class="btn" style="background:var(--acc);color:#fff;padding:10px;border-radius:8px;opacity:1;width:100%" onclick="toggleModal('m-info')">Play</button>
+<div class="modal" id="m-store"><div class="card"><div style="padding:15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee"><b>Fruit Shop (💰<span id="shop-wallet-val">0</span>)</b><span onclick="toggleStore()" style="cursor:pointer;font-size:28px">✕</span></div><div class="shop-body" id="shop-container"></div></div></div>
+<div class="modal" id="m-info"><div class="card"><div style="padding:15px;border-bottom:1px solid #eee"><b>Detailed Player Manual</b></div><div class="shop-body" style="background:#fff">
+    <h4 style="color:var(--acc)">Core Gameplay</h4>
+    <p>• <b>Placement:</b> Drag anywhere to position the fruit. Release to drop.<br>• <b>Merging:</b> Identical items merge automatically on contact, rewarding you with Score and Wallet coins.<br>• <b>Game Over:</b> Keep items below the Red Dotted Line. If an item stays above for 2 seconds, the board resets.</p>
+    <h4 style="color:var(--gold)">Power-Ups (Drag from Button)</h4>
+    <p>• <b>💣 Bomb ($50):</b> Destroys everything in a small radius.<br>• <b>🧹 Broom ($100):</b> Select one fruit; it will delete ALL fruits of that specific tier on the board.<br>• <b>🪄 Wand ($150):</b> Select one fruit to instantly evolve it to the next tier.</p>
+    <h4 style="color:var(--txt)">Economy & Customization</h4>
+    <p>Earn coins by merging. Visit the 🛒 Shop to unlock 44 different items across Skins, Themes, Borders, and Outlines. These settings persist even after closing the app.</p>
+    <button class="btn" style="background:var(--acc);color:#fff;padding:12px;border-radius:10px;opacity:1;width:100%" onclick="toggleModal('m-info')">Start Merging</button>
 </div></div></div>
 
 <script>
@@ -77,22 +81,21 @@ const BORDERS={'Slate':'#657B83','Gold':'#DAA520','Red':'#DC143C','Neon':'#B026F
 const OUTLINES={'Default':'def','Rainbow':'rainbow','White':'white','Black':'black'};
 const COLORS=['#F00','#F70','#FF0','#0F0','#00F','#4B0','#940','#F14','#0CE','#FD7','#F45','#32C'];
 
-let st={s:0, w:parseInt(localStorage.getItem('f14_w')||0), h:parseInt(localStorage.getItem('f14_h')||0), 
-    eq:JSON.parse(localStorage.getItem('f14_e')||'{"sk":"Fruit","ot":"def","th":"Mellow","bd":"Slate"}'), 
-    inv:JSON.parse(localStorage.getItem('f14_i')||'["sk_Fruit","ot_def","th_Mellow","bd_Slate"]'),
+let st={s:0, w:parseInt(localStorage.getItem('f15_w')||0), h:parseInt(localStorage.getItem('f15_h')||0), 
+    eq:JSON.parse(localStorage.getItem('f15_e')||'{"sk":"Fruit","ot":"def","th":"Mellow","bd":"Slate"}'), 
+    inv:JSON.parse(localStorage.getItem('f15_i')||'["sk_Fruit","ot_def","th_Mellow","bd_Slate"]'),
     next:0, drag:0, x:0, y:0, drop:1, tool:null, toolCost:0, over:0, max:-1};
 
 const cv=document.getElementById('c'), cx=cv.getContext('2d'), eng=E.create();
-eng.constraintIterations = 5; eng.positionIterations = 10;
-let W, H, DL;
+let W, H, DL, FY;
 
 function rsz(){
-    W=window.innerWidth; H=window.innerHeight; DL=H*0.08;
+    W=window.innerWidth; H=window.innerHeight; 
+    DL=H*0.08; FY = H - 90; // Pin floor to top of bottom bar
     cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio;
     cx.scale(devicePixelRatio,devicePixelRatio);
     C.clear(eng.world,0);
-    // Absolute floor at screen bottom
-    const floor=B.rectangle(W/2,H+495,W,1000,{isStatic:1,friction:0.8,slop:0});
+    const floor=B.rectangle(W/2,FY+500,W,1000,{isStatic:1,friction:0.8,slop:0});
     C.add(eng.world,[floor,B.rectangle(-250,H/2,500,H*2,{isStatic:1}),B.rectangle(W+250,H/2,500,H*2,{isStatic:1})]);
 }
 window.onresize=rsz; rsz();
@@ -114,8 +117,13 @@ Ev.on(eng,'collisionStart',e=>{
 function loop(){
     E.update(eng,16); cx.clearRect(0,0,W,H);
     document.body.style.background=THEMES[st.eq.th];
+    
+    // Death Line and Collision Visual Alignment
     cx.beginPath(); cx.moveTo(25,DL); cx.lineTo(W-25,DL); cx.strokeStyle='#F44'; cx.setLineDash([10,10]); cx.lineWidth=3; cx.stroke(); cx.setLineDash([]);
-    cx.fillStyle=BORDERS[st.eq.bd]; cx.globalAlpha=0.9; cx.fillRect(0,0,22,H); cx.fillRect(W-22,0,22,H); cx.globalAlpha=1;
+    
+    // Borders
+    cx.fillStyle=BORDERS[st.eq.bd]; cx.globalAlpha=0.9;
+    cx.fillRect(0,0,22,H); cx.fillRect(W-22,0,22,H); cx.globalAlpha=1;
 
     const pulse = (Math.sin(Date.now()/120)+1)/2;
     C.allBodies(eng.world).forEach(b=>{
@@ -129,9 +137,10 @@ function loop(){
         }
         if(highlight){ cx.strokeStyle='var(--gold)'; cx.lineWidth=4+(pulse*4); cx.beginPath(); cx.arc(0,0,r+2,0,6.28); cx.stroke(); }
         cx.shadowColor=COLORS[b.tier]; cx.shadowBlur=10; cx.fillStyle='#fff'; cx.beginPath(); cx.arc(0,0,r,0,6.28); cx.fill(); cx.shadowBlur=0;
-        if(st.eq.ot==='rainbow') cx.strokeStyle=`hsl(${Date.now()/5%360},100%,50%)`;
-        else cx.strokeStyle=st.eq.ot==='white'?'#fff':(st.eq.ot==='black'?'#000':'#0001');
-        cx.lineWidth=2; cx.stroke();
+        
+        const otColor = st.eq.ot==='rainbow' ? `hsl(${Date.now()/5%360},100%,50%)` : (st.eq.ot==='white'?'#fff':(st.eq.ot==='black'?'#000':'#0001'));
+        cx.strokeStyle=otColor; cx.lineWidth=2; cx.stroke();
+        
         cx.font=`bold ${r*1.4}px serif`; cx.textAlign='center'; cx.textBaseline='middle'; cx.fillText(SKINS[st.eq.sk][b.tier],0,0);
         cx.rotate(-b.angle); cx.translate(-b.position.x,-b.position.y);
     });
@@ -146,21 +155,19 @@ function loop(){
     chkAfford(); requestAnimationFrame(loop);
 }
 
-function startTool(e, type, cost){
-    if(st.w < cost){ 
-        const t=document.getElementById('toast'); t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); 
-        return; 
-    }
-    st.tool = type; st.toolCost = cost;
+function updateCoord(e){
+    const r=cv.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    st.x=(clientX-r.left)*(W/r.width);
+    st.y=(clientY-r.top)*(H/r.height);
 }
 
 window.addEventListener('pointerdown', e=>{
-    const r=cv.getBoundingClientRect(); st.x=(e.clientX-r.left)*(W/r.width); st.y=(e.clientY-r.top)*(H/r.height);
+    updateCoord(e);
     if(!e.target.closest('button,.modal')) st.drag=1;
 });
-window.addEventListener('pointermove', e=>{
-    const r=cv.getBoundingClientRect(); st.x=(e.clientX-r.left)*(W/r.width); st.y=(e.clientY-r.top)*(H/r.height);
-});
+window.addEventListener('pointermove', e=>updateCoord(e));
 window.addEventListener('pointerup', ()=>{
     if(st.tool) useTool(); else if(st.drag && st.drop && st.y > 100) dropFruit();
     st.drag=0;
@@ -192,6 +199,14 @@ function useTool(){
     st.tool=null;
 }
 
+function startTool(e, type, cost){
+    if(st.w < cost){ 
+        const t=document.getElementById('toast'); t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); 
+        return; 
+    }
+    st.tool = type; st.toolCost = cost;
+}
+
 function resetGame(){
     if(st.s > st.h) st.h = st.s;
     st.s=0; st.max=-1; save();
@@ -210,6 +225,7 @@ function updUI(){
     document.getElementById('sBest').innerText=st.h;
     document.getElementById('val-wallet').innerText=st.w;
     document.getElementById('next-box').innerText=SKINS[st.eq.sk][st.next];
+    if(document.getElementById('m-store').classList.contains('open')) document.getElementById('shop-wallet-val').innerText=st.w;
 }
 
 function renderPrg(){
@@ -221,8 +237,8 @@ function renderPrg(){
 }
 
 function save(){
-    localStorage.setItem('f14_w',st.w); localStorage.setItem('f14_h',st.h);
-    localStorage.setItem('f14_i',JSON.stringify(st.inv)); localStorage.setItem('f14_e',JSON.stringify(st.eq));
+    localStorage.setItem('f15_w',st.w); localStorage.setItem('f15_h',st.h);
+    localStorage.setItem('f15_i',JSON.stringify(st.inv)); localStorage.setItem('f15_e',JSON.stringify(st.eq));
 }
 
 function toggleFull(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
@@ -230,22 +246,29 @@ function toggleModal(id){ document.getElementById(id).classList.toggle('open'); 
 function toggleStore(){ document.getElementById('m-store').classList.toggle('open'); if(document.getElementById('m-store').classList.contains('open')) renderShop(); }
 
 function renderShop(){
+    document.getElementById('shop-wallet-val').innerText=st.w;
     const g=document.getElementById('shop-container'); g.innerHTML='<div class="grid" id="sg"></div>'; const sg=document.getElementById('sg');
-    const cats=[{n:'Skins',k:'sk',m:SKINS,p:500},{n:'Outlines',k:'ot',m:OUTLINES,p:2000},{n:'Themes',k:'th',m:THEMES,p:300},{n:'Borders',k:'bd',m:BORDERS,p:200}];
+    const cats=[{n:'Skins',k:'sk',m:SKINS,p:500},{n:'Outlines',k:'ot',m:OUTLINES,p:2000},{n:'Themes',k:'th',m:THEMES,p:300},{n:'Borders',k:'bd',m:200}];
+    
     cats.forEach(c=>{
         sg.innerHTML+=`<div class="cat-title">${c.n}</div>`;
         Object.keys(c.m).forEach(key=>{
-            const id=c.k+'_'+key, own=st.inv.includes(id), eq=st.eq[c.k]===key;
+            const id=c.k+'_'+key, own=st.inv.includes(id);
+            const eqVal = (c.k==='ot') ? OUTLINES[key] : key;
+            const eq = st.eq[c.k] === eqVal;
+            
             let prv = '';
             if(c.n==='Skins') prv = `<span style="font-size:24px">${SKINS[key][0]}</span>`;
             if(c.n==='Themes') prv = `<div style="width:25px;height:25px;background:${THEMES[key]};border-radius:50%;margin:0 auto;border:1px solid #ccc"></div>`;
             if(c.n==='Borders') prv = `<div style="width:25px;height:25px;background:${BORDERS[key]};border-radius:50%;margin:0 auto;border:1px solid #ccc"></div>`;
             if(c.n==='Outlines') prv = `<div style="width:25px;height:25px;border:2px ${key==='Rainbow'?'dashed':'solid'} ${key==='Black'?'#000':'#ccc'};border-radius:50%;margin:0 auto"></div>`;
+
             const el=document.createElement('div'); el.className=`item ${eq?'eq':''}`;
             el.innerHTML=`<div style="margin-bottom:5px">${prv}</div><b>${key}</b><br><small>${eq?'Equipped':(own?'Owned':'$'+c.p)}</small>`;
-            el.onclick=()=>{
-                if(own){ st.eq[c.k]=(c.k==='ot'?OUTLINES[key]:key); }
-                else if(st.w>=c.p){ st.w-=c.p; st.inv.push(id); st.eq[c.k]=(c.k==='ot'?OUTLINES[key]:key); }
+            el.onclick=(e)=>{
+                e.stopPropagation();
+                if(own){ st.eq[c.k]=eqVal; }
+                else if(st.w>=c.p){ st.w-=c.p; st.inv.push(id); st.eq[c.k]=eqVal; }
                 save(); renderShop(); updUI(); renderPrg();
             };
             sg.appendChild(el);
