@@ -3,30 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge - v1.25</title>
+    <title>Fruit Merge - v1.26</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: var(--font); height: 100vh; display: flex; flex-direction: column; touch-action: none; }
         
-        /* UI LAYOUT */
         .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
         .top-bar { top: 0; height: 115px; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; padding-top: env(safe-area-inset-top); }
         .bot-bar { bottom: 0; height: 100px; background: var(--panel); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; padding-bottom: env(safe-area-inset-bottom); }
-        .divider { width: 2px; height: 40px; background: #ccc; margin: 0 5px; }
+        .divider { width: 2px; height: 40px; background: #ccc; margin: 0 2px; }
         
         .score-box { text-align: center; min-width: 60px; }
         #next-preview { width: 55px; height: 55px; border: 3px solid #333; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: #fff; box-shadow: 0 4px 0 #333; }
         
-        .pwr-btn { width: 48px; height: 48px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; }
-        .btn-small { width: 32px; height: 32px; font-size: 16px; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; }
+        .pwr-btn { width: 46px; height: 46px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; }
+        .btn-small { width: 30px; height: 30px; font-size: 14px; position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; }
         
         #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
         .pwr-btn:active { transform: scale(0.9); }
         .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
-        /* MODALS - FIXED SCROLLING */
         .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; touch-action: auto; }
         .modal.open { display: flex; }
         .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -35,8 +33,11 @@
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 20px; }
         .card { background: #f9f9f9; padding: 10px; border-radius: 15px; text-align: center; border: 2px solid #eee; cursor: pointer; }
         .card.equipped { border-color: #2ecc71; background: #f0fff4; }
-        .preview-swatch { width: 40px; height: 40px; border-radius: 50%; margin: 5px auto; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; }
         
+        @keyframes rotate-emoji { 0% { transform: rotate(-15deg) scale(1); } 50% { transform: rotate(15deg) scale(1.15); } 100% { transform: rotate(-15deg) scale(1); } }
+        .preview-swatch { width: 45px; height: 45px; border-radius: 50%; margin: 5px auto; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 24px; overflow: hidden; background: white; }
+        .anim-skin { animation: rotate-emoji 2s infinite ease-in-out; }
+
         #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
         #toast { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
     </style>
@@ -65,11 +66,12 @@
     <div id="p-wipe" class="pwr-btn" onclick="prepPower('wipe')">🧹</div>
     <div id="p-evo" class="pwr-btn" onclick="prepPower('evo')">🪄</div>
     <div class="divider"></div>
+    <div class="pwr-btn" style="background:#3498db; width:65px" onclick="toggleModal('shop-modal')">SHOP</div>
+    <div class="pwr-btn" style="background:#2c3e50;" onclick="toggleFull()">⛶</div>
     <div style="position: relative;">
         <button id="mute-btn" class="pwr-btn btn-small" onclick="toggleMute()">🔊</button>
-        <div class="pwr-btn" style="background:#95a5a6" onclick="toggleModal('help-modal')">?</div>
+        <div class="pwr-btn" style="background:#95a5a6; width:40px" onclick="toggleModal('help-modal')">?</div>
     </div>
-    <div class="pwr-btn" style="background:#3498db; width:80px" onclick="toggleModal('shop-modal')">SHOP</div>
 </div>
 
 <div id="shop-modal" class="modal">
@@ -80,21 +82,14 @@
 <div id="help-modal" class="modal">
     <div class="modal-header"><h2>How to Play</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer;">✕</b></div>
     <div class="modal-content">
-        <h3>Objective</h3>
-        <p>Drop items to merge matching pairs. Each merge evolves the item into a larger, more valuable tier. Reach the final Tier 12 to become a Master!</p>
-        <h3>Controls</h3>
-        <ul>
-            <li><b>Tap/Drag:</b> Move the preview item across the top.</li>
-            <li><b>Release:</b> Drop the item into the arena.</li>
-            <li><b>Fullscreen:</b> Use the button below to toggle immersive mode (best for mobile).</li>
-        </ul>
+        <h3>Basics</h3>
+        <p>Drop items to merge identical pairs. Each merge creates a larger item of the next tier. Aim for Tier 12!</p>
         <h3>Power Ups</h3>
-        <p><b>💣 Bomb ($500):</b> Destroys everything in a small radius. Great for clearing jams.</p>
-        <p><b>🧹 Wipe ($1000):</b> Remove all items of a specific tier from the board. Tap Wipe, then tap the item type you want gone.</p>
-        <p><b>🪄 Evolve ($1500):</b> Instantly upgrade every item of a chosen tier to the next level. Tap Evolve, then tap the target item.</p>
-        <h3>Rules</h3>
-        <p><b style="color:red">Death Line:</b> If any item rests above the red dotted line for more than 2 seconds, the game ends. Keep the board clear!</p>
-        <button onclick="toggleFull()" style="width:100%; padding:20px; background:var(--accent); color:white; border:none; border-radius:15px; font-weight:bold; margin: 20px 0;">TOGGLE FULLSCREEN</button>
+        <p><b>💣 Bomb ($500):</b> Clear items in a small blast radius.</p>
+        <p><b>🧹 Wipe ($1000):</b> Select this, then tap a fruit to remove all fruits of that tier from the board.</p>
+        <p><b>🪄 Evolve ($1500):</b> Select this, then tap a fruit to upgrade every fruit of that tier to the next level.</p>
+        <hr>
+        <p><b style="color:red">Death Line:</b> Don't let items stay above the red line for 2 seconds!</p>
     </div>
 </div>
 
@@ -103,24 +98,23 @@
 <script>
 const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events;
 
-// 44 ITEMS TOTAL: 8 Skins, 4 Outlines, 16 Themes, 16 Borders
 const SKINS = { 
     Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"],
     Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"],
-    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"],
-    Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"],
-    Sports: ["⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏒","🥊","🛹"],
-    Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"],
+    Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"],
     Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"],
-    Ocean: ["🐚","🦀","🦞","🦐","🦑","🐙","🐡","🐠","🐟","🐬","🐳","🦈"]
+    Polygons: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","ハート","⬛","⚪"],
+    Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"],
+    Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"],
+    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"]
 };
 const THEMES = { 
     Mellow: "#FDF6E3", Matcha: "#E8F5E9", Midnight: "#1a1b26", Lavender: "#F3E5F5", Sky: "#E1F5FE", 
     Rose: "#FFF1F0", Sunset: "#FFF5E6", Forest: "#1B5E20", DeepSea: "#01579B", Charcoal: "#212121",
-    Sand: "#F4A460", Mint: "#F0FFF0", Plum: "#4B0082", Peach: "#FFDAB9", Slate: "#708090", Ghost: "#F8F9FA"
+    Sand: "#F4A460", Mint: "#F0FFF0", Plum: "#4B0082", Peach: "#FFDAB9", Slate: "#708090", Ghost: "#E8ECEF"
 };
 const BORDERS = { 
-    Gold: "#DAA520", Neon: "#B026FF", Red: "#DC143C", Slate: "#657B83", Black: "#000000",
+    Slate: "#657B83", Gold: "#DAA520", Neon: "#B026FF", Red: "#DC143C", Black: "#000000",
     Silver: "#C0C0C0", Bronze: "#CD7F32", Electric: "#00FFFF", Lime: "#32CD32", Pink: "#FF69B4",
     Wine: "#800000", Navy: "#000080", Olive: "#808000", Teal: "#008080", Orange: "#FF8C00", White: "#FFFFFF"
 };
@@ -142,7 +136,6 @@ function init() {
     canvas = document.getElementById('c'); ctx = canvas.getContext('2d');
     resize();
     window.addEventListener('resize', resize);
-
     engine = E.create({ gravity: { y: 1.2 } });
     updatePhysicsBounds();
 
@@ -158,7 +151,6 @@ function init() {
             }
         });
     });
-
     loop();
 }
 
@@ -166,14 +158,13 @@ function resize() {
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-    DL = 125; FY = H - 100; // Recalculated Floor Y
+    DL = 125; FY = H - 100;
     updatePhysicsBounds();
 }
 
 function updatePhysicsBounds() {
     if(!engine) return;
     if(floor) C.remove(engine.world, [floor, wallL, wallR]);
-    // Floor positioned so bodies rest exactly on the UI bar top
     floor = B.rectangle(W/2, FY + 250, W, 500, { isStatic: true, friction: 0.5 });
     wallL = B.rectangle(-25, H/2, 50, H*2, { isStatic: true });
     wallR = B.rectangle(W+25, H/2, 50, H*2, { isStatic: true });
@@ -181,10 +172,7 @@ function updatePhysicsBounds() {
 }
 
 function spawnFruit(x, y, t, isDrop) {
-    const b = B.circle(x, y, SIZES[t], { 
-        restitution: 0.3, friction: 0.1, slop: 0.05,
-        plugin: { t: t } 
-    });
+    const b = B.circle(x, y, SIZES[t], { restitution: 0.3, friction: 0.1, slop: 0.05, plugin: { t: t } });
     C.add(engine.world, b);
     if(isDrop) {
         curIdx = nextIdx; nextIdx = Math.floor(Math.random()*5);
@@ -196,18 +184,15 @@ function spawnFruit(x, y, t, isDrop) {
 function loop() {
     E.update(engine, 16);
     ctx.clearRect(0, 0, W, H);
-    
     document.body.style.background = THEMES[st.eq.th];
     ctx.fillStyle = BORDERS[st.eq.bd];
     ctx.fillRect(0, 0, 15, H); ctx.fillRect(W-15, 0, 15, H);
     
-    // Death Line
     ctx.setLineDash([8,8]); ctx.strokeStyle="rgba(255,0,0,0.5)"; ctx.beginPath(); ctx.moveTo(15, DL); ctx.lineTo(W-15, DL); ctx.stroke(); ctx.setLineDash([]);
 
     const now = Date.now();
     C.allBodies(engine.world).forEach(b => {
         if(b.isStatic || !b.plugin) return;
-        
         if(b.position.y - b.circleRadius < DL && b.speed < 0.5) {
             if(!b.tm) b.tm = now;
             if(now - b.tm > 2000) triggerGameOver();
@@ -239,7 +224,6 @@ function loop() {
 function handlePower(x, y) {
     const bodies = C.allBodies(engine.world).filter(b => b.plugin);
     const costs = { bomb: 500, wipe: 1000, evo: 1500 };
-
     if(activePower === 'bomb') {
         bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 80) C.remove(engine.world, b); });
     } else {
@@ -271,7 +255,7 @@ function renderStore() {
     const cats = [
         {title: 'Skins', key: 'sk', data: SKINS, cost: 1500},
         {title: 'Outlines', key: 'ot', data: OUTLINES, cost: 1000},
-        {title: 'Backgrounds', key: 'th', data: THEMES, cost: 500},
+        {title: 'Themes', key: 'th', data: THEMES, cost: 500},
         {title: 'Borders', key: 'bd', data: BORDERS, cost: 500}
     ];
 
@@ -282,19 +266,20 @@ function renderStore() {
             const id = cat.key + '_' + item;
             const isOwned = st.owned.includes(id);
             const isEq = st.eq[cat.key] === (cat.key === 'ot' ? OUTLINES[item] : item);
-            
             const card = document.createElement('div');
             card.className = `card ${isEq ? 'equipped' : ''}`;
             
             let preview = '';
-            if(cat.key === 'sk') preview = `<div class="preview-swatch">${cat.data[item][0]}</div>`;
+            if(cat.key === 'sk') preview = `<div class="preview-swatch anim-skin">${cat.data[item][0]}</div>`;
             else if(cat.key === 'th') preview = `<div class="preview-swatch" style="background:${cat.data[item]}"></div>`;
             else if(cat.key === 'bd') preview = `<div class="preview-swatch" style="border: 4px solid ${cat.data[item]}"></div>`;
-            else preview = `<div class="preview-swatch" style="border: 2px solid #000">Aa</div>`;
+            else {
+                let borderStyle = item === 'Rainbow' ? 'border: 2px solid #3498db; background: linear-gradient(to right, red, orange, yellow, green, blue, violet);' : (item === 'White' ? 'border: 2px solid #ccc; background: #fff;' : (item === 'Black' ? 'border: 2px solid #000; background: #000;' : 'border: 2px dashed #ccc;'));
+                preview = `<div class="preview-swatch" style="${borderStyle}"></div>`;
+            }
 
             card.innerHTML = `${preview}<b>${item}</b><div style="font-size:10px; color:${isOwned?'#2ecc71':'#e67e22'}">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.cost}</div>`;
             card.onclick = (e) => {
-                e.stopPropagation();
                 if(isOwned) { st.eq[cat.key] = (cat.key === 'ot' ? OUTLINES[item] : item); }
                 else if(st.wallet >= cat.cost) { st.wallet -= cat.cost; st.owned.push(id); st.eq[cat.key] = (cat.key === 'ot' ? OUTLINES[item] : item); }
                 else showToast("NOT ENOUGH CASH!");
@@ -307,14 +292,11 @@ function renderStore() {
 
 function toggleFull() {
     const el = document.documentElement;
-    const request = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-
+    const request = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (request) request.call(el).catch(e => console.log(e));
-    } else {
-        if (exit) exit.call(document);
-    }
+    } else { if (exit) exit.call(document); }
 }
 
 function showToast(msg) {
@@ -325,7 +307,6 @@ function showToast(msg) {
 function triggerGameOver() {
     document.getElementById('final-score').innerText = st.score;
     document.getElementById('game-over').style.display = 'flex';
-    save();
 }
 
 function restartGame() {
@@ -344,9 +325,9 @@ function updUI() {
     for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.has(i)?1:0.2}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`;
 }
 
-function save() { localStorage.setItem('fm_v125', JSON.stringify({...st, found: Array.from(st.found)})); }
+function save() { localStorage.setItem('fm_v126', JSON.stringify({...st, found: Array.from(st.found)})); }
 function load() { 
-    const d = localStorage.getItem('fm_v125'); 
+    const d = localStorage.getItem('fm_v126'); 
     if(d) { let p = JSON.parse(d); Object.assign(st, p); st.found = new Set(p.found); } 
 }
 
@@ -374,18 +355,12 @@ function toggleMute() {
     save();
 }
 
-// TOUCH HANDLING - Corrected to allow modal scrolling
-window.addEventListener('pointermove', e => { 
-    if (e.target.closest('.modal')) return;
-    lastX = Math.max(45, Math.min(W-45, e.clientX)); 
-});
-
+window.addEventListener('pointermove', e => { if (e.target.closest('.modal')) return; lastX = Math.max(45, Math.min(W-45, e.clientX)); });
 window.addEventListener('pointerup', e => {
     if (e.target.closest('.modal') || e.target.closest('.ui-panel')) return;
     if(activePower) handlePower(e.clientX, e.clientY);
     else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
 });
-
 window.onload = init;
 </script>
 </body>
