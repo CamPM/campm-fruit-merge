@@ -2,36 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Fruit Merge v1.10</title>
+<title>Fruit Merge v1.11</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <style>
-:root{--bg:#FDF6E3;--bd:#657B83;--txt:#586E75;--acc:#2AA198;--err:#DC143C;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+:root{--bg:#FDF6E3;--bd:#657B83;--txt:#586E75;--acc:#2AA198;--err:#DC143C;--gold:#D4AF37;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none}
 body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--txt)}
 #ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:flex;flex-direction:column;justify-content:space-between}
-.top{height:110px;padding:10px 15px;background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);pointer-events:auto;border-bottom:2px solid var(--bd)}
+.top{height:110px;padding:10px 15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);pointer-events:auto;border-bottom:3px solid var(--bd)}
 .row{display:flex;justify-content:space-between;align-items:center}
-.score{font-size:20px;font-weight:900} .lbl{font-size:10px;font-weight:700;opacity:.6}
-#next-box{width:42px;height:42px;border:2px dashed var(--bd);border-radius:50%;display:grid;place-items:center;font-size:24px;background:#fff}
-.bar{display:flex;justify-content:space-between;background:rgba(0,0,0,.08);padding:4px;border-radius:10px;margin-top:5px}
-.dot{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.1);display:grid;place-items:center;font-size:8px}
-.dot.on{transform:scale(1.1);background:#fff;box-shadow:0 0 4px rgba(0,0,0,0.2)}
-.bot{height:90px;background:rgba(255,255,255,0.98);border-top:2px solid var(--bd);display:flex;align-items:center;padding:0 15px;pointer-events:auto;justify-content:space-between;padding-bottom:env(safe-area-inset-bottom)}
-.btn-grp{display:flex;gap:10px;align-items:center}
-.btn{background:0;border:0;font-size:24px;display:flex;flex-direction:column;align-items:center;opacity:.3;transition:0.2s;cursor:pointer;position:relative}
+.score{font-size:22px;font-weight:900}
+#next-box{width:46px;height:46px;border:2px dashed var(--bd);border-radius:50%;display:grid;place-items:center;font-size:28px;background:#fff}
+.bar{display:flex;justify-content:space-between;background:rgba(0,0,0,.08);padding:4px;border-radius:10px;margin-top:6px}
+.dot{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.1)}
+.dot.on{transform:scale(1.2);background:#fff;box-shadow:0 0 5px rgba(0,0,0,0.3)}
+.bot{height:95px;background:rgba(255,255,255,0.98);border-top:3px solid var(--bd);display:flex;align-items:center;padding:0 15px;pointer-events:auto;justify-content:space-between;padding-bottom:env(safe-area-inset-bottom)}
+.btn-grp{display:flex;gap:12px;align-items:center}
+.btn{background:0;border:0;font-size:26px;display:flex;flex-direction:column;align-items:center;opacity:.25;transition:0.2s;cursor:pointer}
 .btn.can-afford{opacity:.7} .btn.act{opacity:1;color:var(--acc);transform:scale(1.1)}
-.btn span{font-size:8px;font-weight:800;margin-top:2px}
-.divider{width:2px;height:40px;background:var(--bd);opacity:0.2}
-.modal{position:absolute;top:0;left:0;width:100%;height:100%;background:#000A;z-index:99;display:none;align-items:center;justify-content:center;pointer-events:auto}
+.btn span{font-size:9px;font-weight:900;margin-top:3px}
+.divider{width:2px;height:45px;background:var(--bd);opacity:0.3}
+.modal{position:absolute;top:0;left:0;width:100%;height:100%;background:#000C;z-index:99;display:none;align-items:center;justify-content:center;pointer-events:auto}
 .modal.open{display:flex}
-.card{background:#fff;width:92%;max-width:440px;height:80%;border-radius:24px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.5)}
-.shop-body{flex:1;overflow-y:auto;padding:20px;background:#f8f9fa;touch-action:pan-y;overscroll-behavior:contain}
-.shop-body::-webkit-scrollbar{width:24px} .shop-body::-webkit-scrollbar-thumb{background:var(--bd);border-radius:12px;border:6px solid #f8f9fa}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.item{border:1px solid #ddd;border-radius:15px;padding:15px;text-align:center;background:#fff;transition:0.2s}
-.item.eq{border:3px solid var(--acc);background:#e6fffa}
-.cat-title{font-size:12px;font-weight:900;padding:15px 0 5px;text-transform:uppercase;color:var(--acc);border-bottom:2px solid #eee;grid-column:span 2}
-#toast{position:absolute;top:130px;left:50%;transform:translateX(-50%);background:var(--err);color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;font-weight:700;display:none;z-index:100}
+.card{background:#fff;width:94%;max-width:450px;height:82%;border-radius:28px;display:flex;flex-direction:column;overflow:hidden}
+.shop-body{flex:1;overflow-y:scroll;padding:20px;background:#f4f4f4;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.shop-body::-webkit-scrollbar{width:28px} .shop-body::-webkit-scrollbar-thumb{background:var(--bd);border-radius:14px;border:7px solid #f4f4f4}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.item{border:2px solid #eee;border-radius:18px;padding:18px;text-align:center;background:#fff}
+.item.eq{border:4px solid var(--acc);background:#edfffb}
+.cat-title{font-size:13px;font-weight:900;padding:18px 0 6px;text-transform:uppercase;color:var(--acc);border-bottom:2px solid #eee;grid-column:span 2}
+#toast{position:absolute;top:130px;left:50%;transform:translateX(-50%);background:var(--err);color:#fff;padding:10px 25px;border-radius:30px;font-size:14px;font-weight:800;display:none;z-index:100}
 </style>
 </head>
 <body>
@@ -40,38 +40,32 @@ body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color
 <div id="ui">
     <div class="top">
         <div class="row">
-            <div><div class="lbl">Score</div><div class="score" id="sCurrent">0</div></div>
+            <div><div style="font-size:10px;font-weight:700;opacity:0.6">SCORE</div><div class="score" id="sCurrent">0</div></div>
             <div id="next-box"></div>
-            <div style="text-align:right"><div class="lbl">Wallet</div><div class="score" style="color:var(--acc)">💰<span id="val-wallet">0</span></div></div>
+            <div style="text-align:right"><div style="font-size:10px;font-weight:700;opacity:0.6">WALLET</div><div class="score" style="color:var(--acc)">💰<span id="val-wallet">0</span></div></div>
         </div>
         <div class="bar" id="prog"></div>
-        <div style="text-align:center;font-size:10px;margin-top:4px;font-weight:800">BEST: <span id="sBest">0</span></div>
     </div>
     <div class="bot">
         <div class="btn-grp">
-            <button class="btn pwr" id="b-bomb" onclick="buyTool('bomb', 50)">💣<span>$50</span></button>
-            <button class="btn pwr" id="b-broom" onclick="buyTool('broom', 100)">🧹<span>$100</span></button>
-            <button class="btn pwr" id="b-wand" onclick="buyTool('wand', 150)">🪄<span>$150</span></button>
+            <button class="btn pwr" id="b-bomb" onpointerdown="startTool(event,'bomb',50)">💣<span>$50</span></button>
+            <button class="btn pwr" id="b-broom" onpointerdown="startTool(event,'broom',100)">🧹<span>$100</span></button>
+            <button class="btn pwr" id="b-wand" onpointerdown="startTool(event,'wand',150)">🪄<span>$150</span></button>
         </div>
         <div class="divider"></div>
         <div class="btn-grp">
             <button class="btn" style="opacity:1" onclick="toggleModal('m-info')">❓<span>Help</span></button>
-            <button class="btn" style="opacity:1" onclick="toggleFull()">⛶<span>Full</span></button>
             <button class="btn" style="opacity:1" onclick="toggleStore()">🛒<span>Shop</span></button>
         </div>
     </div>
 </div>
 
-<div class="modal" id="m-store"><div class="card"><div style="padding:20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #eee"><b>Store (💰<span id="shop-wallet">0</span>)</b><span onclick="toggleStore()" style="cursor:pointer;font-size:28px">✕</span></div><div class="shop-body" id="shop-container"></div></div></div>
-<div class="modal" id="m-info"><div class="card" style="height:85%"><div style="padding:20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between"><b>Game Manual</b><span onclick="toggleModal('m-info')" style="cursor:pointer">✕</span></div><div class="shop-body" style="background:#fff">
-    <h3 style="color:var(--acc)">Objective</h3><p>Merge identical fruits to reach the 12th tier and achieve the highest score possible.</p>
-    <h3 style="color:var(--acc)">Physics & Controls</h3><p><b>Drop:</b> Drag anywhere to move the preview. Release to drop.<br><b>Collision:</b> Fruits will bounce and roll. Strategy is key!</p>
-    <h3 style="color:var(--err)">The Death Line</h3><p>A dashed red line sits at the top. If any fruit rests above this line for 2 seconds, the game ends immediately.</p>
-    <h3 style="color:var(--acc)">Power-Ups (Single Use)</h3>
-    <p><b>💣 Bomb ($50):</b> Destroys all fruits in a wide blast radius.</p>
-    <p><b>🧹 Broom ($100):</b> Clears every instance of a specific fruit type from the board.</p>
-    <p><b>🪄 Wand ($150):</b> Upgrades a single fruit to its next evolution tier.</p>
-    <h3 style="color:var(--acc)">Currency</h3><p>Earn 💰1 for every 10 points scored. Use these in the Store to buy new Skins, Themes, and Borders.</p>
+<div class="modal" id="m-store"><div class="card"><div style="padding:22px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #eee"><b>Shop (💰<span id="shop-wallet">0</span>)</b><span onclick="toggleStore()" style="cursor:pointer;font-size:32px">✕</span></div><div class="shop-body" id="shop-container"></div></div></div>
+<div class="modal" id="m-info"><div class="card"><div style="padding:20px;border-bottom:1px solid #eee"><b>Detailed Help</b></div><div class="shop-body" style="background:#fff">
+    <h4>Power-Up Drag Mechanic</h4><p>Press and hold a power-up button, then drag your finger into the arena. A dashed circle will follow your touch showing the range. Release to activate.</p>
+    <h4>Targeting</h4><p>Fruits that will be hit by the power-up will glow with a pulsing gold outline.</p>
+    <h4>Shop Categories</h4><p>You can equip 1 item from each of the 4 categories at a time. Selecting a new one automatically replaces the old one.</p>
+    <button class="btn" style="background:var(--acc);color:#fff;padding:12px;border-radius:10px;opacity:1;width:100%" onclick="toggleModal('m-info')">Got it</button>
 </div></div></div>
 
 <script>
@@ -79,12 +73,12 @@ const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events, Q=M.Query;
 const SKINS={'Fruit':['🍒','🍓','🍇','🍊','🍎','🍐','🍑','🍍','🍈','🍉','🥥','🥝'],'Space':['🌑','☄️','🛰️','🚀','🛸','👾','🔭','🌌','🪐','☀️','🌀','👽'],'Animals':['🐞','🐸','🐢','🦆','🐒','🦉','🐧','🐺','🦓','🦍','🐘','🐋'],'Weather':['💧','❄️','🌪️','🌈','☀️','☁️','⛈️','🌩️','🌫️','🌤️','🌬️','☂️'],'Dessert':['🍬','🍪','🍩','🍫','🍮','🍦','🧁','🍰','🥧','🥞','🧇','🎂'],'Shapes':['🔴','🟠','🟡','🟢','🔵','🟣','🟤','⚫','⬜','🟦','🟧','🟥'],'Music':['🎵','🎶','🎸','🎹','🎺','🎻','🎷','🥁','🎤','🎧','📻','🎼'],'Plants':['🌱','🌿','☘️','🍀','🌵','🌴','🌳','🌲','🍂','🍁','🍄','🌹']};
 const THEMES={'Mellow':'#FDF6E3','Matcha':'#E8F5E9','Midnight':'#1a1b26','Lavender':'#F3E5F5','Sky':'#E1F5FE','Sunset':'#FFF3E0','Slate':'#263238','Rose':'#FCE4EC','Mint':'#D0F0C0','Ocean':'#E0F7FA','Lemon':'#FFFDE7','Plum':'#F3E5F5','Coffee':'#EFEBE9','Storm':'#ECEFF1','Forest':'#F1F8E9','Blush':'#FFF5F8'};
 const BORDERS={'Slate':'#657B83','Gold':'#DAA520','Red':'#DC143C','Neon':'#B026FF','Black':'#000000','White':'#FFFFFF','Grey':'#95A5A6','Blue':'#2980B9','Green':'#27AE60','Teal':'#16A085','Orange':'#E67E22','Pink':'#E91E63','Purple':'#8E44AD','Brown':'#795548','Mint':'#1ABC9C','Navy':'#2C3E50'};
-const COLORS=['#F00','#F70','#FF0','#0F0','#00F','#4B0','#940','#F14','#0CE','#FD7','#F45','#32C'];
+const OUTLINES={'Soft':'def','White':'white','Black':'black','Rainbow':'rainbow'};
 
-let st={s:0, w:parseInt(localStorage.getItem('f10_w')||0), h:parseInt(localStorage.getItem('f10_h')||0), 
-    inv:JSON.parse(localStorage.getItem('f10_i')||'["sk_Fruit","ot_def","th_Mellow","bd_Slate"]'), 
-    eq:JSON.parse(localStorage.getItem('f10_e')||'{"sk":"Fruit","ot":"def","th":"Mellow","bd":"Slate"}'), 
-    next:0, drag:0, x:0, y:0, drop:1, over:0, tool:null, max:-1};
+let st={s:0, w:parseInt(localStorage.getItem('f11_w')||0), h:parseInt(localStorage.getItem('f11_h')||0), 
+    eq:JSON.parse(localStorage.getItem('f11_e')||'{"sk":"Fruit","ot":"def","th":"Mellow","bd":"Slate"}'), 
+    inv:JSON.parse(localStorage.getItem('f11_i')||'["sk_Fruit","ot_def","th_Mellow","bd_Slate"]'),
+    next:0, drag:0, x:0, y:0, drop:1, tool:null, toolCost:0, over:0, max:-1};
 
 const cv=document.getElementById('c'), cx=cv.getContext('2d'), eng=E.create();
 let W, H, DL;
@@ -95,10 +89,8 @@ function rsz(){
     cx.scale(devicePixelRatio,devicePixelRatio);
     C.clear(eng.world,0,1);
     const t=400;
-    const floor=B.rectangle(W/2,H-90+t/2,W,t,{isStatic:1,friction:0.8,label:'floor'});
-    const lw=B.rectangle(0,H/2,40,H*2,{isStatic:1});
-    const rw=B.rectangle(W,H/2,40,H*2,{isStatic:1});
-    C.add(eng.world,[floor,lw,rw]);
+    const floor=B.rectangle(W/2,H-95+t/2,W,t,{isStatic:1,friction:0.8});
+    C.add(eng.world,[floor,B.rectangle(0,H/2,40,H*2,{isStatic:1}),B.rectangle(W,H/2,40,H*2,{isStatic:1})]);
 }
 window.onresize=rsz; rsz();
 
@@ -109,7 +101,7 @@ Ev.on(eng,'collisionStart',e=>{
             const n=a.tier+1, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
             C.remove(eng.world,[a,b]);
             const nb=B.circle(pos.x,pos.y,10+(n*7),{restitution:0.4}); nb.tier=n; C.add(eng.world,nb);
-            updSc((n+1)*10); updPrg(n);
+            updSc((n+1)*10); if(n>st.max){st.max=n; renderPrg();}
         }
     });
 });
@@ -118,65 +110,98 @@ function loop(){
     E.update(eng,16); cx.clearRect(0,0,W,H);
     document.body.style.background=THEMES[st.eq.th];
     
-    // Death Line Rendering
     cx.beginPath(); cx.moveTo(20,DL); cx.lineTo(W-20,DL); cx.strokeStyle='#F44'; cx.setLineDash([8,8]); cx.lineWidth=3; cx.stroke(); cx.setLineDash([]);
-    
-    // Side Borders
-    cx.fillStyle=BORDERS[st.eq.bd]; cx.globalAlpha=0.8;
-    cx.fillRect(0,0,20,H); cx.fillRect(W-20,0,20,H); cx.globalAlpha=1;
+    cx.fillStyle=BORDERS[st.eq.bd]; cx.globalAlpha=0.8; cx.fillRect(0,0,20,H); cx.fillRect(W-20,0,20,H); cx.globalAlpha=1;
 
-    C.allBodies(eng.world).forEach(b=>{
+    const bs = C.allBodies(eng.world);
+    const pulse = (Math.sin(Date.now()/150)+1)/2;
+
+    bs.forEach(b=>{
         if(b.isStatic || b.tier===undefined) return;
-        if(b.position.y-b.circleRadius < DL && b.speed<0.5){ if(!b.tm) b.tm=Date.now(); if(Date.now()-b.tm>2000) over(); } else b.tm=null;
+        if(b.position.y-b.circleRadius < DL && b.speed<0.5){ if(!b.tm) b.tm=Date.now(); if(Date.now()-b.tm>2000) location.reload(); } else b.tm=null;
+        
         const r=b.circleRadius; cx.translate(b.position.x,b.position.y); cx.rotate(b.angle);
+        
+        // Highlight logic
+        let isHighlighted = false;
+        if(st.tool){
+            const dist = M.Vector.magnitude(M.Vector.sub(b.position, {x:st.x, y:st.y}));
+            if(st.tool==='bomb' && dist < 120) isHighlighted = true;
+            if((st.tool==='broom' || st.tool==='wand') && dist < r+40) isHighlighted = true;
+        }
+
+        if(isHighlighted){
+            cx.strokeStyle=st.tool==='broom'?'#000':'var(--gold)';
+            cx.lineWidth = 6 + (pulse*4);
+            cx.beginPath(); cx.arc(0,0,r+2,0,6.28); cx.stroke();
+        }
+
         cx.shadowColor=COLORS[b.tier]; cx.shadowBlur=15; cx.fillStyle='#fff'; cx.beginPath(); cx.arc(0,0,r,0,6.28); cx.fill();
         cx.shadowBlur=0; 
+        
         if(st.eq.ot==='rainbow') cx.strokeStyle=`hsl(${Date.now()/5%360},100%,50%)`;
         else cx.strokeStyle=st.eq.ot==='white'?'#fff':(st.eq.ot==='black'?'#000':'#0001');
         cx.lineWidth=3; cx.stroke();
-        cx.font=`bold ${r*1.4}px serif`; cx.textAlign='center'; cx.textBaseline='middle'; cx.fillStyle='#000'; cx.fillText(SKINS[st.eq.sk][b.tier],0,0);
+        
+        cx.font=`bold ${r*1.4}px serif`; cx.textAlign='center'; cx.textBaseline='middle'; cx.fillText(SKINS[st.eq.sk][b.tier],0,0);
         cx.rotate(-b.angle); cx.translate(-b.position.x,-b.position.y);
     });
 
-    if(st.drag && st.drop && !st.tool){
+    if(st.tool){
+        cx.beginPath(); cx.arc(st.x, st.y, st.tool==='bomb'?120:40, 0, 6.28);
+        cx.strokeStyle='#fff'; cx.setLineDash([5,5]); cx.stroke(); cx.setLineDash([]);
+    } else if(st.drag && st.drop){
         let gx=Math.max(50,Math.min(W-50,st.x));
-        cx.beginPath(); cx.moveTo(gx,DL); cx.lineTo(gx,H-100); cx.strokeStyle='#ccc'; cx.setLineDash([5,5]); cx.stroke();
-        cx.font="40px serif"; cx.globalAlpha=0.5; cx.fillText(SKINS[st.eq.sk][st.next],gx,DL+15); cx.globalAlpha=1;
+        cx.font="45px serif"; cx.globalAlpha=0.4; cx.fillText(SKINS[st.eq.sk][st.next],gx,DL+20); cx.globalAlpha=1;
     }
+
     chkAfford();
     if(!st.over) requestAnimationFrame(loop);
+}
+
+function startTool(e, type, cost){
+    if(st.w < cost){
+        const t=document.getElementById('toast'); t.style.display='block';
+        setTimeout(()=>t.style.display='none', 2000);
+        return;
+    }
+    st.tool = type; st.toolCost = cost;
 }
 
 function ptr(e,t){
     const touch=e.touches?e.touches[0]:e; const r=cv.getBoundingClientRect();
     st.x=(touch.clientX-r.left)*(W/r.width); st.y=(touch.clientY-r.top)*(H/r.height);
     if(t==='d' && !e.target.closest('button,.modal')) st.drag=1;
-    if(t==='u' && st.drag){ st.drag=0; act(); }
-};
-
-function act(){
-    let bs=C.allBodies(eng.world);
-    if(st.tool){
-        if(st.tool==='bomb'){ 
-            C.remove(eng.world, bs.filter(b=>!b.isStatic && b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y}))<120)); 
-        } else {
-            let target=bs.find(b=>b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y})) < b.circleRadius+40);
-            if(target){
-                if(st.tool==='broom') C.remove(eng.world, bs.filter(b=>b.tier===target.tier));
-                if(st.tool==='wand' && target.tier<11){
-                    let t=target.tier, p=target.position; C.remove(eng.world, target);
-                    let nb=B.circle(p.x,p.y,10+((t+1)*7),{restitution:0.4}); nb.tier=t+1; C.add(eng.world,nb);
-                }
-            }
-        }
-        st.tool=null; document.querySelectorAll('.pwr').forEach(b=>b.classList.remove('act'));
-    } else if(st.drop && st.y > 110){
-        const b=B.circle(Math.max(50,Math.min(W-50,st.x)),DL+20,10+(st.next*7),{restitution:0.4});
-        b.tier=st.next; C.add(eng.world,b);
-        st.next=Math.floor(Math.random()*5); updPre(); st.drop=0; setTimeout(()=>st.drop=1,400);
+    if(t==='u'){
+        if(st.tool) useTool();
+        st.drag=0;
     }
 }
-['down','move','up'].forEach(e=>window.addEventListener('pointer'+e, x=>ptr(x,e[0])));
+
+function useTool(){
+    let bs=C.allBodies(eng.world);
+    let used = false;
+    if(st.tool==='bomb'){
+        C.remove(eng.world, bs.filter(b=>!b.isStatic && b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y}))<120));
+        used = true;
+    } else {
+        let target=bs.find(b=>b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y})) < b.circleRadius+40);
+        if(target){
+            if(st.tool==='broom') C.remove(eng.world, bs.filter(b=>b.tier===target.tier));
+            if(st.tool==='wand' && target.tier<11){
+                let t=target.tier, p=target.position; C.remove(eng.world, target);
+                let nb=B.circle(p.x,p.y,10+((t+1)*7),{restitution:0.4}); nb.tier=t+1; C.add(eng.world,nb);
+            }
+            used = true;
+        }
+    }
+    if(used){ st.w -= st.toolCost; updSc(0); }
+    st.tool=null;
+}
+
+window.addEventListener('pointerdown', e=>ptr(e,'d'));
+window.addEventListener('pointermove', e=>ptr(e,'m'));
+window.addEventListener('pointerup', e=>ptr(e,'u'));
 
 function chkAfford(){
     document.getElementById('b-bomb').classList.toggle('can-afford', st.w>=50);
@@ -184,61 +209,31 @@ function chkAfford(){
     document.getElementById('b-wand').classList.toggle('can-afford', st.w>=150);
 }
 
-function buyTool(type, cost){
-    if(st.w >= cost){
-        st.w -= cost; st.tool = type;
-        document.querySelectorAll('.pwr').forEach(b=>b.classList.toggle('act', b.id==='b-'+type));
-        document.getElementById('val-wallet').innerText=st.w;
-        save();
-    } else {
-        const t=document.getElementById('toast'); t.style.display='block';
-        setTimeout(()=>t.style.display='none', 2000);
-    }
-}
-
-function updSc(n){ st.s+=n; st.w+=Math.floor(n/10); document.getElementById('sCurrent').innerText=st.s; document.getElementById('val-wallet').innerText=st.w; if(st.s>st.h){st.h=st.s; document.getElementById('sBest').innerText=st.h;} save(); }
-function updPrg(t){ if(t>st.max){st.max=t; renderPrg();} }
-function updPre(){ document.getElementById('next-box').innerText=SKINS[st.eq.sk][st.next]; }
-function renderPrg(){ const d=document.getElementById('prog'); d.innerHTML=''; for(let i=0;i<12;i++) d.innerHTML+=`<div class="dot ${i<=st.max?'on':''}" style="color:${COLORS[i]}">${i<=st.max?SKINS[st.eq.sk][i]:''}</div>`; }
-function save(){ localStorage.setItem('f10_i',JSON.stringify(st.inv)); localStorage.setItem('f10_e',JSON.stringify(st.eq)); localStorage.setItem('f10_h',st.h); localStorage.setItem('f10_w',st.w); }
+function updSc(n){ st.s+=n; st.w+=Math.floor(n/10); document.getElementById('sCurrent').innerText=st.s; document.getElementById('val-wallet').innerText=st.w; save(); }
+function updPrg(){ const d=document.getElementById('prog'); d.innerHTML=''; for(let i=0;i<12;i++) d.innerHTML+=`<div class="dot ${i<=st.max?'on':''}" style="background:${i<=st.max?COLORS[i]:''}"></div>`; }
+function save(){ localStorage.setItem('f11_i',JSON.stringify(st.inv)); localStorage.setItem('f11_e',JSON.stringify(st.eq)); localStorage.setItem('f11_w',st.w); }
 function toggleModal(id){ document.getElementById(id).classList.toggle('open'); }
-function reset(){ location.reload(); }
-function toggleFull(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+function toggleStore(){ document.getElementById('m-store').classList.toggle('open'); if(document.getElementById('m-store').classList.contains('open')) renderShop(); }
 
-function toggleStore(){
-    document.getElementById('m-store').classList.toggle('open');
+function renderShop(){
     document.getElementById('shop-wallet').innerText=st.w;
-    if(document.getElementById('m-store').classList.contains('open')){
-        const container=document.getElementById('shop-container'); container.innerHTML='<div class="grid" id="sg"></div>'; const g=document.getElementById('sg');
-        const items = [
-            ...Object.keys(SKINS).map(k=>({id:'sk_'+k,cat:'Skins',n:k,p:500,v:k})),
-            {id:'ot_def',cat:'Outlines',n:'Soft',p:0,v:'def'},{id:'ot_white',cat:'Outlines',n:'White',p:2000,v:'white'},{id:'ot_black',cat:'Outlines',n:'Black',p:2000,v:'black'},{id:'ot_rainbow',cat:'Outlines',n:'Rainbow',p:2000,v:'rainbow'},
-            ...Object.keys(THEMES).map(k=>({id:'th_'+k,cat:'Themes',n:k,p:300,v:k})),
-            ...Object.keys(BORDERS).map(k=>({id:'bd_'+k,cat:'Borders',n:k,p:200,v:k}))
-        ];
-        ['Skins','Outlines','Themes','Borders'].forEach(cat=>{
-            g.innerHTML+=`<div class="cat-title">${cat}</div>`;
-            items.filter(i=>i.cat===cat).forEach(i=>{
-                const own=st.inv.includes(i.id), eq=(st.eq.sk==i.v||st.eq.ot==i.v||st.eq.th==i.v||st.eq.bd==i.v);
-                let prv = i.n;
-                if(cat==='Skins') prv=SKINS[i.v][0];
-                if(cat==='Themes') prv=`<div style="width:30px;height:30px;background:${THEMES[i.v]};border-radius:50%;margin:0 auto;border:2px solid #ccc"></div>`;
-                if(cat==='Borders') prv=`<div style="width:30px;height:30px;background:${BORDERS[i.v]};border-radius:50%;margin:0 auto;border:2px solid #ccc"></div>`;
-                const el=document.createElement('div'); el.className=`item ${eq?'eq':''}`;
-                el.innerHTML=`<div style="font-size:30px;margin-bottom:5px">${prv}</div><b>${i.n}</b><br><small>${eq?'Equipped':(own?'Owned':'$'+i.p)}</small>`;
-                el.onclick=()=>{
-                    if(own){ 
-                        if(cat==='Skins') st.eq.sk=i.v; if(cat==='Outlines') st.eq.ot=i.v; if(cat==='Themes') st.eq.th=i.v; if(cat==='Borders') st.eq.bd=i.v; 
-                    } else if(st.w>=i.p){ 
-                        st.w-=i.p; st.inv.push(i.id); 
-                        if(cat==='Skins') st.eq.sk=i.v; if(cat==='Outlines') st.eq.ot=i.v; if(cat==='Themes') st.eq.th=i.v; if(cat==='Borders') st.eq.bd=i.v;
-                    }
-                    save(); toggleStore(); toggleStore(); updPre(); renderPrg();
-                };
-                g.appendChild(el);
-            });
+    const g=document.getElementById('shop-container'); g.innerHTML='<div class="grid" id="sg"></div>'; const sg=document.getElementById('sg');
+    const cats=[{n:'Skins',k:'sk',m:SKINS},{n:'Outlines',k:'ot',m:OUTLINES},{n:'Themes',k:'th',m:THEMES},{n:'Borders',k:'bd',m:BORDERS}];
+    
+    cats.forEach(c=>{
+        sg.innerHTML+=`<div class="cat-title">${c.n}</div>`;
+        Object.keys(c.m).forEach(key=>{
+            const id=c.k+'_'+key; const own=st.inv.includes(id); const eq=st.eq[c.k]===key; const price=(c.n==='Skins'?500:(c.n==='Outlines'?2000:(c.n==='Themes'?300:200)));
+            const el=document.createElement('div'); el.className=`item ${eq?'eq':''}`;
+            el.innerHTML=`<b>${key}</b><br><small>${eq?'Equipped':(own?'Owned':'$'+price)}</small>`;
+            el.onclick=()=>{
+                if(own){ st.eq[c.k]=key; }
+                else if(st.w>=price){ st.w-=price; st.inv.push(id); st.eq[c.k]=key; }
+                save(); renderShop();
+            };
+            sg.appendChild(el);
         });
-    }
+    });
 }
-document.getElementById('sBest').innerText=st.h; document.getElementById('val-wallet').innerText=st.w; updPre(); renderPrg(); loop();
+updSc(0); updPrg(); loop();
 </script></body></html>
