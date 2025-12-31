@@ -3,83 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v97</title>
+    <title>Fruit Merge v98</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root {
-            --bg: #fdfbf7; --ui-border: #e8e6e1; --text: #5c554a;
-            --border-width: 15px; --rainbow-step: 0;
+            --bg: #fdfbf7; --border-color: #e8e6e1; --text: #5c554a;
+            --border-width: 15px;
         }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; background: var(--bg); color: var(--text);
-            font-family: 'Avenir', 'Helvetica Neue', sans-serif;
-            user-select: none; -webkit-user-select: none;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            touch-action: none; -webkit-user-select: none;
         }
 
-        /* UI Containers */
-        #top-ui { height: 175px; position: absolute; top: 0; width: 100%; border-bottom: var(--border-width) solid var(--ui-border); z-index: 100; background: inherit; padding: 10px; box-sizing: border-box; }
-        #bottom-ui { height: 100px; position: absolute; bottom: 0; width: 100%; border-top: var(--border-width) solid var(--ui-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; background: inherit; }
-        #game-container { position: absolute; top: 175px; bottom: 100px; width: 100%; overflow: hidden; background: #fff; border-left: var(--border-width) solid var(--ui-border); border-right: var(--border-width) solid var(--ui-border); box-sizing: border-box; }
+        /* UI Framework */
+        #top-ui { height: 175px; position: absolute; top: 0; width: 100%; border-bottom: var(--border-width) solid var(--border-color); z-index: 100; background: inherit; padding: 12px; box-sizing: border-box; }
+        #bottom-ui { height: 100px; position: absolute; bottom: 0; width: 100%; border-top: var(--border-width) solid var(--border-color); display: flex; justify-content: space-around; align-items: center; z-index: 100; background: inherit; }
+        #game-container { position: absolute; top: 175px; bottom: 100px; width: 100%; background: #fff; border-left: var(--border-width) solid var(--border-color); border-right: var(--border-width) solid var(--border-color); box-sizing: border-box; cursor: none; }
 
-        /* Store UI */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 1000; flex-direction: column; }
-        .modal-content { flex: 1; overflow-y: auto; padding: 20px; touch-action: pan-y; }
-        .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { border: 1px solid #eee; border-radius: 12px; padding: 10px; text-align: center; transition: 0.2s; }
-        .card.active { border: 2px solid #88d498; background: #f0faf2; }
-        .swatch { width: 100%; height: 35px; border-radius: 6px; margin: 5px 0; border: 1px solid rgba(0,0,0,0.1); }
+        /* Crosshair & Preview */
+        #crosshair { position: absolute; width: 50px; height: 50px; border: 2px solid #ff4757; border-radius: 50%; pointer-events: none; z-index: 1000; display: none; transform: translate(-50%, -50%); }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: #ff4757; }
+        #crosshair::before { width: 100%; height: 2px; top: 50%; left: 0; margin-top: -1px; }
+        #crosshair::after { height: 100%; width: 2px; left: 50%; top: 0; margin-left: -1px; }
+        #drop-preview { position: absolute; font-size: 2.5rem; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); opacity: 0.7; pointer-events: none; }
 
-        /* Game Elements */
-        .btn { padding: 10px; border-radius: 10px; border: 1px solid var(--ui-border); background: #fff; cursor: pointer; font-weight: bold; }
-        .danger-line { position: absolute; top: 195px; width: 100%; border-top: 2px dashed #ff7675; opacity: 0.5; z-index: 10; pointer-events: none; }
-        #crosshair { position: absolute; width: 40px; height: 40px; border: 2px solid rgba(0,0,0,0.3); border-radius: 50%; display: none; transform: translate(-50%, -50%); pointer-events: none; z-index: 500; }
-        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(0,0,0,0.3); }
-        #crosshair::before { width: 100%; height: 1px; top: 50%; left: 0; }
-        #crosshair::after { height: 100%; width: 1px; left: 50%; top: 0; }
+        /* Store & Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 2000; flex-direction: column; }
+        .modal-content { flex: 1; overflow-y: auto; padding: 25px; touch-action: pan-y; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { border: 2px solid #eee; border-radius: 15px; padding: 15px; text-align: center; background: #fff; transition: 0.2s; }
+        .card.active { border-color: #2ecc71; background: #f0fff4; }
+        .swatch { width: 100%; height: 40px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.1); }
 
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; text-align: center; }
+        .btn { padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: #fff; font-weight: bold; cursor: pointer; }
+        .danger-line { position: absolute; top: 195px; width: 100%; border-top: 3px dashed rgba(255, 71, 87, 0.4); pointer-events: none; z-index: 50; }
+        
+        #game-over-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; color: white; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="top-ui">
     <div style="display:flex; justify-content: space-between; align-items: center;">
-        <div><b>Score:</b> <span id="score">0</span><br><small>Best: <span id="best">0</span></small></div>
-        <div style="text-align: center;">Next<br><span id="next-preview" style="font-size: 1.5rem;"></span></div>
-        <div style="display:flex; gap: 5px;"><button class="btn" onclick="toggleFS()">⛶</button><button class="btn" onclick="openMod('help')">?</button></div>
+        <div><b>Score:</b> <span id="score">0</span><br><small>High: <span id="best">0</span></small></div>
+        <div style="text-align: center;">Next<br><span id="next-icon" style="font-size: 1.8rem;"></span></div>
+        <div style="display:flex; gap: 8px;"><button class="btn" onclick="toggleFS()">⛶</button><button class="btn" onclick="openMod('help')">?</button></div>
     </div>
-    <div id="progress-bar" style="display:flex; justify-content: space-between; margin-top:15px;"></div>
-    <div style="text-align:center; font-weight:bold; margin-top:8px;">Wallet: $<span id="wallet-display">0</span></div>
+    <div id="progress-bar" style="display:flex; justify-content: space-between; margin-top:15px; font-size: 1.2rem;"></div>
+    <div style="text-align:center; font-weight:bold; margin-top:10px; letter-spacing: 1px;">WALLET: $<span id="wallet-val">0</span></div>
 </div>
 
 <div class="danger-line"></div>
 <div id="game-container">
     <div id="crosshair"></div>
+    <div id="drop-preview"></div>
 </div>
 
 <div id="bottom-ui">
-    <button class="btn pwr-btn" data-type="bomb">💣</button>
-    <button class="btn pwr-btn" data-type="broom">🧹</button>
-    <button class="btn pwr-btn" data-type="wand">🪄</button>
-    <button class="btn" onclick="openMod('store')">Store</button>
+    <button class="btn pwr-btn" data-pwr="bomb">💣</button>
+    <button class="btn pwr-btn" data-pwr="broom">🧹</button>
+    <button class="btn pwr-btn" data-pwr="wand">🪄</button>
+    <button class="btn" onclick="openMod('store')">🏪 STORE</button>
 </div>
 
-<div id="overlay" onclick="this.style.display='none'">GAME OVER<br><span style="font-size:1rem">Board Reset</span></div>
+<div id="game-over-overlay" onclick="this.style.display='none'">
+    <h1 style="font-size: 3rem;">GAME OVER</h1>
+    <p>The board has been cleared.<br>Your wallet and high score are safe.</p>
+    <button class="btn">Tap to Continue</button>
+</div>
 
-<div id="help-modal" class="modal"><div class="modal-content"><h2>How to Play</h2><p>Merge items to reach Tier 12. Don't stay above the red line!</p><p><b>Power-ups:</b> Drag onto the fruit to use. Target fruits will highlight.</p><button class="btn" onclick="closeMods()">Close</button></div></div>
+<div id="help-modal" class="modal">
+    <div class="modal-content">
+        <h2>Game Guide</h2>
+        <p><b>Goal:</b> Merge two identical items to evolve them to the next tier. Don't let items stack above the dashed red line for 2 seconds!</p>
+        <hr>
+        <h3>Power-Ups (Drag to use)</h3>
+        <ul>
+            <li><b>Bomb 💣:</b> Drag onto the board to destroy everything in a large radius.</li>
+            <li><b>Broom 🧹:</b> Drag onto a specific item to destroy every item of that same type on the board.</li>
+            <li><b>Wand 🪄:</b> Drag onto an item to instantly evolve it to the next tier.</li>
+        </ul>
+        <p>Targeted items will highlight with a gold border when a power-up is active.</p>
+        <button class="btn" style="width:100%" onclick="closeMods()">Got it!</button>
+    </div>
+</div>
+
 <div id="store-modal" class="modal">
     <div class="modal-content">
-        <h2 style="display:flex; justify-content: space-between;">Store <span>$<span id="store-wallet">0</span></span></h2>
-        <div id="store-list"></div>
+        <h2 style="display:flex; justify-content: space-between;">Shop <span>$<span id="shop-wallet">0</span></span></h2>
+        <div id="store-render"></div>
         <button class="btn" style="width:100%; margin-top:20px" onclick="closeMods()">Close</button>
     </div>
 </div>
 
 <script>
-/** * DATA & CONFIG
+/** * CONFIG & DATA
  */
-const COLORS = ['#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#FFC6FF', '#FFFFFC', '#D4FC79', '#96E6A1', '#F6D365'];
+const TIER_GLOWS = ['#ff7675', '#fab1a0', '#ffeaa7', '#55efc4', '#81ecec', '#74b9ff', '#a29bfe', '#fd79a8', '#dfe6e9', '#badc58', '#686de0', '#f0932b'];
 const DATA = {
     skins: {
         Fruit: ['🍒','🍓','🍇','🍊','🍎','🍐','🍑','🍍','🍈','🍉','🥥','🎃'],
@@ -91,32 +113,37 @@ const DATA = {
         Space: ['☄️','🛰️','🪐','🌙','☀️','🔭','🚀','👽','🛸','🌌','🌠','👩‍🚀'],
         Dessert: ['🍪','🍩','🧁','🍦','🍰','🥧','🍫','🍬','🍭','🍮','🍯','🎂']
     },
-    outlines: { Default: "transparent", White: "#fff", Black: "#000", Rainbow: "rainbow" },
-    themes: { Mellow: "#fdfbf7", Midnight: "#1a1a2e", Forest: "#edf5f1", Ocean: "#eef2f7", Rose: "#fff5f5", Matcha: "#f2f9f1", Slate: "#f1f3f5", Sand: "#fdf6e3", Lilac: "#f8f0fc", Olive: "#f1f2e9", Peach: "#fff0e6", Storm: "#e6e9f0", Zest: "#fdfae6", Mint: "#e6fdf5", Coal: "#2d3436", Cloud: "#f1f2f6" },
-    borders: { Steel: "#718096", Gold: "#d4af37", Neon: "#00f2ff", Crimson: "#e53e3e", Mint: "#68d391", Lavender: "#b794f4", Coal: "#2d3436", Ivory: "#f7fafc", Emerald: "#38a169", Sky: "#63b3ed", Amber: "#ed8936", Plum: "#805ad5", Clay: "#a0aec0", Silver: "#cbd5e0", Coffee: "#6f4e37", Coral: "#f56565" }
+    outlines: { Default: "transparent", White: "#ffffff", Black: "#000000", Rainbow: "rainbow" },
+    themes: {
+        "Matcha": { bg: "#f2f9f1", border: "#c8e6c9" },
+        "Ocean": { bg: "#eef2f7", border: "#bbdefb" },
+        "Mellow": { bg: "#fdfbf7", border: "#e8e6e1" },
+        "Midnight": { bg: "#1a1a2e", border: "#16213e" },
+        "Rose": { bg: "#fff5f5", border: "#fed7d7" },
+        "Slate": { bg: "#f1f3f5", border: "#dee2e6" },
+        "Sand": { bg: "#fdf6e3", border: "#eee8d5" },
+        "Lilac": { bg: "#f8f0fc", border: "#f3d9fa" },
+        "Olive": { bg: "#f1f2e9", border: "#dce0d0" },
+        "Peach": { bg: "#fff0e6", border: "#ffe0cc" },
+        "Storm": { bg: "#e6e9f0", border: "#d1d9e6" },
+        "Zest": { bg: "#fdfae6", border: "#f9f1c6" },
+        "Mint": { bg: "#e6fdf5", border: "#c6f6d5" },
+        "Coal": { bg: "#2d3436", border: "#1e272e" },
+        "Cloud": { bg: "#f1f2f6", border: "#dfe4ea" },
+        "Gold": { bg: "#fdfcf0", border: "#faf3d1" }
+    }
 };
 
 let state = {
-    score: 0, wallet: parseInt(localStorage.getItem('wallet')) || 1000,
-    best: parseInt(localStorage.getItem('hs')) || 0,
-    skin: 'Fruit', outline: 'Default', theme: 'Mellow', border: 'Steel',
-    owned: JSON.parse(localStorage.getItem('owned')) || ['Fruit', 'Default', 'Mellow', 'Steel'],
-    unlocked: new Set([0]), next: 0, activePower: null, gameOverTime: null, tick: 0
+    score: 0, wallet: parseInt(localStorage.getItem('fm_wallet')) || 1500,
+    best: parseInt(localStorage.getItem('fm_hs')) || 0,
+    skin: 'Fruit', outline: 'Default', theme: 'Mellow',
+    owned: JSON.parse(localStorage.getItem('fm_owned')) || ['Fruit', 'Default', 'Mellow'],
+    unlocked: new Set([0]), next: 0, 
+    activePower: null, touchX: 0, touchY: 0, isTouching: false, lastSpawn: 0
 };
 
-/** * AUDIO
- */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playTone(freq, type='sine', d=0.5) {
-    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + d);
-}
-
-/** * ENGINE
+/** * PHYSICS ENGINE
  */
 const { Engine, Render, Runner, Bodies, Composite, Events, Vector, Query } = Matter;
 const container = document.getElementById('game-container');
@@ -126,127 +153,155 @@ const render = Render.create({
     options: { width: container.clientWidth, height: container.clientHeight, wireframes: false, background: 'transparent' }
 });
 
-function initWorld() {
+function setupBoundaries() {
     Composite.clear(engine.world);
     const options = { isStatic: true, friction: 0.1, render: { visible: false } };
-    const floor = Bodies.rectangle(container.clientWidth/2, container.clientHeight + 10, container.clientWidth, 25, options);
-    const lW = Bodies.rectangle(-10, container.clientHeight/2, 20, container.clientHeight, options);
-    const rW = Bodies.rectangle(container.clientWidth + 10, container.clientHeight/2, 20, container.clientHeight, options);
-    Composite.add(engine.world, [floor, lW, rW]);
+    const ground = Bodies.rectangle(container.clientWidth/2, container.clientHeight + 10, container.clientWidth, 25, options);
+    const left = Bodies.rectangle(-10, container.clientHeight/2, 20, container.clientHeight, options);
+    const right = Bodies.rectangle(container.clientWidth + 10, container.clientHeight/2, 20, container.clientHeight, options);
+    Composite.add(engine.world, [ground, left, right]);
 }
 
 function spawn(x, y, tier) {
-    const r = 15 + (tier * 7.5);
-    const b = Bodies.circle(x, y, r, { restitution: 0.3, friction: 0.2, plugin: { tier } });
+    const r = 16 + (tier * 7.5);
+    const b = Bodies.circle(x, y, r, { restitution: 0.3, friction: 0.1, plugin: { tier } });
     Composite.add(engine.world, b);
 }
 
-/** * INTERACTION
+/** * AUDIO
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(freq, type='sine', dur=0.3) {
+    const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+
+/** * INTERACTION LOGIC
  */
 const cross = document.getElementById('crosshair');
-const handleMove = (e) => {
+const prev = document.getElementById('drop-preview');
+
+const updatePointers = (e) => {
     const t = e.touches ? e.touches[0] : e;
-    const r = container.getBoundingClientRect();
-    const x = t.clientX - r.left; const y = t.clientY - r.top;
+    const rect = container.getBoundingClientRect();
+    state.touchX = t.clientX - rect.left;
+    state.touchY = t.clientY - rect.top;
+
     cross.style.display = 'block';
     cross.style.left = t.clientX + 'px';
     cross.style.top = t.clientY + 'px';
-    state.touchPos = { x, y };
-};
 
-container.addEventListener('mousemove', handleMove);
-container.addEventListener('touchmove', handleMove);
-
-const handleEnd = () => {
-    if (!state.touchPos) return;
-    if (state.activePower) {
-        const target = Query.point(Composite.allBodies(engine.world), state.touchPos)[0];
-        usePower(state.activePower, target, state.touchPos);
-        state.activePower = null;
+    if (!state.activePower) {
+        prev.style.display = 'block';
+        prev.style.left = t.clientX + 'px';
+        prev.style.top = (rect.top + 40) + 'px';
+        prev.innerText = DATA.skins[state.skin][state.next];
     } else {
-        spawn(state.touchPos.x, 40, state.next);
-        state.next = Math.floor(Math.random() * 4);
-        const landingFreq = 200 - (Object.keys(DATA.skins).indexOf(state.skin) * 15);
-        playTone(landingFreq, 'sine', 0.2);
-        updateUI();
+        prev.style.display = 'none';
     }
 };
 
-container.addEventListener('mouseup', handleEnd);
-container.addEventListener('touchend', handleEnd);
+container.addEventListener('touchstart', (e) => { state.isTouching = true; updatePointers(e); });
+container.addEventListener('touchmove', (e) => { if(state.isTouching) updatePointers(e); });
+container.addEventListener('touchend', (e) => {
+    if(!state.isTouching) return;
+    state.isTouching = false;
+    cross.style.display = 'none';
+    prev.style.display = 'none';
 
-document.querySelectorAll('.pwr-btn').forEach(b => {
-    b.addEventListener('mousedown', () => state.activePower = b.dataset.type);
-    b.addEventListener('touchstart', () => state.activePower = b.dataset.type);
+    if (state.activePower) {
+        const target = Query.point(Composite.allBodies(engine.world), { x: state.touchX, y: state.touchY })[0];
+        handlePower(state.activePower, target);
+        state.activePower = null;
+    } else if (Date.now() - state.lastSpawn > 500) {
+        spawn(state.touchX, 40, state.next);
+        state.next = Math.floor(Math.random() * 4);
+        state.lastSpawn = Date.now();
+        updateUI();
+    }
 });
 
-function usePower(type, target, pos) {
-    const all = Composite.allBodies(engine.world);
+function handlePower(type, target) {
+    const bodies = Composite.allBodies(engine.world);
     if (type === 'bomb') {
-        const victims = all.filter(b => Vector.magnitude(Vector.sub(b.position, pos)) < 80);
-        Composite.remove(engine.world, victims);
-        playTone(100, 'square');
+        const area = bodies.filter(b => Vector.magnitude(Vector.sub(b.position, {x: state.touchX, y: state.touchY})) < 90);
+        Composite.remove(engine.world, area);
+        playSound(80, 'triangle', 0.6);
     } else if (target && target.plugin.tier !== undefined) {
         if (type === 'broom') {
-            const same = all.filter(b => b.plugin.tier === target.plugin.tier);
+            const same = bodies.filter(b => b.plugin.tier === target.plugin.tier);
             Composite.remove(engine.world, same);
-            playTone(150, 'triangle');
+            playSound(150, 'square');
         } else if (type === 'wand' && target.plugin.tier < 11) {
-            const next = target.plugin.tier + 1; const p = {...target.position};
+            const pos = {...target.plugin.position};
             Composite.remove(engine.world, target);
-            spawn(p.x, p.y, next);
-            playTone(440);
+            spawn(target.position.x, target.position.y, target.plugin.tier + 1);
+            playSound(400);
         }
     }
 }
 
-/** * MAIN LOOP & RENDERING
+document.querySelectorAll('.pwr-btn').forEach(b => {
+    b.addEventListener('touchstart', (e) => {
+        state.activePower = b.dataset.pwr;
+        playSound(200, 'sine', 0.1);
+    });
+});
+
+/** * ENGINE LOOPS
  */
 Events.on(engine, 'collisionStart', (e) => {
-    e.pairs.forEach(p => {
-        const { bodyA, bodyB } = p;
+    e.pairs.forEach(pair => {
+        const { bodyA, bodyB } = pair;
         if (bodyA.plugin?.tier === bodyB.plugin?.tier && bodyA.plugin.tier < 11) {
             const pos = Vector.div(Vector.add(bodyA.position, bodyB.position), 2);
-            const next = bodyA.plugin.tier + 1;
+            const tier = bodyA.plugin.tier + 1;
             Composite.remove(engine.world, [bodyA, bodyB]);
-            spawn(pos.x, pos.y, next);
-            state.score += (next * 10); state.wallet += next;
-            state.unlocked.add(next);
-            playTone(300 + (next * 20));
+            spawn(pos.x, pos.y, tier);
+            state.score += (tier * 15); state.wallet += tier;
+            state.unlocked.add(tier);
+            playSound(300 + (tier * 25));
             updateUI();
         }
     });
 });
 
 Events.on(render, 'afterRender', () => {
-    const ctx = render.context; state.tick++;
+    const ctx = render.context;
     let violation = false;
     const bodies = Composite.allBodies(engine.world);
 
     bodies.forEach(b => {
         if (b.plugin.tier !== undefined) {
-            const tier = b.plugin.tier; const r = 15 + (tier * 7.5);
-            ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+            const tier = b.plugin.tier;
+            const r = 16 + (tier * 7.5);
+            ctx.save();
+            ctx.translate(b.position.x, b.position.y);
+            ctx.rotate(b.angle);
             
-            // Hitbox Glow
+            // Hitbox Color
             ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2);
-            ctx.fillStyle = COLORS[tier]; ctx.globalAlpha = 0.2; ctx.fill();
+            ctx.fillStyle = TIER_GLOWS[tier]; ctx.globalAlpha = 0.25; ctx.fill();
             
-            // Power-up Highlighting
+            // Highlights
             if (state.activePower) {
-                let highlighted = false;
-                if (state.activePower === 'bomb' && Vector.magnitude(Vector.sub(b.position, state.touchPos)) < 80) highlighted = true;
-                if (state.activePower !== 'bomb' && Query.point([b], state.touchPos).length > 0) highlighted = true;
-                if (highlighted) { ctx.shadowBlur = 15; ctx.shadowColor = "gold"; ctx.lineWidth = 4; ctx.strokeStyle = "gold"; ctx.stroke(); }
+                let hit = false;
+                if (state.activePower === 'bomb' && Vector.magnitude(Vector.sub(b.position, {x: state.touchX, y: state.touchY})) < 90) hit = true;
+                if (state.activePower !== 'bomb' && Query.point([b], {x: state.touchX, y: state.touchY}).length > 0) hit = true;
+                if (hit) { ctx.shadowBlur = 15; ctx.shadowColor = "gold"; ctx.lineWidth = 4; ctx.strokeStyle = "gold"; ctx.stroke(); }
             }
 
-            // Outline logic
-            let color = DATA.outlines[state.outline];
-            if (color === 'rainbow') color = `hsl(${state.tick % 360}, 70%, 50%)`;
-            if (color !== 'transparent') { ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.strokeText(DATA.skins[state.skin][tier], 0, 0); }
+            // Outline
+            let out = DATA.outlines[state.outline];
+            if (out === 'rainbow') out = `hsl(${(Date.now()/10)%360}, 70%, 50%)`;
+            if (out !== 'transparent') { ctx.strokeStyle = out; ctx.lineWidth = 3; ctx.strokeText(DATA.skins[state.skin][tier], 0, 0); }
 
-            ctx.font = `${r * 1.7}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.globalAlpha = 1.0; ctx.fillText(DATA.skins[state.skin][tier], 0, 0);
+            ctx.font = `${r * 1.6}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.globalAlpha = 1; ctx.fillText(DATA.skins[state.skin][tier], 0, 0);
             ctx.restore();
 
             if (b.position.y < 20) violation = true;
@@ -256,63 +311,63 @@ Events.on(render, 'afterRender', () => {
     if (violation) {
         if (!state.gameOverTime) state.gameOverTime = Date.now();
         else if (Date.now() - state.gameOverTime > 2000) {
-            document.getElementById('overlay').style.display = 'flex';
-            playTone(100, 'sawtooth', 1.0); // Death Jingle
-            initWorld(); state.score = 0; state.gameOverTime = null; updateUI();
+            document.getElementById('game-over-overlay').style.display = 'flex';
+            playSound(100, 'sawtooth', 1.0); setupBoundaries();
+            state.score = 0; state.gameOverTime = null; updateUI();
         }
     } else state.gameOverTime = null;
 });
 
-/** * UI & STORE
+/** * STORE & UI
  */
 function updateUI() {
     document.getElementById('score').innerText = state.score;
-    document.getElementById('wallet-display').innerText = state.wallet;
-    document.getElementById('store-wallet').innerText = state.wallet;
+    document.getElementById('wallet-val').innerText = state.wallet;
+    document.getElementById('shop-wallet').innerText = state.wallet;
     document.getElementById('best').innerText = state.best;
-    document.getElementById('next-preview').innerText = DATA.skins[state.skin][state.next];
+    document.getElementById('next-icon').innerText = DATA.skins[state.skin][state.next];
     
-    const p = document.getElementById('progress-bar'); p.innerHTML = '';
+    const bar = document.getElementById('progress-bar'); bar.innerHTML = '';
     DATA.skins[state.skin].forEach((s, i) => {
         const d = document.createElement('div');
         d.style.opacity = state.unlocked.has(i) ? '1' : '0.15'; d.innerText = s;
-        p.appendChild(d);
+        bar.appendChild(d);
     });
-    localStorage.setItem('wallet', state.wallet);
-    if(state.score > state.best) { state.best = state.score; localStorage.setItem('hs', state.best); }
+
+    localStorage.setItem('fm_wallet', state.wallet);
+    localStorage.setItem('fm_owned', JSON.stringify(state.owned));
+    if(state.score > state.best) { state.best = state.score; localStorage.setItem('fm_hs', state.best); }
 }
 
 function renderStore() {
-    const root = document.getElementById('store-list'); root.innerHTML = '';
-    const cats = [
-        { name: 'Skins', data: DATA.skins, price: 500 },
-        { name: 'Outlines', data: DATA.outlines, price: 2000 },
-        { name: 'Themes', data: DATA.themes, price: 300 },
-        { name: 'Borders', data: DATA.borders, price: 200 }
+    const root = document.getElementById('store-render'); root.innerHTML = '';
+    const categories = [
+        { name: 'Skins', data: DATA.skins, p: 500 },
+        { name: 'Outlines', data: DATA.outlines, p: 2000 },
+        { name: 'Themes', data: DATA.themes, p: 300 }
     ];
 
-    cats.forEach(cat => {
+    categories.forEach(cat => {
         root.innerHTML += `<h3>${cat.name}</h3>`;
-        const g = document.createElement('div'); g.className = 'store-grid';
+        const g = document.createElement('div'); g.className = 'grid';
         Object.keys(cat.data).sort().forEach(k => {
             const owned = state.owned.includes(k);
             const card = document.createElement('div');
             card.className = `card ${owned ? 'active' : ''}`;
             
-            let prev = '';
-            if (cat.name === 'Skins') prev = `<div class="revolve">${cat.data[k][Math.floor(Date.now()/500) % 12]}</div>`;
-            else if (cat.name === 'Outlines') prev = `<div style="border:1px solid #ccc; background:${cat.data[k] === 'rainbow' ? 'linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)' : (cat.data[k] || 'transparent')}; height:10px"></div>`;
-            else prev = `<div class="swatch" style="background:${cat.data[k]}"></div>`;
+            let preview = '';
+            if (cat.name === 'Skins') preview = `<div class="revolve" style="font-size:2rem">${cat.data[k][Math.floor(Date.now()/600)%12]}</div>`;
+            else if (cat.name === 'Themes') preview = `<div class="swatch" style="background:${cat.data[k].bg}; border: 3px solid ${cat.data[k].border}"></div>`;
+            else preview = `<div style="height:10px; border:2px solid ${cat.data[k] === 'rainbow' ? 'red' : cat.data[k]}"></div>`;
 
-            card.innerHTML = `${prev}<b>${k}</b><br>${owned ? 'EQUIPPED' : '$'+cat.price}`;
+            card.innerHTML = `${preview}<b>${k}</b><br>${owned ? 'EQUIPPED' : '$'+cat.p}`;
             card.onclick = () => {
-                if (!owned && state.wallet >= cat.price) {
-                    state.wallet -= cat.price; state.owned.push(k); updateUI(); renderStore();
+                if (!owned && state.wallet >= cat.p) {
+                    state.wallet -= cat.p; state.owned.push(k); updateUI(); renderStore();
                 } else if (owned) {
                     if (cat.name === 'Skins') state.skin = k;
                     if (cat.name === 'Outlines') state.outline = k;
-                    if (cat.name === 'Themes') document.documentElement.style.setProperty('--bg', cat.data[k]);
-                    if (cat.name === 'Borders') document.documentElement.style.setProperty('--ui-border', cat.data[k]);
+                    if (cat.name === 'Themes') applyTheme(k);
                     updateUI(); renderStore();
                 }
             };
@@ -322,14 +377,23 @@ function renderStore() {
     });
 }
 
-// Interval for revolving skin icons in store
-setInterval(() => { if(document.getElementById('store-modal').style.display === 'flex') renderStore(); }, 1000);
+function applyTheme(key) {
+    state.theme = key;
+    const colors = DATA.themes[key];
+    const root = document.documentElement;
+    root.style.setProperty('--bg', colors.bg);
+    root.style.setProperty('--border-color', colors.border);
+}
 
-function openMod(id) { if(id === 'store') renderStore(); document.getElementById(id+'-modal').style.display = 'flex'; }
-function closeMods() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+// Re-render revolving icons
+setInterval(() => { if(document.getElementById('store-modal').style.display==='flex') renderStore(); }, 800);
+
+function openMod(id) { if(id==='store') renderStore(); document.getElementById(id+'-modal').style.display='flex'; }
+function closeMods() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
 function toggleFS() { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
 
-initWorld(); updateUI();
+// Init
+setupBoundaries(); updateUI(); applyTheme(state.theme);
 Render.run(render); Runner.run(Runner.create(), engine);
 </script>
 </body>
