@@ -3,58 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge Ultimate v68</title>
+    <title>Fruit Merge v69</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #111; font-family: -apple-system, sans-serif; touch-action: none; }
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #E6E6FA; border: 12px solid #333; box-sizing: border-box; overflow: hidden; }
-        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 135px; background: rgba(255,255,255,0.95); border-bottom: 4px solid #333; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; touch-action: none; }
+        #game-container { position: relative; width: 100vw; height: 100vh; background: #E6E6FA; border: 12px solid #333; box-sizing: border-box; overflow: hidden; transition: border-color 0.3s; }
+        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 135px; background: rgba(255,255,255,0.98); border-bottom: 4px solid #333; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
         #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 95px; background: #fff; border-top: 4px solid #333; z-index: 1000; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
-        #progress-wrap { width: 100%; height: 30px; background: #ddd; border-radius: 15px; margin-top: 8px; border: 2.5px solid #333; position: relative; overflow: hidden; }
+        #progress-wrap { width: 100%; height: 32px; background: #eee; border-radius: 16px; margin-top: 8px; border: 3px solid #333; position: relative; overflow: hidden; }
         #progress-bar { height: 100%; background: #2ecc71; width: 0%; transition: width 0.4s; }
-        #progress-icons { position: absolute; width: 100%; height: 100%; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; box-sizing: border-box; font-size: 14px; pointer-events: none; z-index: 2; }
-        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #444; }
-        .btn { width: 55px; height: 55px; border-radius: 15px; border: 3px solid #333; display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #bbb; position: relative; }
-        .btn span { position: absolute; bottom: -14px; font-size: 9px; background: white; border: 1.5px solid #333; padding: 0 4px; border-radius: 6px; font-weight: 900; }
-        #controls-overlay { position: absolute; top: 145px; right: 12px; z-index: 1001; display: flex; flex-direction: column; gap: 10px; }
-        .sub-btn { background: #3498db; color: white; border: 2.5px solid #333; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
-        .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 5px solid #333; border-radius: 24px; padding: 20px; overflow-y: auto; }
-        .store-cat { margin-bottom: 25px; border-top: 2px dashed #eee; padding-top: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
-        .item-card { border: 2px solid #ddd; padding: 12px; border-radius: 14px; text-align: center; position: relative; background: #fdfdfd; }
-        .item-card.selected { border-color: #2ecc71; background: #f0fff4; border-width: 3px; }
-        .badge { font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 8px; position: absolute; top: -10px; right: -5px; border: 1.5px solid #333; color: #fff; }
-        .combo-text { position: absolute; pointer-events: none; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; z-index: 1500; animation: fUp 1s forwards; text-align:center; }
-        @keyframes fUp { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3) translateY(-100px); opacity: 0; } }
+        #progress-icons { position: absolute; width: 100%; height: 100%; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; box-sizing: border-box; font-size: 15px; pointer-events: none; z-index: 2; }
+        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #333; }
+        .btn { width: 56px; height: 56px; border-radius: 15px; border: 3px solid #333; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #bbb; position: relative; }
+        .btn span { position: absolute; bottom: -14px; font-size: 10px; background: white; border: 1.5px solid #333; padding: 1px 5px; border-radius: 6px; font-weight: 900; }
+        #controls-overlay { position: absolute; top: 145px; right: 15px; z-index: 1001; display: flex; flex-direction: column; gap: 12px; }
+        .sub-btn { background: #3498db; color: white; border: 3px solid #333; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-size: 20px; }
+        .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 6px solid #333; border-radius: 28px; padding: 25px; overflow-y: auto; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .store-cat { margin-bottom: 30px; border-top: 2px solid #eee; padding-top: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px; }
+        .item-card { border: 3px solid #eee; padding: 15px; border-radius: 18px; text-align: center; position: relative; background: #fff; font-weight: bold; }
+        .item-card.selected { border-color: #2ecc71; background: #f0fff4; }
+        .badge { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; position: absolute; top: -12px; right: -5px; border: 2px solid #333; color: #fff; text-transform: uppercase; }
     </style>
 </head>
 <body>
 <div id="game-container">
     <div id="top-ui">
         <div class="stats"><span>Score: <span id="s-val">0</span></span><span>Best: <span id="h-val">0</span></span></div>
-        <div id="next-disp" style="text-align:center; font-size:38px; height: 45px; line-height:45px;"></div>
+        <div id="next-disp" style="text-align:center; font-size:42px; height: 50px; line-height:50px;"></div>
         <div id="progress-wrap"><div id="progress-bar"></div><div id="progress-icons"></div></div>
-        <div class="stats" style="margin-top:8px"><span>Wallet: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer;">🔊</span></div>
+        <div class="stats" style="margin-top:10px"><span>Wallet: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer;">🔊</span></div>
     </div>
     <div id="controls-overlay"><div class="sub-btn" onclick="openHelp()" style="background:#f1c40f; color:#333;">?</div><div class="sub-btn" onclick="toggleFS()">⛶</div></div>
     <div id="bottom-ui">
         <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣<span>$500</span></div>
         <div class="btn" style="background:#9b59b6" onpointerdown="prepPwr('wipe', event)">🧹<span>$1k</span></div>
         <div class="btn" style="background:#f1c40f" onpointerdown="prepPwr('evo', event)">✨<span>$1.5k</span></div>
-        <div class="btn" style="background:#3498db; width: 85px; font-size: 14px; color:white; font-weight:bold;" onclick="openShop()">Store</div>
+        <div class="btn" style="background:#3498db; width: 90px; font-size: 16px; color:white; font-weight:bold;" onclick="openShop()">Store</div>
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="helpModal" class="modal">
-        <h2 style="text-align:center">Help & Power-ups</h2>
-        <p>Drop items to merge. High-bouncy items (Fruit) squish more than heavy items (Cars)!</p>
-        <p><b>💣 Bomb:</b> Clears a circular area.</p>
-        <p><b>🧹 Broom:</b> Clears all items of a selected type.</p>
-        <p><b>✨ Sparkle:</b> Upgrades all items of a selected type.</p>
-        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:12px; margin-top:15px; height:48px;">Let's Go!</button>
+        <h2 style="text-align:center">Gameplay Mechanics</h2>
+        <p>Combine two identical emojis to grow them. Keep an eye on the <b>Red Danger Line</b>! If emojis stay above it for 2 seconds, it's Game Over.</p>
+        <hr>
+        <h3>Mastering Power-ups</h3>
+        <p><b>💣 The Bomb ($500):</b> Blast away stuck emojis. Drag from the button and release where you want the explosion.</p>
+        <p><b>🧹 The Broom ($1,000):</b> Cleans up the board. Drag over an emoji to remove ALL instances of that specific tier.</p>
+        <p><b>✨ The Sparkle ($1,500):</b> Magic upgrade! Drag over an emoji to instantly evolve ALL matching emojis to the next tier.</p>
+        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:15px; margin-top:20px; height:55px;">Start Merging!</button>
     </div>
     <div id="shopModal" class="modal">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Store</h2><button class="sub-btn" style="width:30px; height:30px;" onclick="closeModal()">×</button></div>
-        <p style="text-align:center; font-weight:bold; color:#2ecc71;">Wallet: $<span id="shop-wallet">0</span></p>
+        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>The Store</h2><button class="sub-btn" style="width:35px; height:35px;" onclick="closeModal()">×</button></div>
+        <p style="text-align:center; font-weight:bold; color:#2ecc71; font-size: 1.2em;">Balance: $<span id="shop-wallet">0</span></p>
         <div id="shop-scroll"></div>
     </div>
 </div>
@@ -63,13 +63,13 @@ const SKINS = {
     Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], 
     Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], 
     Retro:["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"], 
-    Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍GROW"], 
+    Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"], 
     Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"], 
     Plants:["🌱","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"], 
     Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚁"], 
     Weather:["☁️","🌤️","⚡","☀️","🌦️","🌧️","🌨️","⛈️","❄️","🌬️","🌈","🌪️"] 
 };
-const SQUISH_VALS = { Fruit:0.6, Animals:0.6, Desserts:0.6, Weather:0.2, Plants:0.2, Space:0, Cars:0, Retro:0 };
+const SQUISH_VALS = { Fruit:0.6, Animals:0.6, Desserts:0.6, Weather:0.25, Plants:0.25, Space:0, Cars:0, Retro:0 };
 const BOUNCE = { Fruit:0.6, Animals:0.6, Desserts:0.6, Weather:0.4, Plants:0.4, Space:0.1, Cars:0.1, Retro:0.1 };
 const THEME_DATA = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3", Cherry:"#d63031", Mint:"#00b894", Grape:"#6c5ce7", Pumpkin:"#e67e22", Coffee:"#634832", Rose:"#fd79a8", Sky:"#81ecec", Grass:"#26de81", Charcoal:"#2f3640" };
 const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185], COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
@@ -78,16 +78,15 @@ let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', border:'#333'
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), aCtx = new (window.AudioContext || window.webkitAudioContext)();
 let engine, runner, currentIdx=0, nextIdx=1, lastX=200, isDragging=false, activePwr=null, pwrX=0, pwrY=0, canDrop=true;
 
-function playS(t, f=440) {
+function playS(f=440) {
     if(state.muted) return; if(aCtx.state==='suspended') aCtx.resume();
     const o=aCtx.createOscillator(), g=aCtx.createGain(); o.connect(g); g.connect(aCtx.destination);
-    o.type = (t==='pop')?'sine':'triangle';
     o.frequency.setValueAtTime(f, aCtx.currentTime); g.gain.setValueAtTime(0.1, aCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, aCtx.currentTime + 0.1); o.start(); o.stop(aCtx.currentTime + 0.1);
 }
 
 function init() {
-    const s=localStorage.getItem('fm_ult_v68'); if(s) Object.assign(state, JSON.parse(s));
+    const s=localStorage.getItem('fm_ult_v69'); if(s) Object.assign(state, JSON.parse(s));
     engine = Matter.Engine.create(); setupD();
     Matter.Events.on(engine, 'collisionStart', (e) => {
         e.pairs.forEach(p => {
@@ -95,14 +94,12 @@ function init() {
             if(a.plugin?.t === b.plugin?.t && a.plugin?.t < 11 && !a.isMerging && !b.isMerging) {
                 a.isMerging = b.isMerging = true;
                 const nt=a.plugin.t+1, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
-                state.maxT = Math.max(state.maxT, nt); playS('pop', 300+(nt*40));
+                state.maxT = Math.max(state.maxT, nt); playS(300+(nt*40));
                 Matter.Composite.remove(engine.world, [a, b]);
-                const nb = Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { restitution: BOUNCE[state.skin], plugin: {t:nt, dT:null} });
-                Matter.Composite.add(engine.world, nb);
+                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { restitution: BOUNCE[state.skin], plugin: {t:nt, dT:null} }));
                 state.score += (nt*10); state.pts += (nt*5); updateUI();
             } else if(p.collision.depth > 1) {
                 const s = SQUISH_VALS[state.skin]; if(a.plugin) a.sq = 1 - s*0.35; if(b.plugin) b.sq = 1 - s*0.35;
-                playS('thud', 100+(a.plugin?a.plugin.t*10:0));
             }
         });
     });
@@ -115,17 +112,31 @@ function setupD() {
     const fY=canvas.height-95, bW = 12;
     Matter.Composite.clear(engine.world); 
     Matter.Composite.add(engine.world, [
-        Matter.Bodies.rectangle(canvas.width/2, fY + 50, canvas.width, 100, {isStatic:true}), // Floor
-        Matter.Bodies.rectangle(bW/2, canvas.height/2, bW, canvas.height, {isStatic:true}), // Left
-        Matter.Bodies.rectangle(canvas.width - bW/2, canvas.height/2, bW, canvas.height, {isStatic:true}) // Right
+        Matter.Bodies.rectangle(canvas.width/2, fY + 50, canvas.width, 100, {isStatic:true}), // FLOOR
+        Matter.Bodies.rectangle(bW/2, canvas.height/2, bW, canvas.height, {isStatic:true}), // LEFT
+        Matter.Bodies.rectangle(canvas.width - bW/2, canvas.height/2, bW, canvas.height, {isStatic:true}) // RIGHT
     ]);
 }
 
 function render(time) {
     ctx.fillStyle=THEME_DATA[state.theme]; ctx.fillRect(0,0,canvas.width,canvas.height);
+    
+    // ULTRA-VIS DANGER LINE
+    ctx.strokeStyle = `rgba(255, 0, 0, ${0.4 + Math.sin(time/200)*0.2})`;
+    ctx.lineWidth = 6; ctx.setLineDash([15, 10]);
+    ctx.beginPath(); ctx.moveTo(0, 175); ctx.lineTo(canvas.width, 175); ctx.stroke(); ctx.setLineDash([]);
+
     if(isDragging && !activePwr) { 
-        ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(SKINS[state.skin][currentIdx], lastX, 160);
+        ctx.save();
+        ctx.font="40px Arial"; ctx.textAlign="center";
+        const char = SKINS[state.skin][currentIdx];
+        if(state.skin === 'Retro') {
+            ctx.fillStyle = COLORS[currentIdx]; ctx.shadowBlur = 10; ctx.shadowColor = "black";
+        } else { ctx.fillStyle = "black"; }
+        ctx.fillText(char, lastX, 160);
+        ctx.restore();
     }
+
     const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
     let tT = -1; if(activePwr && activePwr !== 'bomb') { const h=bodies.find(b=>Math.hypot(b.position.x-pwrX, b.position.y-pwrY)<b.circleRadius+20); if(h) tT=h.plugin.t; }
     
@@ -133,27 +144,32 @@ function render(time) {
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
         if(!b.sq) b.sq = 1; b.sq += (1 - b.sq) * 0.12;
         ctx.scale(b.sq, 1/b.sq);
+
         const highlight = (activePwr==='bomb'&&Math.hypot(b.position.x-pwrX, b.position.y-pwrY)<80) || (tT!==-1&&b.plugin.t===tT);
-        if(highlight) { ctx.shadowBlur=25; ctx.shadowColor="white"; ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius+4,0,Math.PI*2); ctx.fill(); }
+        if(highlight) { ctx.shadowBlur=30; ctx.shadowColor="white"; ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius+6,0,Math.PI*2); ctx.fill(); }
         
-        ctx.fillStyle = (state.skin==='Retro') ? "#fff" : COLORS[b.plugin.t];
+        ctx.fillStyle = (state.skin==='Retro') ? COLORS[b.plugin.t] : COLORS[b.plugin.t];
         ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill(); 
         
         if(state.outline !== 'none' || state.skin==='Retro') {
-            if(state.outline==='rainbow') ctx.strokeStyle = `hsl(${time/10 % 360}, 70%, 50%)`;
-            else ctx.strokeStyle = (state.outline==='white' || state.skin==='Retro') ? '#fff' : '#000';
+            ctx.strokeStyle = state.outline==='rainbow' ? `hsl(${time/10 % 360}, 70%, 50%)` : (state.outline==='white'?'#fff':'#000');
             ctx.lineWidth=3; ctx.stroke();
         }
         ctx.font = (b.circleRadius*1.3)+"px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; 
-        ctx.fillStyle = (state.skin==='Retro') ? "#000" : "#fff";
+        ctx.fillStyle = (state.skin==='Retro') ? "#fff" : "#fff";
+        ctx.shadowBlur = (state.skin==='Retro') ? 5 : 0; ctx.shadowColor = "black";
         ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); 
         ctx.restore();
+
+        if(b.position.y < 175 && !isDragging) { if(!b.plugin.dT) b.plugin.dT=Date.now(); if(Date.now()-b.plugin.dT > 2000) { alert("Game Over!"); location.reload(); } } else b.plugin.dT=null;
     });
+
     if(activePwr) { 
-        ctx.strokeStyle="white"; ctx.lineWidth=3; ctx.beginPath(); 
+        ctx.save();
+        ctx.strokeStyle="white"; ctx.lineWidth=5; ctx.shadowBlur=10; ctx.shadowColor="black"; ctx.beginPath(); 
         if(activePwr==='bomb') ctx.arc(pwrX, pwrY, 80, 0, Math.PI*2); 
-        else { ctx.moveTo(pwrX-30,pwrY); ctx.lineTo(pwrX+30,pwrY); ctx.moveTo(pwrX,pwrY-30); ctx.lineTo(pwrX,pwrY+30); ctx.arc(pwrX,pwrY,15,0,Math.PI*2); } 
-        ctx.stroke(); 
+        else { ctx.arc(pwrX, pwrY, 30, 0, Math.PI*2); ctx.moveTo(pwrX-50,pwrY); ctx.lineTo(pwrX+50,pwrY); ctx.moveTo(pwrX,pwrY-50); ctx.lineTo(pwrX,pwrY+50); } 
+        ctx.stroke(); ctx.restore();
     }
     requestAnimationFrame(render);
 }
@@ -161,7 +177,6 @@ function render(time) {
 function prepPwr(t, e) {
     const c={bomb:500, wipe:1000, evo:1500}[t]; if(state.pts<c) return alert("Not enough money!");
     activePwr = t; isDragging = true;
-    pwrX = e.clientX; pwrY = e.clientY;
 }
 
 canvas.addEventListener('pointerdown', (e) => { if(!activePwr && e.clientY < canvas.height-95 && e.clientY > 130) { isDragging=true; lastX=e.clientX; if(aCtx.state==='suspended') aCtx.resume(); } });
@@ -178,7 +193,7 @@ canvas.addEventListener('pointerup', (e) => {
 
 function usePwr(x, y) {
     const bds=Matter.Composite.allBodies(engine.world).filter(b=>b.plugin?.t!==undefined);
-    const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+20);
+    const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+30);
     if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<80) Matter.Composite.remove(engine.world,b);}); state.pts-=500; }
     else if(activePwr==='wipe'&&h){ bds.forEach(b=>{if(b.plugin.t===h.plugin.t) Matter.Composite.remove(engine.world,b);}); state.pts-=1000; }
     else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{plugin:{t:nt}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; }
@@ -187,7 +202,6 @@ function usePwr(x, y) {
 function updateUI() {
     document.getElementById('s-val').innerText=state.score; document.getElementById('h-val').innerText=state.best=Math.max(state.best, state.score);
     document.getElementById('w-val').innerText=state.pts; document.getElementById('next-disp').innerText="Next: "+SKINS[state.skin][nextIdx];
-    document.getElementById('game-container').style.background=THEME_DATA[state.theme]; 
     document.getElementById('game-container').style.borderColor=state.border;
     document.getElementById('progress-bar').style.width=(state.maxT/11*100)+"%";
     document.getElementById('progress-icons').innerHTML=SKINS[state.skin].map(e=>`<span>${e}</span>`).join('');
@@ -199,24 +213,20 @@ function openShop() {
     let h = '<div class="store-cat"><h3>Skins</h3><div class="grid">';
     Object.keys(SKINS).forEach(id => h += `<div class="item-card ${state.skin===id?'selected':''}" onclick="buy('${id}','skin',500)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'Owned':'$500'}</span>${SKINS[id][0]}<br>${id}</div>`);
     h += '</div></div><div class="store-cat"><h3>Outlines</h3><div class="grid">';
-    ['none', 'black', 'white', 'rainbow'].forEach(id => h += `<div class="item-card ${state.outline===id?'selected':''}" onclick="buy('${id}','outline',1000)"><span class="badge" style="background:${state.owned.includes('o_'+id)?'#2ecc71':'#f1c40f'}">${state.owned.includes('o_'+id)?'Owned':'$1k'}</span>${id}</div>`);
+    ['None', 'Black', 'White', 'Rainbow'].forEach(id => h += `<div class="item-card ${state.outline===id.toLowerCase()?'selected':''}" onclick="buy('${id.toLowerCase()}','outline',1000)"><span class="badge" style="background:${state.owned.includes('o_'+id.toLowerCase())?'#2ecc71':'#f1c40f'}">${state.owned.includes('o_'+id.toLowerCase())?'Owned':'$1k'}</span>${id}</div>`);
     h += '</div></div><div class="store-cat"><h3>Themes</h3><div class="grid">';
-    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.theme===id?'selected':''}" onclick="buy('${id}','theme',300)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'Owned':'$300'}</span><div style="height:20px;background:${THEME_DATA[id]};border-radius:4px;"></div>${id}</div>`);
+    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.theme===id?'selected':''}" onclick="buy('${id}','theme',300)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'Owned':'$300'}</span><div style="height:20px;background:${THEME_DATA[id]};border-radius:6px;"></div>${id}</div>`);
     h += '</div></div><div class="store-cat"><h3>Borders</h3><div class="grid">';
-    Object.keys(THEME_DATA).forEach(id => {
-        const col = THEME_DATA[id];
-        h += `<div class="item-card ${state.border===col?'selected':''}" onclick="buy('${col}','border',200)"><span class="badge" style="background:${state.owned.includes('b_'+col)?'#2ecc71':'#f1c40f'}">${state.owned.includes('b_'+col)?'Owned':'$200'}</span><div style="height:20px;background:${col};border-radius:4px;"></div>${id}</div>`;
-    });
-    h += '</div></div>';
-    document.getElementById('shop-scroll').innerHTML = h;
+    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.border===THEME_DATA[id]?'selected':''}" onclick="buy('${THEME_DATA[id]}','border',200)"><span class="badge" style="background:${state.owned.includes('b_'+THEME_DATA[id])?'#2ecc71':'#f1c40f'}">${state.owned.includes('b_'+THEME_DATA[id])?'Owned':'$200'}</span><div style="height:20px;background:${THEME_DATA[id]};border-radius:6px;"></div>${id}</div>`);
+    document.getElementById('shop-scroll').innerHTML = h + '</div></div>';
 }
 
 function buy(id, t, c) { 
-    const k = (t==='outline'?'o_':(t==='border'?'b_':''))+id; 
+    const k = t==='outline'?'o_':(t==='border'?'b_':'')+id; 
     if(!state.owned.includes(k)){ if(state.pts>=c){state.pts-=c; state.owned.push(k);} else return; }
     state[t]=id; updateUI(); openShop(); 
 }
-function save() { localStorage.setItem('fm_ult_v68', JSON.stringify(state)); }
+function save() { localStorage.setItem('fm_ult_v69', JSON.stringify(state)); }
 function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
 function openHelp() { document.getElementById('helpModal').style.display='block'; }
 function toggleMute() { state.muted=!state.muted; document.getElementById('mute-btn').innerText=state.muted?"🔇":"🔊"; save(); }
