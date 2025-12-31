@@ -3,71 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v96</title>
+    <title>Fruit Merge v97</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root {
-            --bg: #fdfbf7; --border-color: #e8e6e1; --text: #5c554a;
-            --border-width: 15px;
+            --bg: #fdfbf7; --ui-border: #e8e6e1; --text: #5c554a;
+            --border-width: 15px; --rainbow-step: 0;
         }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; background: var(--bg); color: var(--text);
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'Avenir', 'Helvetica Neue', sans-serif;
+            user-select: none; -webkit-user-select: none;
         }
 
-        /* UI Framework */
-        #top-ui { height: 175px; position: absolute; top: 0; width: 100%; border-bottom: var(--border-width) solid var(--border-color); z-index: 100; background: inherit; padding: 15px; box-sizing: border-box; }
-        #bottom-ui { height: 100px; position: absolute; bottom: 0; width: 100%; border-top: var(--border-width) solid var(--border-color); display: flex; justify-content: space-around; align-items: center; z-index: 100; background: inherit; }
-        #game-container { position: absolute; top: 175px; bottom: 100px; width: 100%; overflow: hidden; background: #fff; border-left: var(--border-width) solid var(--border-color); border-right: var(--border-width) solid var(--border-color); }
+        /* UI Containers */
+        #top-ui { height: 175px; position: absolute; top: 0; width: 100%; border-bottom: var(--border-width) solid var(--ui-border); z-index: 100; background: inherit; padding: 10px; box-sizing: border-box; }
+        #bottom-ui { height: 100px; position: absolute; bottom: 0; width: 100%; border-top: var(--border-width) solid var(--ui-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; background: inherit; }
+        #game-container { position: absolute; top: 175px; bottom: 100px; width: 100%; overflow: hidden; background: #fff; border-left: var(--border-width) solid var(--ui-border); border-right: var(--border-width) solid var(--ui-border); box-sizing: border-box; }
 
-        /* Store & Previews */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 2000; flex-direction: column; }
+        /* Store UI */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 1000; flex-direction: column; }
         .modal-content { flex: 1; overflow-y: auto; padding: 20px; touch-action: pan-y; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .card { border: 1px solid #eee; border-radius: 12px; padding: 10px; text-align: center; }
-        .card.owned { border-color: #88d498; background: #f0faf2; }
-        .swatch { width: 100%; height: 30px; border-radius: 6px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.05); }
+        .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .card { border: 1px solid #eee; border-radius: 12px; padding: 10px; text-align: center; transition: 0.2s; }
+        .card.active { border: 2px solid #88d498; background: #f0faf2; }
+        .swatch { width: 100%; height: 35px; border-radius: 6px; margin: 5px 0; border: 1px solid rgba(0,0,0,0.1); }
 
         /* Game Elements */
-        .btn { padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; }
-        .danger-line { position: absolute; top: 195px; width: 100%; border-top: 2px dashed #ff7675; pointer-events: none; z-index: 10; opacity: 0.6; }
-        #drop-preview { position: absolute; top: 10px; font-size: 2rem; pointer-events: none; opacity: 0.5; transform: translateX(-50%); }
-        #reticle { position: absolute; width: 60px; height: 60px; border: 2px solid #5c554a; border-radius: 50%; display: none; pointer-events: none; transform: translate(-50%, -50%); z-index: 500; }
+        .btn { padding: 10px; border-radius: 10px; border: 1px solid var(--ui-border); background: #fff; cursor: pointer; font-weight: bold; }
+        .danger-line { position: absolute; top: 195px; width: 100%; border-top: 2px dashed #ff7675; opacity: 0.5; z-index: 10; pointer-events: none; }
+        #crosshair { position: absolute; width: 40px; height: 40px; border: 2px solid rgba(0,0,0,0.3); border-radius: 50%; display: none; transform: translate(-50%, -50%); pointer-events: none; z-index: 500; }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(0,0,0,0.3); }
+        #crosshair::before { width: 100%; height: 1px; top: 50%; left: 0; }
+        #crosshair::after { height: 100%; width: 1px; left: 50%; top: 0; }
+
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="top-ui">
-    <div style="display:flex; justify-content: space-between;">
-        <div><b>Score:</b> <span id="score">0</span><br><small>High: <span id="best">0</span></small></div>
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <div><b>Score:</b> <span id="score">0</span><br><small>Best: <span id="best">0</span></small></div>
         <div style="text-align: center;">Next<br><span id="next-preview" style="font-size: 1.5rem;"></span></div>
-        <div style="display:flex; gap: 5px;"><button class="btn" onclick="toggleFS()">⛶</button><button class="btn" onclick="openModal('help')">?</button></div>
+        <div style="display:flex; gap: 5px;"><button class="btn" onclick="toggleFS()">⛶</button><button class="btn" onclick="openMod('help')">?</button></div>
     </div>
-    <div id="progress-icons" style="display:flex; justify-content: space-between; margin-top:15px;"></div>
-    <div style="text-align:center; font-weight:bold; margin-top:5px;">Available: $<span id="wallet">0</span></div>
+    <div id="progress-bar" style="display:flex; justify-content: space-between; margin-top:15px;"></div>
+    <div style="text-align:center; font-weight:bold; margin-top:8px;">Wallet: $<span id="wallet-display">0</span></div>
 </div>
 
 <div class="danger-line"></div>
 <div id="game-container">
-    <div id="drop-preview"></div>
-    <div id="reticle"></div>
+    <div id="crosshair"></div>
 </div>
 
 <div id="bottom-ui">
-    <button class="btn power-btn" data-type="bomb">💣</button>
-    <button class="btn power-btn" data-type="broom">🧹</button>
-    <button class="btn power-btn" data-type="wand">🪄</button>
-    <button class="btn" onclick="openModal('store')">🏪 Store</button>
+    <button class="btn pwr-btn" data-type="bomb">💣</button>
+    <button class="btn pwr-btn" data-type="broom">🧹</button>
+    <button class="btn pwr-btn" data-type="wand">🪄</button>
+    <button class="btn" onclick="openMod('store')">Store</button>
 </div>
 
-<div id="help-modal" class="modal"><div class="modal-content"><h2 id="help-title">How to Play</h2><div id="help-text"></div><button class="btn" style="width:100%" onclick="closeModals()">Close</button></div></div>
-<div id="store-modal" class="modal"><div class="modal-content"><h2>Store</h2><div style="padding:10px; background:#f9f9f9; border-radius:10px; margin-bottom:15px"><b>Your Wallet:</b> $<span id="store-wallet">0</span></div><div id="store-list"></div><button class="btn" style="width:100%; margin-top:20px" onclick="closeModals()">Back to Game</button></div></div>
+<div id="overlay" onclick="this.style.display='none'">GAME OVER<br><span style="font-size:1rem">Board Reset</span></div>
+
+<div id="help-modal" class="modal"><div class="modal-content"><h2>How to Play</h2><p>Merge items to reach Tier 12. Don't stay above the red line!</p><p><b>Power-ups:</b> Drag onto the fruit to use. Target fruits will highlight.</p><button class="btn" onclick="closeMods()">Close</button></div></div>
+<div id="store-modal" class="modal">
+    <div class="modal-content">
+        <h2 style="display:flex; justify-content: space-between;">Store <span>$<span id="store-wallet">0</span></span></h2>
+        <div id="store-list"></div>
+        <button class="btn" style="width:100%; margin-top:20px" onclick="closeMods()">Close</button>
+    </div>
+</div>
 
 <script>
-/** * CONSTANTS & DATA
+/** * DATA & CONFIG
  */
-const TIER_COLORS = ['#ffadad','#ffd6a5','#fdffb6','#caffbf','#9bf6ff','#a0c4ff','#bdb2ff','#ffc6ff','#ffdee9','#d4fc79','#96e6a1','#f6d365'];
+const COLORS = ['#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#FFC6FF', '#FFFFFC', '#D4FC79', '#96E6A1', '#F6D365'];
 const DATA = {
     skins: {
         Fruit: ['🍒','🍓','🍇','🍊','🍎','🍐','🍑','🍍','🍈','🍉','🥥','🎃'],
@@ -79,235 +91,246 @@ const DATA = {
         Space: ['☄️','🛰️','🪐','🌙','☀️','🔭','🚀','👽','🛸','🌌','🌠','👩‍🚀'],
         Dessert: ['🍪','🍩','🧁','🍦','🍰','🥧','🍫','🍬','🍭','🍮','🍯','🎂']
     },
-    themes: { Mellow: "#fdfbf7", Midnight: "#1a1a2e", Forest: "#edf5f1", Rose: "#fff5f5", Matcha: "#f2f9f1", Slate: "#f1f3f5" },
-    borders: { Steel: "#718096", Gold: "#d4af37", Neon: "#00f2ff", Crimson: "#e53e3e", Mint: "#68d391", Lavender: "#b794f4" },
-    outlines: ["None", "White", "Black", "Neon"]
+    outlines: { Default: "transparent", White: "#fff", Black: "#000", Rainbow: "rainbow" },
+    themes: { Mellow: "#fdfbf7", Midnight: "#1a1a2e", Forest: "#edf5f1", Ocean: "#eef2f7", Rose: "#fff5f5", Matcha: "#f2f9f1", Slate: "#f1f3f5", Sand: "#fdf6e3", Lilac: "#f8f0fc", Olive: "#f1f2e9", Peach: "#fff0e6", Storm: "#e6e9f0", Zest: "#fdfae6", Mint: "#e6fdf5", Coal: "#2d3436", Cloud: "#f1f2f6" },
+    borders: { Steel: "#718096", Gold: "#d4af37", Neon: "#00f2ff", Crimson: "#e53e3e", Mint: "#68d391", Lavender: "#b794f4", Coal: "#2d3436", Ivory: "#f7fafc", Emerald: "#38a169", Sky: "#63b3ed", Amber: "#ed8936", Plum: "#805ad5", Clay: "#a0aec0", Silver: "#cbd5e0", Coffee: "#6f4e37", Coral: "#f56565" }
 };
 
 let state = {
     score: 0, wallet: parseInt(localStorage.getItem('wallet')) || 1000,
-    best: parseInt(localStorage.getItem('highScore')) || 0,
-    skin: 'Fruit', owned: JSON.parse(localStorage.getItem('owned')) || ['Fruit', 'Mellow', 'Steel', 'None'],
-    unlocked: new Set([0]), next: 0, activePower: null, gameOverTime: null
+    best: parseInt(localStorage.getItem('hs')) || 0,
+    skin: 'Fruit', outline: 'Default', theme: 'Mellow', border: 'Steel',
+    owned: JSON.parse(localStorage.getItem('owned')) || ['Fruit', 'Default', 'Mellow', 'Steel'],
+    unlocked: new Set([0]), next: 0, activePower: null, gameOverTime: null, tick: 0
 };
 
-/** * PHYSICS ENGINE
+/** * AUDIO
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(freq, type='sine', d=0.5) {
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + d);
+}
+
+/** * ENGINE
  */
 const { Engine, Render, Runner, Bodies, Composite, Events, Vector, Query } = Matter;
 const container = document.getElementById('game-container');
-const engine = Engine.create({ gravity: { y: 1.5 }, enableSleeping: false });
+const engine = Engine.create({ gravity: { y: 1.5 } });
 const render = Render.create({
     element: container, engine: engine,
-    options: { width: window.innerWidth, height: container.clientHeight, wireframes: false, background: 'transparent' }
+    options: { width: container.clientWidth, height: container.clientHeight, wireframes: false, background: 'transparent' }
 });
 
-// Create Persistent Boundaries
-function initBoundaries() {
+function initWorld() {
     Composite.clear(engine.world);
-    const floor = Bodies.rectangle(window.innerWidth/2, container.clientHeight + 10, window.innerWidth, 25, { isStatic: true, label: 'ground' });
-    const lW = Bodies.rectangle(-10, container.clientHeight/2, 20, container.clientHeight, { isStatic: true });
-    const rW = Bodies.rectangle(window.innerWidth + 10, container.clientHeight/2, 20, container.clientHeight, { isStatic: true });
+    const options = { isStatic: true, friction: 0.1, render: { visible: false } };
+    const floor = Bodies.rectangle(container.clientWidth/2, container.clientHeight + 10, container.clientWidth, 25, options);
+    const lW = Bodies.rectangle(-10, container.clientHeight/2, 20, container.clientHeight, options);
+    const rW = Bodies.rectangle(container.clientWidth + 10, container.clientHeight/2, 20, container.clientHeight, options);
     Composite.add(engine.world, [floor, lW, rW]);
 }
 
 function spawn(x, y, tier) {
     const r = 15 + (tier * 7.5);
-    const b = Bodies.circle(x, y, r, { restitution: 0.3, friction: 0.1, plugin: { tier } });
+    const b = Bodies.circle(x, y, r, { restitution: 0.3, friction: 0.2, plugin: { tier } });
     Composite.add(engine.world, b);
 }
 
-/** * INTERACTION & TARGETING
+/** * INTERACTION
  */
-const reticle = document.getElementById('reticle');
-const preview = document.getElementById('drop-preview');
+const cross = document.getElementById('crosshair');
+const handleMove = (e) => {
+    const t = e.touches ? e.touches[0] : e;
+    const r = container.getBoundingClientRect();
+    const x = t.clientX - r.left; const y = t.clientY - r.top;
+    cross.style.display = 'block';
+    cross.style.left = t.clientX + 'px';
+    cross.style.top = t.clientY + 'px';
+    state.touchPos = { x, y };
+};
 
-document.querySelectorAll('.power-btn').forEach(btn => {
-    btn.addEventListener('touchstart', (e) => {
-        state.activePower = btn.dataset.type;
-        reticle.style.display = 'block';
-    });
-});
+container.addEventListener('mousemove', handleMove);
+container.addEventListener('touchmove', handleMove);
 
-window.addEventListener('touchmove', (e) => {
-    const touch = e.touches[0];
-    const rect = container.getBoundingClientRect();
-    const x = touch.clientX;
-    const y = touch.clientY - rect.top;
-
+const handleEnd = () => {
+    if (!state.touchPos) return;
     if (state.activePower) {
-        reticle.style.left = x + 'px';
-        reticle.style.top = y + rect.top + 'px';
-    } else {
-        preview.style.left = x + 'px';
-        preview.innerText = DATA.skins[state.skin][state.next];
-    }
-});
-
-window.addEventListener('touchend', (e) => {
-    const touch = e.changedTouches[0];
-    const rect = container.getBoundingClientRect();
-    const x = touch.clientX;
-    const y = touch.clientY - rect.top;
-
-    if (state.activePower) {
-        const body = Query.point(Composite.allBodies(engine.world), { x, y })[0];
-        handlePower(state.activePower, body, x, y);
+        const target = Query.point(Composite.allBodies(engine.world), state.touchPos)[0];
+        usePower(state.activePower, target, state.touchPos);
         state.activePower = null;
-        reticle.style.display = 'none';
-    } else if (touch.clientY > 175 && touch.clientY < window.innerHeight - 100) {
-        spawn(x, 40, state.next);
+    } else {
+        spawn(state.touchPos.x, 40, state.next);
         state.next = Math.floor(Math.random() * 4);
+        const landingFreq = 200 - (Object.keys(DATA.skins).indexOf(state.skin) * 15);
+        playTone(landingFreq, 'sine', 0.2);
         updateUI();
     }
+};
+
+container.addEventListener('mouseup', handleEnd);
+container.addEventListener('touchend', handleEnd);
+
+document.querySelectorAll('.pwr-btn').forEach(b => {
+    b.addEventListener('mousedown', () => state.activePower = b.dataset.type);
+    b.addEventListener('touchstart', () => state.activePower = b.dataset.type);
 });
 
-function handlePower(type, target, x, y) {
+function usePower(type, target, pos) {
     const all = Composite.allBodies(engine.world);
     if (type === 'bomb') {
-        const affected = all.filter(b => Vector.magnitude(Vector.sub(b.position, {x, y})) < 80);
-        Composite.remove(engine.world, affected);
+        const victims = all.filter(b => Vector.magnitude(Vector.sub(b.position, pos)) < 80);
+        Composite.remove(engine.world, victims);
+        playTone(100, 'square');
     } else if (target && target.plugin.tier !== undefined) {
         if (type === 'broom') {
             const same = all.filter(b => b.plugin.tier === target.plugin.tier);
             Composite.remove(engine.world, same);
+            playTone(150, 'triangle');
         } else if (type === 'wand' && target.plugin.tier < 11) {
-            const tier = target.plugin.tier + 1;
-            const pos = {...target.position};
+            const next = target.plugin.tier + 1; const p = {...target.position};
             Composite.remove(engine.world, target);
-            spawn(pos.x, pos.y, tier);
+            spawn(p.x, p.y, next);
+            playTone(440);
         }
     }
 }
 
-/** * RENDERING & HITBOXES
+/** * MAIN LOOP & RENDERING
  */
+Events.on(engine, 'collisionStart', (e) => {
+    e.pairs.forEach(p => {
+        const { bodyA, bodyB } = p;
+        if (bodyA.plugin?.tier === bodyB.plugin?.tier && bodyA.plugin.tier < 11) {
+            const pos = Vector.div(Vector.add(bodyA.position, bodyB.position), 2);
+            const next = bodyA.plugin.tier + 1;
+            Composite.remove(engine.world, [bodyA, bodyB]);
+            spawn(pos.x, pos.y, next);
+            state.score += (next * 10); state.wallet += next;
+            state.unlocked.add(next);
+            playTone(300 + (next * 20));
+            updateUI();
+        }
+    });
+});
+
 Events.on(render, 'afterRender', () => {
-    const ctx = render.context;
+    const ctx = render.context; state.tick++;
     let violation = false;
     const bodies = Composite.allBodies(engine.world);
 
-    bodies.forEach(body => {
-        if (body.plugin.tier !== undefined) {
-            const tier = body.plugin.tier;
-            const r = 15 + (tier * 7.5);
+    bodies.forEach(b => {
+        if (b.plugin.tier !== undefined) {
+            const tier = b.plugin.tier; const r = 15 + (tier * 7.5);
+            ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
             
-            ctx.save();
-            ctx.translate(body.position.x, body.position.y);
-            ctx.rotate(body.angle);
+            // Hitbox Glow
+            ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2);
+            ctx.fillStyle = COLORS[tier]; ctx.globalAlpha = 0.2; ctx.fill();
             
-            // Tier-Consistent Hitbox Color
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
-            ctx.fillStyle = TIER_COLORS[tier];
-            ctx.globalAlpha = 0.3;
-            ctx.fill();
-            ctx.globalAlpha = 1.0;
+            // Power-up Highlighting
+            if (state.activePower) {
+                let highlighted = false;
+                if (state.activePower === 'bomb' && Vector.magnitude(Vector.sub(b.position, state.touchPos)) < 80) highlighted = true;
+                if (state.activePower !== 'bomb' && Query.point([b], state.touchPos).length > 0) highlighted = true;
+                if (highlighted) { ctx.shadowBlur = 15; ctx.shadowColor = "gold"; ctx.lineWidth = 4; ctx.strokeStyle = "gold"; ctx.stroke(); }
+            }
 
-            ctx.font = `${r * 1.6}px Arial`;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(DATA.skins[state.skin][tier], 0, 0);
+            // Outline logic
+            let color = DATA.outlines[state.outline];
+            if (color === 'rainbow') color = `hsl(${state.tick % 360}, 70%, 50%)`;
+            if (color !== 'transparent') { ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.strokeText(DATA.skins[state.skin][tier], 0, 0); }
+
+            ctx.font = `${r * 1.7}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.globalAlpha = 1.0; ctx.fillText(DATA.skins[state.skin][tier], 0, 0);
             ctx.restore();
 
-            if (body.position.y < 20) violation = true;
+            if (b.position.y < 20) violation = true;
         }
     });
 
     if (violation) {
         if (!state.gameOverTime) state.gameOverTime = Date.now();
         else if (Date.now() - state.gameOverTime > 2000) {
-            initBoundaries(); // Clean wipe but keep boundaries
-            state.score = 0; state.gameOverTime = null;
-            updateUI();
+            document.getElementById('overlay').style.display = 'flex';
+            playTone(100, 'sawtooth', 1.0); // Death Jingle
+            initWorld(); state.score = 0; state.gameOverTime = null; updateUI();
         }
     } else state.gameOverTime = null;
 });
 
-// Collision Merge
-Events.on(engine, 'collisionStart', (e) => {
-    e.pairs.forEach(pair => {
-        const { bodyA, bodyB } = pair;
-        if (bodyA.plugin?.tier === bodyB.plugin?.tier && bodyA.plugin.tier < 11) {
-            const pos = Vector.div(Vector.add(bodyA.position, bodyB.position), 2);
-            const tier = bodyA.plugin.tier + 1;
-            Composite.remove(engine.world, [bodyA, bodyB]);
-            spawn(pos.x, pos.y, tier);
-            state.score += (tier * 10); state.wallet += tier;
-            state.unlocked.add(tier);
-            updateUI();
-        }
-    });
-});
-
-/** * STORE & UI
+/** * UI & STORE
  */
 function updateUI() {
     document.getElementById('score').innerText = state.score;
-    document.getElementById('wallet').innerText = state.wallet;
+    document.getElementById('wallet-display').innerText = state.wallet;
     document.getElementById('store-wallet').innerText = state.wallet;
     document.getElementById('best').innerText = state.best;
     document.getElementById('next-preview').innerText = DATA.skins[state.skin][state.next];
     
-    const p = document.getElementById('progress-icons');
-    p.innerHTML = '';
+    const p = document.getElementById('progress-bar'); p.innerHTML = '';
     DATA.skins[state.skin].forEach((s, i) => {
-        const div = document.createElement('div');
-        div.style.opacity = state.unlocked.has(i) ? '1' : '0.15';
-        div.innerText = s;
-        p.appendChild(div);
+        const d = document.createElement('div');
+        d.style.opacity = state.unlocked.has(i) ? '1' : '0.15'; d.innerText = s;
+        p.appendChild(d);
     });
     localStorage.setItem('wallet', state.wallet);
-    localStorage.setItem('owned', JSON.stringify(state.owned));
+    if(state.score > state.best) { state.best = state.score; localStorage.setItem('hs', state.best); }
 }
 
 function renderStore() {
-    const list = document.getElementById('store-list');
-    list.innerHTML = '';
-    
+    const root = document.getElementById('store-list'); root.innerHTML = '';
     const cats = [
-        { n: 'Skins', d: DATA.skins, p: 500 },
-        { n: 'Themes', d: DATA.themes, p: 300 },
-        { n: 'Borders', d: DATA.borders, p: 200 }
+        { name: 'Skins', data: DATA.skins, price: 500 },
+        { name: 'Outlines', data: DATA.outlines, price: 2000 },
+        { name: 'Themes', data: DATA.themes, price: 300 },
+        { name: 'Borders', data: DATA.borders, price: 200 }
     ];
 
     cats.forEach(cat => {
-        list.innerHTML += `<h3>${cat.n}</h3>`;
-        const g = document.createElement('div'); g.className = 'grid';
-        Object.keys(cat.d).forEach(k => {
-            const isOwned = state.owned.includes(k);
+        root.innerHTML += `<h3>${cat.name}</h3>`;
+        const g = document.createElement('div'); g.className = 'store-grid';
+        Object.keys(cat.data).sort().forEach(k => {
+            const owned = state.owned.includes(k);
             const card = document.createElement('div');
-            card.className = `card ${isOwned ? 'owned' : ''}`;
+            card.className = `card ${owned ? 'active' : ''}`;
             
-            // Preview Logic
-            let previewHTML = '';
-            if (cat.n === 'Skins') previewHTML = `<div style="font-size:1.5rem">${cat.d[k][0]}</div>`;
-            else previewHTML = `<div class="swatch" style="background:${cat.d[k]}"></div>`;
+            let prev = '';
+            if (cat.name === 'Skins') prev = `<div class="revolve">${cat.data[k][Math.floor(Date.now()/500) % 12]}</div>`;
+            else if (cat.name === 'Outlines') prev = `<div style="border:1px solid #ccc; background:${cat.data[k] === 'rainbow' ? 'linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)' : (cat.data[k] || 'transparent')}; height:10px"></div>`;
+            else prev = `<div class="swatch" style="background:${cat.data[k]}"></div>`;
 
-            card.innerHTML = `${previewHTML}<b>${k}</b><br>${isOwned ? 'Equipped' : '$'+cat.p}`;
+            card.innerHTML = `${prev}<b>${k}</b><br>${owned ? 'EQUIPPED' : '$'+cat.price}`;
             card.onclick = () => {
-                if (!isOwned && state.wallet >= cat.p) {
-                    state.wallet -= cat.p; state.owned.push(k);
+                if (!owned && state.wallet >= cat.price) {
+                    state.wallet -= cat.price; state.owned.push(k); updateUI(); renderStore();
+                } else if (owned) {
+                    if (cat.name === 'Skins') state.skin = k;
+                    if (cat.name === 'Outlines') state.outline = k;
+                    if (cat.name === 'Themes') document.documentElement.style.setProperty('--bg', cat.data[k]);
+                    if (cat.name === 'Borders') document.documentElement.style.setProperty('--ui-border', cat.data[k]);
                     updateUI(); renderStore();
-                } else if (isOwned) {
-                    if (cat.n === 'Skins') state.skin = k;
-                    if (cat.n === 'Themes') document.documentElement.style.setProperty('--bg', cat.d[k]);
-                    if (cat.n === 'Borders') document.documentElement.style.setProperty('--border-color', cat.d[k]);
-                    updateUI();
                 }
             };
             g.appendChild(card);
         });
-        list.appendChild(g);
+        root.appendChild(g);
     });
 }
 
-function openModal(id) { if(id === 'store') renderStore(); document.getElementById(id+'-modal').style.display = 'flex'; }
-function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+// Interval for revolving skin icons in store
+setInterval(() => { if(document.getElementById('store-modal').style.display === 'flex') renderStore(); }, 1000);
+
+function openMod(id) { if(id === 'store') renderStore(); document.getElementById(id+'-modal').style.display = 'flex'; }
+function closeMods() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 function toggleFS() { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
 
-initBoundaries();
-updateUI();
-Render.run(render);
-Runner.run(Runner.create(), engine);
+initWorld(); updateUI();
+Render.run(render); Runner.run(Runner.create(), engine);
 </script>
 </body>
 </html>
