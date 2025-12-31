@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge Ultimate</title>
+    <title>Fruit Merge v65</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #111; font-family: sans-serif; touch-action: none; }
@@ -24,8 +24,8 @@
         .item-card { border: 2px solid #ccc; padding: 10px; border-radius: 12px; text-align: center; position: relative; background: #fafafa; }
         .item-card.selected { border-color: #2ecc71; background: #e8f8f0; border-width: 3px; }
         .badge { font-size: 8px; font-weight: bold; padding: 2px 4px; border-radius: 6px; position: absolute; top: -8px; right: -5px; border: 1px solid #333; color: #fff; }
-        .combo-text { position: absolute; pointer-events: none; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; z-index: 1500; animation: fUp 1s forwards; }
-        @keyframes fUp { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5) translateY(-80px); opacity: 0; } }
+        .combo-text { position: absolute; pointer-events: none; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; z-index: 1500; animation: fUp 1s forwards; text-align:center; line-height: 1; }
+        @keyframes fUp { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.4) translateY(-90px); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -46,8 +46,8 @@
     <canvas id="gameCanvas"></canvas>
     <div id="helpModal" class="modal">
         <h2 style="text-align:center">Ultimate Fruit Merge</h2>
-        <p>Combine items to reach the end of the progress bar. Use power-ups by dragging them from the store buttons.</p>
-        <p><b>Anti-Spam:</b> You must wait 0.6s between drops to prevent overcrowding!</p>
+        <p><b>Physics:</b> Every skin has a different bounce! Animals are bouncy, Cars are heavy.</p>
+        <p><b>Combo:</b> Merge quickly for huge multipliers and bonus phrases!</p>
         <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:10px; margin-top:10px; height:45px;">START</button>
     </div>
     <div id="shopModal" class="modal">
@@ -55,13 +55,32 @@
         <p style="text-align:center; font-weight:bold; color:#2ecc71;">Wallet: $<span id="shop-wallet">0</span></p>
         <div class="store-cat"><h3>Skins</h3><div id="skin-grid" class="grid"></div></div>
         <div class="store-cat"><h3>Outlines</h3><div id="outline-grid" class="grid"></div></div>
-        <div class="store-cat"><h3>Themes (16)</h3><div id="theme-grid" class="grid"></div></div>
-        <div class="store-cat"><h3>Borders (16)</h3><div id="border-grid" class="grid"></div></div>
+        <div class="store-cat"><h3>Themes</h3><div id="theme-grid" class="grid"></div></div>
+        <div class="store-cat"><h3>Borders</h3><div id="border-grid" class="grid"></div></div>
     </div>
 </div>
 <script>
-const SKINS = { Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], Retro:["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"], Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"], Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"], Plants:["🌱","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"], Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"], Weather:["☁️","⛅","🌤️","☀️","🌦️","🌧️","🌩️","⛈️","❄️","🌬️","🌈","🌪️"] };
-const MSGS = { Fruit:"JUICY!", Animals:"WILD!", Retro:"LEVEL UP!", Space:"COSMIC!", Desserts:"SWEET!", Plants:"BLOOM!", Cars:"VROOM!", Weather:"STORMING!" };
+const SKINS = { 
+    Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], 
+    Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], 
+    Retro:["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"], 
+    Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"], 
+    Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"], 
+    Plants:["🌱","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"], 
+    Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚁"], 
+    Weather:["☁️","🌤️","⚡","☀️","🌦️","🌧️","🌨️","⛈️","❄️","🌬️","🌈","🌪️"] 
+};
+const MSGS = { 
+    Fruit:["JUICY!","SWEET!","FRESH!","TASTY!","ZAP!"], 
+    Animals:["WILD!","ROAR!","BEAST!","FEROCIOUS!","PRIME!"], 
+    Retro:["LEVEL UP!","COMBO!","8-BIT!","PIXEL!","SCORE!"], 
+    Space:["COSMIC!","STELLAR!","NOVA!","ORBIT!","VOYAGE!"], 
+    Desserts:["SUGAR!","DELIGHT!","YUMMY!","TREAT!","GLAZED!"], 
+    Plants:["BLOOM!","GROW!","FLOURISH!","NATURE!","ROOTED!"], 
+    Cars:["VROOM!","TURBO!","DRIFT!","FAST!","REVVED!"], 
+    Weather:["BOOM!","STORM!","SHOCK!","BREEZY!","THUNDER!"] 
+};
+const BOUNCE = { Fruit:0.6, Animals:0.6, Desserts:0.6, Weather:0.4, Plants:0.4, Space:0.1, Cars:0.1, Retro:0.1 };
 const THEME_DATA = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3", Cherry:"#d63031", Mint:"#00b894", Grape:"#6c5ce7", Pumpkin:"#e67e22", Coffee:"#634832", Rose:"#fd79a8", Sky:"#81ecec", Grass:"#26de81", Charcoal:"#2f3640" };
 const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185], COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
 let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', border:'#333', outline:'none', owned:['Fruit', 'Lilac', '#333', 'none'], muted:false, maxT:0 };
@@ -71,24 +90,30 @@ let engine, runner, currentIdx=0, nextIdx=1, lastX=200, isDragging=false, active
 function playS(t, f=440) {
     if(state.muted) return; if(aCtx.state==='suspended') aCtx.resume();
     const o=aCtx.createOscillator(), g=aCtx.createGain(); o.connect(g); g.connect(aCtx.destination);
-    o.type = (t==='pop')?'sine':'triangle'; f = Math.min(f, 1000);
-    o.frequency.setValueAtTime(f, aCtx.currentTime); g.gain.setValueAtTime(0.1, aCtx.currentTime);
+    o.type = (t==='pop')?'sine':'triangle'; f = Math.min(f, 900);
+    o.frequency.setValueAtTime(f, aCtx.currentTime); g.gain.setValueAtTime(0.08, aCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, aCtx.currentTime + 0.1); o.start(); o.stop(aCtx.currentTime + 0.1);
 }
 
 function init() {
-    const s=localStorage.getItem('fm_ult_s'); if(s) Object.assign(state, JSON.parse(s));
+    const s=localStorage.getItem('fm_ult_s_v65'); if(s) Object.assign(state, JSON.parse(s));
     engine = Matter.Engine.create(); setupD();
     Matter.Events.on(engine, 'collisionStart', (e) => {
         e.pairs.forEach(p => {
             const a=p.bodyA, b=p.bodyB;
-            if(a.plugin?.t === b.plugin?.t && a.plugin?.t < 11) {
+            if(a.plugin?.t === b.plugin?.t && a.plugin?.t < 11 && !a.isMerging && !b.isMerging) {
+                a.isMerging = b.isMerging = true; // PREVENT TRIPLE MERGE
                 const nt=a.plugin.t+1, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
                 combo = (Date.now()-lastM < 1500) ? Math.min(combo+1, 5) : 1; lastM = Date.now();
                 if(combo > 1) showC(pos.x, pos.y, combo);
-                state.maxT = Math.max(state.maxT, nt); playS('pop', 350 + (nt*45) + (combo*30));
+                state.maxT = Math.max(state.maxT, nt); playS('pop', 300 + (nt*40) + (combo*30));
                 Matter.Composite.remove(engine.world, [a, b]);
-                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { friction: 0.1, plugin: {t:nt, dT:null} }));
+                const nb = Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { 
+                    restitution: BOUNCE[state.skin] || 0.4, 
+                    friction: 0.1, 
+                    plugin: {t:nt, dT:null} 
+                });
+                Matter.Composite.add(engine.world, nb);
                 state.score += (nt*10)*combo; state.pts += (nt*5)*combo; updateUI();
             } else if(p.collision.depth > 1) playS('thud', 80 + (a.plugin?a.plugin.t*10:0));
         });
@@ -97,14 +122,20 @@ function init() {
     window.addEventListener('resize', setupD); requestAnimationFrame(render); updateUI();
 }
 
-function showC(x, y, c) { const d=document.createElement('div'); d.className='combo-text'; d.style.left=x+'px'; d.style.top=y+'px'; d.innerHTML=(MSGS[state.skin]||'COMBO')+' x'+c; document.body.appendChild(d); setTimeout(()=>d.remove(), 800); }
+function showC(x, y, c) { 
+    const d=document.createElement('div'); d.className='combo-text'; d.style.left=x+'px'; d.style.top=y+'px';
+    const skinMsgs = MSGS[state.skin];
+    const txt = skinMsgs[Math.floor(Math.random()*skinMsgs.length)];
+    d.innerHTML=`${txt}<br>x${c}`; document.body.appendChild(d); setTimeout(()=>d.remove(), 850); 
+}
+
 function setupD() { 
     canvas.width=window.innerWidth; canvas.height=window.innerHeight; const fY=canvas.height-95; 
     Matter.Composite.clear(engine.world); 
     Matter.Composite.add(engine.world, [
-        Matter.Bodies.rectangle(canvas.width/2, fY+60, canvas.width, 120, {isStatic:true}),
-        Matter.Bodies.rectangle(6, fY/2, 12, fY*2, {isStatic:true}),
-        Matter.Bodies.rectangle(canvas.width-6, fY/2, 12, fY*2, {isStatic:true})
+        Matter.Bodies.rectangle(canvas.width/2, fY+60, canvas.width, 120, {isStatic:true}), // FLOOR
+        Matter.Bodies.rectangle(6, fY/2, 12, fY*2, {isStatic:true}), // LEFT
+        Matter.Bodies.rectangle(canvas.width-6, fY/2, 12, fY*2, {isStatic:true}) // RIGHT
     ]);
 }
 
@@ -113,7 +144,7 @@ function render(time) {
     ctx.strokeStyle="red"; ctx.setLineDash([10,5]); ctx.beginPath(); ctx.moveTo(0,175); ctx.lineTo(canvas.width,175); ctx.stroke(); ctx.setLineDash([]);
     if(isDragging && !activePwr) { 
         ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(SKINS[state.skin][currentIdx], lastX, 160);
-        ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(lastX, 175); ctx.lineTo(lastX, canvas.height-95); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle="rgba(0,0,0,0.15)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(lastX, 175); ctx.lineTo(lastX, canvas.height-95); ctx.stroke(); ctx.setLineDash([]);
     }
     const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
     let tT = -1; if(activePwr && activePwr !== 'bomb') { const h=bodies.find(b=>Math.hypot(b.position.x-pwrX, b.position.y-pwrY)<b.circleRadius+40); if(h) tT=h.plugin.t; }
@@ -124,13 +155,11 @@ function render(time) {
         ctx.fillStyle = (state.skin==='Retro') ? "#fff" : COLORS[b.plugin.t]; 
         ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill(); 
         
-        // OUTLINE SYSTEM
         if(state.outline !== 'none' || state.skin==='Retro') {
             if(state.outline==='rainbow') ctx.strokeStyle = `hsl(${time/10 % 360}, 70%, 50%)`;
             else ctx.strokeStyle = state.outline==='white' ? '#fff' : '#000';
             ctx.lineWidth=3; ctx.stroke();
         }
-        
         ctx.font = (b.circleRadius*1.3)+"px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(SKINS[state.skin][b.plugin.t], 0,0); ctx.restore();
         if(b.position.y < 175 && !isDragging) { if(!b.plugin.dT) b.plugin.dT=Date.now(); if(Date.now()-b.plugin.dT > 2000) { state.score=0; state.maxT=0; save(); alert("GAME OVER!"); location.reload(); } } else b.plugin.dT=null;
     });
@@ -148,7 +177,11 @@ canvas.addEventListener('pointermove', (e) => { if(isDragging) { pwrX=e.clientX;
 canvas.addEventListener('pointerup', (e) => {
     if(activePwr) { usePwr(e.clientX, e.clientY); activePwr=null; }
     else if(isDragging && canDrop) { 
-        Matter.Composite.add(engine.world, Matter.Bodies.circle(lastX, 135, SIZES[currentIdx], {restitution:0.4, plugin:{t:currentIdx, dT:null}})); 
+        const dropBody = Matter.Bodies.circle(lastX, 135, SIZES[currentIdx], {
+            restitution: BOUNCE[state.skin] || 0.4,
+            plugin:{t:currentIdx, dT:null}
+        });
+        Matter.Composite.add(engine.world, dropBody); 
         currentIdx=nextIdx; nextIdx=Math.floor(Math.random()*4); canDrop=false; 
         setTimeout(()=>canDrop=true, 600); updateUI(); 
     }
@@ -160,7 +193,7 @@ function usePwr(x, y) {
     const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+40);
     if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<80) Matter.Composite.remove(engine.world,b);}); state.pts-=500; }
     else if(activePwr==='wipe'&&h){ bds.forEach(b=>{if(b.plugin.t===h.plugin.t) Matter.Composite.remove(engine.world,b);}); state.pts-=1000; }
-    else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{plugin:{t:nt, dT:null}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; }
+    else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{restitution: BOUNCE[state.skin], plugin:{t:nt, dT:null}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; }
     save(); updateUI();
 }
 
@@ -171,7 +204,7 @@ function updateUI() {
     document.getElementById('progress-bar').style.width=(state.maxT/11*100)+"%"; document.getElementById('progress-icons').innerHTML=SKINS[state.skin].map(e=>`<span>${e}</span>`).join('');
     save();
 }
-function save() { localStorage.setItem('fm_ult_s', JSON.stringify(state)); }
+function save() { localStorage.setItem('fm_ult_s_v65', JSON.stringify(state)); }
 function openShop() {
     document.getElementById('shopModal').style.display='block'; document.getElementById('shop-wallet').innerText=state.pts;
     const sG=document.getElementById('skin-grid'), tG=document.getElementById('theme-grid'), bG=document.getElementById('border-grid'), oG=document.getElementById('outline-grid');
