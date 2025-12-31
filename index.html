@@ -1,220 +1,451 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Fruit Merge v1.00</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-<style>
-:root{--bg:#FDF6E3;--bd:#657B83;--txt:#586E75;--acc:#2AA198;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-*{box-sizing:border-box;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none}
-body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--txt);transition:background .5s}
-#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:flex;flex-direction:column;justify-content:space-between}
-.top{height:175px;padding:15px;background:linear-gradient(to bottom,rgba(255,255,255,.9),transparent);pointer-events:auto}
-.row{display:flex;justify-content:space-between;align-items:center}
-.score{font-size:24px;font-weight:800} .lbl{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:1px}
-.bar{display:flex;justify-content:space-between;background:rgba(0,0,0,.05);padding:8px;border-radius:20px;margin-top:10px}
-.dot{width:16px;height:16px;border-radius:50%;background:#ddd;display:grid;place-items:center;font-size:10px;transition:.3s}
-.dot.on{transform:scale(1.2);box-shadow:0 0 8px currentColor}
-.preview{position:absolute;top:60px;right:20px;width:50px;height:50px;border:2px dashed var(--bd);border-radius:50%;display:grid;place-items:center;font-size:24px;background:rgba(255,255,255,.5)}
-.bot{height:100px;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid #0001;display:flex;justify-content:space-around;align-items:center;pointer-events:auto;padding-bottom:env(safe-area-inset-bottom)}
-.btn{background:0;border:0;font-size:24px;display:flex;flex-direction:column;align-items:center;opacity:.6;cursor:pointer;transition:.2s}
-.btn.act{opacity:1;color:var(--acc);transform:translateY(-5px)} .btn span{font-size:9px;font-weight:700}
-.modal{position:absolute;top:0;left:0;width:100%;height:100%;background:#0008;backdrop-filter:blur(4px);z-index:99;display:none;opacity:0;transition:opacity .3s;align-items:center;justify-content:center;pointer-events:auto}
-.modal.open{display:flex;opacity:1}
-.card{background:#fff;width:90%;max-width:420px;height:85%;border-radius:20px;display:flex;flex-direction:column;overflow:hidden}
-.head{padding:15px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;font-weight:700;background:#f9f9f9}
-.shop-body{flex:1;overflow-y:auto;padding:10px}
-.cat-title{font-size:12px;font-weight:800;padding:15px 5px 5px;text-transform:uppercase;color:var(--acc);border-bottom:1px solid #eee;margin-bottom:10px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.item{border:1px solid #eee;border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:#fff}
-.item.own{background:#f0fdf4;border-color:#86efac} .item.eq{box-shadow:0 0 0 3px var(--acc)}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Fruit Merge Pro v1.01</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0e6d2;
+            --border-color: #5d4037;
+            --ui-font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: var(--ui-font);
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            background: #fffdf9;
+            box-sizing: border-box;
+            border: 8px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top UI */
+        #top-ui {
+            height: 140px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: rgba(255,255,255,0.8);
+            z-index: 10;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .stat-box { font-weight: bold; font-size: 18px; }
+        .stat-label { font-size: 12px; color: #666; display: block; }
+
+        #progress-bar {
+            grid-column: span 2;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            background: #eee;
+            padding: 5px;
+            border-radius: 20px;
+        }
+
+        .tier-icon {
+            width: 22px;
+            height: 22px;
+            filter: grayscale(1) opacity(0.3);
+            transition: all 0.3s;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tier-icon.active { filter: grayscale(0) opacity(1); transform: scale(1.2); }
+
+        /* Canvas Area */
+        #canvas-wrapper {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        /* Bottom UI */
+        #bottom-ui {
+            height: 100px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #fff;
+            z-index: 10;
+        }
+
+        .btn-circle {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: none;
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Modals */
+        #store-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 70%;
+            background: white;
+            border-radius: 20px;
+            display: none;
+            z-index: 100;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+        }
+
+        .scroll-area { overflow-y: auto; flex-grow: 1; }
+        
+        #game-over {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+    </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="ui">
-    <div class="top">
-        <div class="row"><div><div class="lbl">Score</div><div class="score" id="sCurrent">0</div></div><div style="text-align:right"><div class="lbl">Best</div><div class="score" id="sBest">0</div></div></div>
-        <div class="bar" id="prog"></div>
-        <div class="preview" id="next"></div>
+
+<div id="game-container">
+    <div id="top-ui">
+        <div class="stat-box"><span class="stat-label">SCORE</span><span id="score">0</span></div>
+        <div class="stat-box" style="text-align: right;"><span class="stat-label">WALLET</span><span id="wallet">💰 0</span></div>
+        <div id="progress-bar">
+            </div>
     </div>
-    <div class="bot">
-        <button class="btn" onclick="toggleStore()">🛒<span>Store</span></button>
-        <div style="width:1px;height:30px;background:#ccc"></div>
-        <button class="btn pwr" id="b-bomb" onclick="setTool('bomb')">💣<span>Bomb</span></button>
-        <button class="btn pwr" id="b-broom" onclick="setTool('broom')">🧹<span>Broom</span></button>
-        <button class="btn pwr" id="b-wand" onclick="setTool('wand')">🪄<span>Wand</span></button>
-        <div style="width:1px;height:30px;background:#ccc"></div>
-        <button class="btn" onclick="toggleFull()">⛶<span>Full</span></button>
+
+    <div id="canvas-wrapper">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="bottom-ui">
+        <button class="btn-circle" onclick="toggleStore()">🛒</button>
+        <div class="btn-circle powerup" data-type="bomb">💣</div>
+        <div class="btn-circle powerup" data-type="broom">🧹</div>
+        <div class="btn-circle powerup" data-type="wand">🪄</div>
+        <button class="btn-circle" onclick="toggleFullscreen()">📺</button>
+    </div>
+
+    <div id="store-modal">
+        <h2>Store</h2>
+        <div class="scroll-area" id="store-items"></div>
+        <button onclick="toggleStore()" style="margin-top:10px; padding:10px;">Close</button>
+    </div>
+
+    <div id="game-over">
+        <h1>GAME OVER</h1>
+        <p>Score: <span id="final-score">0</span></p>
+        <button onclick="location.reload()" style="padding:15px 30px; font-size:20px; border-radius:10px;">RETRY</button>
     </div>
 </div>
-<div class="modal" id="m-store"><div class="card"><div class="head"><span>Shop</span><span id="wallet">💰 0</span><span onclick="toggleStore()" style="cursor:pointer">✕</span></div><div class="shop-body" id="shop-container"></div></div></div>
-<div class="modal" id="m-over"><div style="text-align:center;color:#fff"><h1>GAME OVER</h1><button class="btn" style="background:#fff;color:#000;padding:10px 30px;border-radius:20px;opacity:1" onclick="reset()">Retry</button></div></div>
 
 <script>
-const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events, Q=M.Query;
-const SKINS={
-    'Fruit':['🍒','🍓','🍇','🍊','🍎','🍐','🍑','🍍','🍈','🍉','🥥','🥝'],
-    'Space':['🌑','☄️','🛰️','🚀','🛸','👾','🔭','🌌','🪐','☀️','🌀','👽'],
-    'Animals':['🐞','🐸','🐢','🦆','🐒','🦉','🐧','🐺','🦓','🦍','🐘','🐋'],
-    'Weather':['💧','❄️','🌪️','🌈','☀️','☁️','⛈️','🌩️','🌫️','🌤️','🌬️','☂️'],
-    'Dessert':['🍬','🍪','🍩','🍫','🍮','🍦','🧁','🍰','🥧','🥞','🧇','🎂'],
-    'Shapes':['🔴','🟠','🟡','🟢','🔵','🟣','🟤','⚫','⬜','🟦','🟧','🟥'],
-    'Music':['🎵','🎶','🎸','🎹','🎺','🎻','🎷','🥁','🎤','🎧','📻','🎼'],
-    'Plants':['🌱','🌿','☘️','🍀','🌵','🌴','🌳','🌲','🍂','🍁','🍄','🌹']
-};
-const THEMES={
-    'Mellow':'#FDF6E3','Matcha':'#E8F5E9','Midnight':'#1a1b26','Lavender':'#F3E5F5','Sky':'#E1F5FE','Sunset':'#FFF3E0','Slate':'#263238','Rose':'#FCE4EC',
-    'Mint':'#D0F0C0','Ocean':'#E0F7FA','Lemon':'#FFFDE7','Plum':'#F3E5F5','Coffee':'#EFEBE9','Storm':'#ECEFF1','Forest':'#F1F8E9','Blush':'#FFF5F8'
-};
-const BORDERS={
-    'Slate':'#657B83','Gold':'#DAA520','Red':'#DC143C','Neon':'#B026FF','Black':'#000000','White':'#FFFFFF','Grey':'#95A5A6','Blue':'#2980B9',
-    'Green':'#27AE60','Teal':'#16A085','Orange':'#E67E22','Pink':'#E91E63','Purple':'#8E44AD','Brown':'#795548','Mint':'#1ABC9C','Navy':'#2C3E50'
-};
-const COLORS=['#F00','#F70','#FF0','#0F0','#00F','#4B0','#940','#F14','#0CE','#FD7','#F45','#32C'];
+/** 1. CONFIGURATION & STATE **/
+const FRUIT_HIERARCHY = [
+    { name: "Cherry", emoji: "🍒", radius: 15, color: "#ff4d4d", value: 2 },
+    { name: "Strawberry", emoji: "🍓", radius: 22, color: "#ff85a2", value: 4 },
+    { name: "Grape", emoji: "🍇", radius: 30, color: "#a18cd1", value: 8 },
+    { name: "Dekopon", emoji: "🍊", radius: 38, color: "#ffb347", value: 16 },
+    { name: "Persimmon", emoji: "🍅", radius: 48, color: "#ff5e62", value: 32 },
+    { name: "Apple", emoji: "🍎", radius: 58, color: "#ff0844", value: 64 },
+    { name: "Pear", emoji: "🍐", radius: 68, color: "#cedf13", value: 128 },
+    { name: "Peach", emoji: "🍑", radius: 80, color: "#fbd3e9", value: 256 },
+    { name: "Pineapple", emoji: "🍍", radius: 92, color: "#f7971e", value: 512 },
+    { name: "Melon", emoji: "🍈", radius: 105, color: "#56ab2f", value: 1024 },
+    { name: "Watermelon", emoji: "🍉", radius: 120, color: "#00b09b", value: 2048 },
+    { name: "King", emoji: "👑", radius: 135, color: "#ffd700", value: 4096 }
+];
 
-let st={s:0, w:1000, h:parseInt(localStorage.getItem('f1_h')||0), inv:JSON.parse(localStorage.getItem('f1_i')||'["sk_Fruit","ot_def","th_Mellow","bd_Slate"]'), 
-    eq:JSON.parse(localStorage.getItem('f1_e')||'{"sk":"Fruit","ot":"def","th":"Mellow","bd":"Slate"}'), next:0, drag:0, x:0, y:0, drop:1, over:0, tool:null, max:-1, audInit:0};
+let score = 0;
+let wallet = parseInt(localStorage.getItem('wallet')) || 0;
+let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+let canDrop = true;
+let currentTierIdx = 0;
+let gameActive = true;
+let audioCtx = null;
 
-const cv=document.getElementById('c'), cx=cv.getContext('2d');
-const eng=E.create(); eng.timing.timeScale=1;
-let W,H, aud;
+/** 2. MATTER.JS SETUP **/
+const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
+const engine = Engine.create({ positionIterations: 10 }); // High precision
+const wrapper = document.getElementById('canvas-wrapper');
+const canvas = document.getElementById('gameCanvas');
 
-function setupAudio(){ if(st.audInit)return; aud=new(window.AudioContext||window.webkitAudioContext)(); st.audInit=1; }
-function tone(f,t,d,v=.1){if(!aud)return;if(aud.state==='suspended')aud.resume();const o=aud.createOscillator(),g=aud.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,aud.currentTime);g.gain.exponentialRampToValueAtTime(.01,aud.currentTime+d);o.connect(g);g.connect(aud.destination);o.start();o.stop(aud.currentTime+d)};
+const cw = wrapper.clientWidth;
+const ch = wrapper.clientHeight;
+canvas.width = cw;
+canvas.height = ch;
 
-function rsz(){ W=window.innerWidth; H=window.innerHeight; cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio; cx.scale(devicePixelRatio,devicePixelRatio); C.clear(eng.world,0,1); addWalls(); }
-function addWalls(){
-    const b=100, t=50; // Thick walls/floor to prevent phasing
-    const g=B.rectangle(W/2,H-b+t,W,t*2,{isStatic:1,friction:0.5});
-    const lw=B.rectangle(-t,H/2,t*2,H*2,{isStatic:1});
-    const rw=B.rectangle(W+t,H/2,t*2,H*2,{isStatic:1});
-    C.add(eng.world,[g,lw,rw]);
+const runner = Runner.create();
+const deathLineY = ch * 0.2;
+
+// Walls
+const wallStyle = { isStatic: true, render: { visible: false } };
+const floor = Bodies.rectangle(cw/2, ch + 25, cw, 50, wallStyle);
+const leftWall = Bodies.rectangle(-25, ch/2, 50, ch, wallStyle);
+const rightWall = Bodies.rectangle(cw + 25, ch/2, 50, ch, wallStyle);
+Composite.add(engine.world, [floor, leftWall, rightWall]);
+
+Runner.run(runner, engine);
+
+/** 3. PROCEDURAL AUDIO **/
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
-window.onresize=rsz; rsz();
 
-function spawn(x,t){
-    const r=10+(t*6), b=B.circle(x,50,r,{restitution:0.2,friction:0.1,label:'f_'+t});
-    b.tier=t; C.add(eng.world,b); return b;
+function playSound(type) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    if (type === 'merge') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(); osc.stop(now + 0.1);
+    } else if (type === 'death') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.linearRampToValueAtTime(50, now + 1);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0, now + 1);
+        osc.start(); osc.stop(now + 1);
+    }
 }
 
-Ev.on(eng,'collisionStart',e=>{
-    e.pairs.forEach(p=>{
-        const a=p.bodyA, b=p.bodyB;
-        if(a.tier!==undefined && b.tier!==undefined && a.tier===b.tier && a.tier<11){
-            const n=a.tier+1, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
-            C.remove(eng.world,[a,b]);
-            const nb=B.circle(pos.x,pos.y,10+(n*6),{restitution:0.2,label:'f_'+n}); nb.tier=n; C.add(eng.world,nb);
-            tone(400+n*20,'sine',.15,.2); updSc((n+1)*10); updPrg(n);
-        } else if(!p.isActive && (a.tier!==undefined||b.tier!==undefined)) tone(100+Math.random()*20,'triangle',.1,.05);
+/** 4. GAME LOGIC **/
+function spawnFruit(x, tierIdx, isGhost = false) {
+    const tier = FRUIT_HIERARCHY[tierIdx];
+    const fruit = Bodies.circle(x, 50, tier.radius, {
+        restitution: 0.3,
+        friction: 0.1,
+        label: "fruit",
+        tier: tierIdx,
+        render: { sprite: { emoji: tier.emoji } } // Custom rendering handled in Draw loop
+    });
+    
+    if (!isGhost) {
+        Composite.add(engine.world, fruit);
+        unlockTier(tierIdx);
+    }
+    return fruit;
+}
+
+function unlockTier(idx) {
+    const icon = document.getElementsByClassName('tier-icon')[idx];
+    if (icon) icon.classList.add('active');
+}
+
+// Merge Handling
+Events.on(engine, 'collisionStart', (event) => {
+    event.pairs.forEach(pair => {
+        const { bodyA, bodyB } = pair;
+        if (bodyA.label === "fruit" && bodyB.label === "fruit" && bodyA.tier === bodyB.tier) {
+            if (bodyA.tier < 11) {
+                const newX = (bodyA.position.x + bodyB.position.x) / 2;
+                const newY = (bodyA.position.y + bodyB.position.y) / 2;
+                
+                Composite.remove(engine.world, [bodyA, bodyB]);
+                const newFruit = spawnFruit(newX, bodyA.tier + 1);
+                Body.setPosition(newFruit, { x: newX, y: newY });
+                
+                score += FRUIT_HIERARCHY[bodyA.tier].value;
+                wallet += Math.floor(FRUIT_HIERARCHY[bodyA.tier].value / 2);
+                updateUI();
+                playSound('merge');
+            }
+        }
     });
 });
 
-function loop(){
-    E.update(eng,1000/60); cx.clearRect(0,0,W,H);
-    document.body.style.background=THEMES[st.eq.th];
-    
-    cx.beginPath(); cx.moveTo(15,195); cx.lineTo(W-15,195); cx.strokeStyle='#F44'; cx.setLineDash([10,10]); cx.stroke(); cx.setLineDash([]);
-    cx.fillStyle=BORDERS[st.eq.bd]; cx.fillRect(0,0,15,H); cx.fillRect(W-15,0,15,H);
+/** 5. RENDERING & INPUT **/
+let mouseX = cw / 2;
+let isDragging = false;
 
-    C.allBodies(eng.world).forEach(b=>{
-        if(b.isStatic || !b.circleRadius) return;
-        if(b.position.y-b.circleRadius < 195 && b.speed<.5){ if(!b.tm) b.tm=Date.now(); if(Date.now()-b.tm>2000) over(); } else b.tm=null;
-        
-        const r=b.circleRadius, t=b.tier;
-        cx.translate(b.position.x,b.position.y); cx.rotate(b.angle);
-        if(st.tool && st.hov===b) { cx.shadowColor='#FFD700'; cx.strokeStyle='#FFD700'; cx.shadowBlur=20; }
-        else { cx.shadowColor=COLORS[t]; cx.shadowBlur=15; cx.strokeStyle=st.eq.ot==='rain'?`hsl(${Date.now()/5%360},100%,50%)`: (st.eq.ot==='def'?'#0003':(st.eq.ot==='wht'?'#fff':'#000')); }
-        
-        cx.fillStyle='#fff'; cx.beginPath(); cx.arc(0,0,r,0,6.28); cx.fill(); cx.lineWidth=2; cx.stroke();
-        cx.font=`${r*1.5}px serif`; cx.textAlign='center'; cx.textBaseline='middle'; cx.shadowBlur=0;
-        cx.fillStyle='#000'; cx.fillText(SKINS[st.eq.sk][t],0,r*0.1);
-        cx.rotate(-b.angle); cx.translate(-b.position.x,-b.position.y);
-    });
+canvas.addEventListener('pointerdown', (e) => {
+    initAudio();
+    isDragging = true;
+    updateMousePos(e);
+});
 
-    if(st.drag && !st.tool && st.drop){
-        let gx=Math.max(35,Math.min(W-35,st.x));
-        cx.beginPath(); cx.moveTo(gx,50); cx.lineTo(gx,H-100); cx.strokeStyle='#aaa'; cx.setLineDash([5,5]); cx.stroke();
-        cx.font=`${(10+st.next*6)*1.5}px serif`; cx.globalAlpha=.5; cx.fillText(SKINS[st.eq.sk][st.next],gx,50); cx.globalAlpha=1;
+canvas.addEventListener('pointermove', (e) => {
+    updateMousePos(e);
+});
+
+canvas.addEventListener('pointerup', () => {
+    if (isDragging && canDrop && gameActive) {
+        spawnFruit(mouseX, currentTierIdx);
+        currentTierIdx = Math.floor(Math.random() * 4); // Only spawn first 4 types
+        canDrop = false;
+        setTimeout(() => canDrop = true, 500);
     }
-    if(!st.over) requestAnimationFrame(loop);
+    isDragging = false;
+});
+
+function updateMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    // Keep fruit within walls
+    const radius = FRUIT_HIERARCHY[currentTierIdx].radius;
+    mouseX = Math.max(radius, Math.min(cw - radius, mouseX));
 }
 
-function ptr(e,t){
-    setupAudio();
-    if(t==='d' && !e.target.closest('button,.modal')) { st.drag=1; move(e); }
-    if(t==='m' && st.drag) move(e);
-    if(t==='u' && st.drag) { st.drag=0; act(); }
-};
-function move(e){ 
-    const t=e.touches?e.touches[0]:e, r=cv.getBoundingClientRect(); 
-    st.x=(t.clientX-r.left)*(W/r.width); st.y=(t.clientY-r.top)*(H/r.height);
-    if(st.tool) st.hov = Q.point(C.allBodies(eng.world),{x:st.x,y:st.y})[0];
+function updateUI() {
+    document.getElementById('score').innerText = score;
+    document.getElementById('wallet').innerText = "💰 " + wallet;
+    localStorage.setItem('wallet', wallet);
 }
-function act(){
-    if(st.tool) {
-        let h=0, bs=C.allBodies(eng.world);
-        if(st.tool==='bomb'){ C.remove(eng.world, bs.filter(b=>!b.isStatic && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y}))<90)); h=1; }
-        else if(st.hov && !st.hov.isStatic){
-            if(st.tool==='broom'){ C.remove(eng.world, bs.filter(b=>b.tier===st.hov.tier)); h=1; }
-            if(st.tool==='wand' && st.hov.tier<11){ 
-                let t=st.hov.tier, p=st.hov.position; C.remove(eng.world,st.hov);
-                let nb=B.circle(p.x,p.y,10+(t+1)*6,{restitution:0.2,label:'f_'+(t+1)}); nb.tier=t+1; C.add(eng.world,nb); h=1;
+
+// Custom Draw Loop (60fps)
+(function render() {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, cw, ch);
+
+    // Death Line
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = "red";
+    ctx.beginPath();
+    ctx.moveTo(0, deathLineY);
+    ctx.lineTo(cw, deathLineY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Ghost Preview
+    if (isDragging && canDrop) {
+        ctx.globalAlpha = 0.4;
+        const tier = FRUIT_HIERARCHY[currentTierIdx];
+        ctx.font = `${tier.radius * 2}px serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(tier.emoji, mouseX, 50);
+        
+        ctx.strokeStyle = "#ccc";
+        ctx.beginPath();
+        ctx.moveTo(mouseX, 50);
+        ctx.lineTo(mouseX, ch);
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Render Fruits
+    const bodies = Composite.allBodies(engine.world);
+    let topFruitViolator = false;
+
+    bodies.forEach(body => {
+        if (body.label === "fruit") {
+            const tier = FRUIT_HIERARCHY[body.tier];
+            
+            // Draw Glow
+            ctx.beginPath();
+            const grad = ctx.createRadialGradient(body.position.x, body.position.y, 0, body.position.x, body.position.y, tier.radius * 1.5);
+            grad.addColorStop(0, tier.color + "55");
+            grad.addColorStop(1, "transparent");
+            ctx.fillStyle = grad;
+            ctx.arc(body.position.x, body.position.y, tier.radius * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Emoji
+            ctx.save();
+            ctx.translate(body.position.x, body.position.y);
+            ctx.rotate(body.angle);
+            ctx.font = `${tier.radius * 2}px serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(tier.emoji, 0, 0);
+            ctx.restore();
+
+            // Check Death Line
+            if (body.position.y < deathLineY && body.velocity.y < 0.1) {
+                topFruitViolator = true;
             }
         }
-        if(h){ tone(500,'sine',.2); st.tool=null; document.querySelectorAll('.pwr').forEach(b=>b.classList.remove('act')); }
-    } else if(st.drop){
-        spawn(Math.max(35,Math.min(W-35,st.x)), st.next);
-        st.next=Math.floor(Math.random()*5); updPre(); st.drop=0; setTimeout(()=>st.drop=1,500);
+    });
+
+    checkGameOver(topFruitViolator);
+    requestAnimationFrame(render);
+})();
+
+/** 6. GAME OVER & ECONOMY **/
+let deathTimer = 0;
+function checkGameOver(isViolating) {
+    if (isViolating && gameActive) {
+        deathTimer += 16.6; // approx ms per frame
+        if (deathTimer > 2000) {
+            triggerGameOver();
+        }
+    } else {
+        deathTimer = 0;
     }
 }
-['down','move','up'].forEach(e=>window.addEventListener('pointer'+e, x=>ptr(x,e[0])));
 
-function updSc(n){ st.s+=n; st.w+=Math.floor(n/10); document.getElementById('sCurrent').innerText=st.s; if(st.s>st.h){st.h=st.s; document.getElementById('sBest').innerText=st.h;} save(); }
-function updPrg(t){ if(t>st.max){st.max=t; renderPrg();} }
-function updPre(){ document.getElementById('next').innerText=SKINS[st.eq.sk][st.next]; }
-function renderPrg(){ const d=document.getElementById('prog'); d.innerHTML=''; for(let i=0;i<12;i++){ d.innerHTML+=`<div class="dot ${i<=st.max?'on':''}" style="color:${COLORS[i]}">${i<=st.max?SKINS[st.eq.sk][i]:''}</div>`; } }
-function over(){ st.over=1; tone(100,'sawtooth',.5); document.getElementById('m-over').classList.add('open'); }
-function reset(){ C.clear(eng.world,0,1); addWalls(); st.s=0; st.over=0; st.max=-1; updSc(0); renderPrg(); document.getElementById('m-over').classList.remove('open'); loop(); }
-function save(){ localStorage.setItem('f1_i',JSON.stringify(st.inv)); localStorage.setItem('f1_e',JSON.stringify(st.eq)); localStorage.setItem('f1_h',st.h); }
+function triggerGameOver() {
+    gameActive = false;
+    playSound('death');
+    document.getElementById('game-over').style.display = 'flex';
+    document.getElementById('final-score').innerText = score;
+}
 
-const ITEMS = [
-    ...Object.keys(SKINS).map(k=>({id:'sk_'+k,cat:'Skins',n:k,p:500,v:k})),
-    ...Object.keys(THEMES).map(k=>({id:'th_'+k,cat:'Themes',n:k,p:300,v:k})),
-    ...Object.keys(BORDERS).map(k=>({id:'bd_'+k,cat:'Borders',n:k,p:200,v:k})),
-    {id:'ot_def',cat:'Outlines',n:'Soft',p:0,v:'def'},{id:'ot_wht',cat:'Outlines',n:'White',p:2000,v:'wht'},{id:'ot_blk',cat:'Outlines',n:'Black',p:2000,v:'blk'},{id:'ot_rain',cat:'Outlines',n:'Rainbow',p:2000,v:'rain'}
-];
+function toggleStore() {
+    const modal = document.getElementById('store-modal');
+    modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+}
 
-function toggleStore(){ 
-    const m=document.getElementById('m-store'); m.classList.toggle('open'); 
-    if(m.classList.contains('open')){
-        document.getElementById('wallet').innerText='💰 '+st.w;
-        const container=document.getElementById('shop-container'); container.innerHTML='';
-        const cats = [...new Set(ITEMS.map(i=>i.cat))].sort();
-        cats.forEach(cName => {
-            container.innerHTML += `<div class="cat-title">${cName}</div>`;
-            const g = document.createElement('div'); g.className='grid';
-            ITEMS.filter(i=>i.cat===cName).sort((a,b)=>a.n.localeCompare(b.n)).forEach(i=>{
-                const own=st.inv.includes(i.id), eq=(st.eq.sk==i.v||st.eq.ot==i.v||st.eq.th==i.v||st.eq.bd==i.v);
-                let prv = i.n;
-                if(i.cat==='Skins') prv = SKINS[i.v][0];
-                if(i.cat==='Themes') prv = `<div style="width:20px;height:20px;background:${THEMES[i.v]};border-radius:50%"></div>`;
-                if(i.cat==='Borders') prv = `<div style="width:20px;height:20px;background:${BORDERS[i.v]};border-radius:50%"></div>`;
-                if(i.cat==='Outlines') prv = '⭕';
-                const el=document.createElement('div'); el.className=`item ${own?'own':''} ${eq?'eq':''}`;
-                el.innerHTML=`<div style="font-size:20px;display:flex;justify-content:center;margin-bottom:5px">${prv}</div><div style="font-size:12px;font-weight:700">${i.n}</div><div style="font-size:10px">${own?(eq?'EQUIPPED':'OWNED'):'$'+i.p}</div>`;
-                el.onclick=()=>{
-                    if(own){ if(i.cat==='Skins')st.eq.sk=i.v; if(i.cat==='Outlines')st.eq.ot=i.v; if(i.cat==='Themes')st.eq.th=i.v; if(i.cat==='Borders')st.eq.bd=i.v; }
-                    else if(st.w>=i.p){ st.w-=i.p; st.inv.push(i.id); toggleStore(); toggleStore(); }
-                    save(); updPre(); renderPrg(); toggleStore(); toggleStore();
-                };
-                g.appendChild(el);
-            });
-            container.appendChild(g);
-        });
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
     }
 }
-function setTool(t){ st.tool=(st.tool===t?null:t); document.querySelectorAll('.pwr').forEach(b=>b.classList.toggle('act',b.id==='b-'+st.tool)); }
-function toggleFull(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
-document.getElementById('sBest').innerText=st.h; updPre(); renderPrg(); loop();
-</script></body></html>
+
+// Init Progress Bar Icons
+const progBar = document.getElementById('progress-bar');
+FRUIT_HIERARCHY.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'tier-icon';
+    div.innerHTML = f.emoji;
+    progBar.appendChild(div);
+});
+
+updateUI();
+</script>
+</body>
+</html>
