@@ -2,35 +2,35 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Fruit Merge v1.12</title>
+<title>Fruit Merge v1.13</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <style>
 :root{--bg:#FDF6E3;--bd:#657B83;--txt:#586E75;--acc:#2AA198;--err:#DC143C;--gold:#D4AF37;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none}
 body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--txt)}
 #ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:flex;flex-direction:column;justify-content:space-between}
-.top{height:100px;padding:10px 15px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);pointer-events:auto;border-bottom:3px solid var(--bd)}
+.top{height:110px;padding:10px 15px;background:rgba(255,255,255,0.96);backdrop-filter:blur(10px);pointer-events:auto;border-bottom:3px solid var(--bd)}
 .row{display:flex;justify-content:space-between;align-items:center}
 .score{font-size:20px;font-weight:900}
 #next-box{width:40px;height:40px;border:2px dashed var(--bd);border-radius:50%;display:grid;place-items:center;font-size:24px;background:#fff}
-.bar{display:flex;justify-content:space-between;background:rgba(0,0,0,.08);padding:4px;border-radius:10px;margin-top:6px;height:22px}
-.dot{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.1);transition:0.3s}
-.dot.on{transform:scale(1.2);box-shadow:0 0 5px rgba(0,0,0,0.3)}
+.bar{display:flex;justify-content:space-between;background:rgba(0,0,0,.08);padding:4px;border-radius:10px;margin-top:6px;height:26px;align-items:center}
+.dot{width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:center;font-size:10px;transition:0.3s}
+.dot.on{transform:scale(1.2);background:#fff;box-shadow:0 0 5px rgba(0,0,0,0.2)}
 .bot{height:95px;background:rgba(255,255,255,0.98);border-top:3px solid var(--bd);display:flex;align-items:center;padding:0 15px;pointer-events:auto;justify-content:space-between;padding-bottom:env(safe-area-inset-bottom)}
 .btn-grp{display:flex;gap:12px;align-items:center}
 .btn{background:0;border:0;font-size:26px;display:flex;flex-direction:column;align-items:center;opacity:.25;transition:0.2s;cursor:pointer}
 .btn.can-afford{opacity:.7} .btn.act{opacity:1;color:var(--acc);transform:scale(1.1)}
 .btn span{font-size:9px;font-weight:900;margin-top:3px}
 .divider{width:2px;height:45px;background:var(--bd);opacity:0.3}
-.modal{position:absolute;top:0;left:0;width:100%;height:100%;background:#000C;z-index:99;display:none;align-items:center;justify-content:center;pointer-events:auto}
+.modal{position:absolute;top:0;left:0;width:100%;height:100%;background:#000D;z-index:99;display:none;align-items:center;justify-content:center;pointer-events:auto}
 .modal.open{display:flex}
 .card{background:#fff;width:94%;max-width:450px;height:82%;border-radius:28px;display:flex;flex-direction:column;overflow:hidden}
-.shop-body{flex:1;overflow-y:scroll;padding:20px;background:#f4f4f4;touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.shop-body::-webkit-scrollbar{width:30px} .shop-body::-webkit-scrollbar-thumb{background:var(--bd);border-radius:15px;border:8px solid #f4f4f4}
+.shop-body{flex:1;overflow-y:scroll;padding:20px;background:#f9f9f9;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.shop-body::-webkit-scrollbar{width:30px} .shop-body::-webkit-scrollbar-thumb{background:var(--bd);border-radius:15px;border:9px solid #f9f9f9}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.item{border:2px solid #eee;border-radius:18px;padding:15px;text-align:center;background:#fff}
-.item.eq{border:4px solid var(--acc);background:#edfffb}
-.cat-title{font-size:13px;font-weight:900;padding:18px 0 6px;text-transform:uppercase;color:var(--acc);border-bottom:2px solid #eee;grid-column:span 2}
+.item{border:2px solid #ddd;border-radius:18px;padding:12px;text-align:center;background:#fff;transition:0.1s}
+.item.eq{border:4px solid var(--acc);background:#eefffd}
+.cat-title{font-size:12px;font-weight:900;padding:20px 0 8px;text-transform:uppercase;color:var(--acc);border-bottom:2px solid #eee;grid-column:span 2}
 #toast{position:absolute;top:120px;left:50%;transform:translateX(-50%);background:var(--err);color:#fff;padding:10px 25px;border-radius:30px;font-size:14px;font-weight:800;display:none;z-index:100}
 </style>
 </head>
@@ -40,12 +40,12 @@ body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color
 <div id="ui">
     <div class="top">
         <div class="row">
-            <div><div style="font-size:9px;font-weight:700;opacity:0.6">SCORE</div><div class="score" id="sCurrent">0</div></div>
+            <div><div style="font-size:9px;font-weight:800;opacity:0.5">SCORE</div><div class="score" id="sCurrent">0</div></div>
             <div id="next-box"></div>
-            <div style="text-align:right"><div style="font-size:9px;font-weight:700;opacity:0.6">WALLET</div><div class="score" style="color:var(--acc)">💰<span id="val-wallet">0</span></div></div>
+            <div style="text-align:right"><div style="font-size:9px;font-weight:800;opacity:0.5">WALLET</div><div class="score" style="color:var(--acc)">💰<span id="val-wallet">0</span></div></div>
         </div>
         <div class="bar" id="prog"></div>
-        <div style="text-align:center;font-size:10px;font-weight:700;margin-top:2px">BEST: <span id="sBest">0</span></div>
+        <div style="text-align:center;font-size:10px;font-weight:800;margin-top:3px">BEST: <span id="sBest">0</span></div>
     </div>
     <div class="bot">
         <div class="btn-grp">
@@ -61,11 +61,15 @@ body{margin:0;overflow:hidden;background:var(--bg);font-family:var(--font);color
     </div>
 </div>
 
-<div class="modal" id="m-store"><div class="card"><div style="padding:20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #eee"><b>Shop (💰<span id="shop-wallet">0</span>)</b><span onclick="toggleStore()" style="cursor:pointer;font-size:32px">✕</span></div><div class="shop-body" id="shop-container"></div></div></div>
-<div class="modal" id="m-info"><div class="card"><div style="padding:20px;border-bottom:1px solid #eee"><b>Help & Guide</b></div><div class="shop-body" style="background:#fff">
-    <h4>How to Play</h4><p>1. Drag to aim, release to drop fruit.<br>2. Merge identical fruits to evolve them.<br>3. Don't let fruits stay above the <b>Red Dash Line</b> for 2 seconds!</p>
-    <h4>Power-Up Dragging</h4><p>Hold a power-up button and drag it into the field. Fruits that will be affected will glow <b>Gold</b>. Release to buy and use instantly.</p>
-    <button class="btn" style="background:var(--acc);color:#fff;padding:12px;border-radius:10px;opacity:1;width:100%" onclick="toggleModal('m-info')">Close</button>
+<div class="modal" id="m-store"><div class="card"><div style="padding:20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #eee"><b>The Market</b><span onclick="toggleStore()" style="cursor:pointer;font-size:32px">✕</span></div><div class="shop-body" id="shop-container"></div></div></div>
+<div class="modal" id="m-info"><div class="card"><div style="padding:20px;border-bottom:1px solid #eee"><b>Detailed Game Manual</b></div><div class="shop-body" style="background:#fff">
+    <h4 style="color:var(--acc)">Game Mechanics</h4>
+    <p>1. <b>Aim:</b> Drag anywhere on screen. The fruit follows your finger horizontally.<br>2. <b>Drop:</b> Release to let the fruit fall.<br>3. <b>Merge:</b> Touch two identical fruits to evolve them into the next tier.</p>
+    <h4 style="color:var(--err)">The Death Line</h4>
+    <p>If any fruit settles above the red dashed line for 2 seconds, the game resets. Your <b>Wallet</b> and <b>High Score</b> are saved.</p>
+    <h4 style="color:var(--gold)">Pro Power-Ups (Drag & Drop)</h4>
+    <p><b>💣 Bomb:</b> Clears a medium area. Best for unclogging corners.<br><b>🧹 Broom:</b> Destroys ALL fruits of the type you target.<br><b>🪄 Wand:</b> Instantly levels up the fruit you touch.</p>
+    <button class="btn" style="background:var(--acc);color:#fff;padding:12px;border-radius:10px;opacity:1;width:100%" onclick="toggleModal('m-info')">Start Merging</button>
 </div></div></div>
 
 <script>
@@ -76,22 +80,26 @@ const BORDERS={'Slate':'#657B83','Gold':'#DAA520','Red':'#DC143C','Neon':'#B026F
 const OUTLINES={'Soft':'def','White':'white','Black':'black','Rainbow':'rainbow'};
 const COLORS=['#F00','#F70','#FF0','#0F0','#00F','#4B0','#940','#F14','#0CE','#FD7','#F45','#32C'];
 
-let st={s:0, w:parseInt(localStorage.getItem('f12_w')||0), h:parseInt(localStorage.getItem('f12_h')||0), 
-    eq:JSON.parse(localStorage.getItem('f12_e')||'{"sk":"Fruit","ot":"def","th":"Mellow","bd":"Slate"}'), 
-    inv:JSON.parse(localStorage.getItem('f12_i')||'["sk_Fruit","ot_def","th_Mellow","bd_Slate"]'),
+let st={s:0, w:parseInt(localStorage.getItem('f13_w')||0), h:parseInt(localStorage.getItem('f13_h')||0), 
+    eq:JSON.parse(localStorage.getItem('f13_e')||'{"sk":"Fruit","ot":"def","th":"Mellow","bd":"Slate"}'), 
+    inv:JSON.parse(localStorage.getItem('f13_i')||'["sk_Fruit","ot_def","th_Mellow","bd_Slate"]'),
     next:0, drag:0, x:0, y:0, drop:1, tool:null, toolCost:0, over:0, max:-1};
 
 const cv=document.getElementById('c'), cx=cv.getContext('2d'), eng=E.create();
+eng.positionIterations = 10; // High precision physics
 let W, H, DL;
 
 function rsz(){
-    W=window.innerWidth; H=window.innerHeight; DL=H*0.1;
+    W=window.innerWidth; H=window.innerHeight; DL=H*0.12;
     cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio;
     cx.scale(devicePixelRatio,devicePixelRatio);
     C.clear(eng.world,0);
     const floorY = H - 95;
-    const floor=B.rectangle(W/2,floorY+250,W,500,{isStatic:1,friction:0.8});
-    C.add(eng.world,[floor,B.rectangle(-20,H/2,40,H*2,{isStatic:1}),B.rectangle(W+20,H/2,40,H*2,{isStatic:1})]);
+    // Deep thick boundaries to prevent clipping
+    const floor=B.rectangle(W/2,floorY+250,W,500,{isStatic:1,friction:0.9,restitution:0.1});
+    const lw=B.rectangle(-250,H/2,500,H*2,{isStatic:1,friction:0.1});
+    const rw=B.rectangle(W+250,H/2,500,H*2,{isStatic:1,friction:0.1});
+    C.add(eng.world,[floor,lw,rw]);
 }
 window.onresize=rsz; rsz();
 
@@ -101,7 +109,7 @@ Ev.on(eng,'collisionStart',e=>{
         if(a.tier!==undefined && b.tier!==undefined && a.tier===b.tier && a.tier<11){
             const n=a.tier+1; const pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
             C.remove(eng.world,[a,b]);
-            const nb=B.circle(pos.x,pos.y,10+(n*7.5),{restitution:0.3}); nb.tier=n; C.add(eng.world,nb);
+            const nb=B.circle(pos.x,pos.y,8+(n*6.5),{restitution:0.3, friction:0.2}); nb.tier=n; C.add(eng.world,nb);
             st.s+=(n+1)*10; st.w+=Math.floor(((n+1)*10)/10); 
             if(n>st.max){st.max=n; renderPrg();}
             save(); updUI();
@@ -112,36 +120,41 @@ Ev.on(eng,'collisionStart',e=>{
 function loop(){
     E.update(eng,16); cx.clearRect(0,0,W,H);
     document.body.style.background=THEMES[st.eq.th];
-    cx.beginPath(); cx.moveTo(20,DL); cx.lineTo(W-20,DL); cx.strokeStyle='#F44'; cx.setLineDash([8,8]); cx.lineWidth=3; cx.stroke(); cx.setLineDash([]);
-    cx.fillStyle=BORDERS[st.eq.bd]; cx.globalAlpha=0.8; cx.fillRect(0,0,20,H); cx.fillRect(W-20,0,20,H); cx.globalAlpha=1;
+    
+    // Death Line
+    cx.beginPath(); cx.moveTo(25,DL); cx.lineTo(W-25,DL); cx.strokeStyle='#F44'; cx.setLineDash([10,10]); cx.lineWidth=3; cx.stroke(); cx.setLineDash([]);
+    
+    // Borders
+    cx.fillStyle=BORDERS[st.eq.bd]; cx.globalAlpha=0.9;
+    cx.fillRect(0,0,22,H); cx.fillRect(W-22,0,22,H); cx.globalAlpha=1;
 
-    const pulse = (Math.sin(Date.now()/150)+1)/2;
+    const pulse = (Math.sin(Date.now()/120)+1)/2;
     C.allBodies(eng.world).forEach(b=>{
         if(b.isStatic || b.tier===undefined) return;
-        if(b.position.y-b.circleRadius < DL && b.speed<0.5){ if(!b.tm) b.tm=Date.now(); if(Date.now()-b.tm>2000) resetGame(); } else b.tm=null;
+        if(b.position.y-b.circleRadius < DL && b.speed<0.4){ if(!b.tm) b.tm=Date.now(); if(Date.now()-b.tm>2000) resetGame(); } else b.tm=null;
         
         const r=b.circleRadius; cx.translate(b.position.x,b.position.y); cx.rotate(b.angle);
         let highlight = false;
         if(st.tool){
             const d = M.Vector.magnitude(M.Vector.sub(b.position, {x:st.x, y:st.y}));
-            if((st.tool==='bomb'&&d<120) || ((st.tool==='broom'||st.tool==='wand')&&d<r+45)) highlight=true;
+            if((st.tool==='bomb'&&d<85) || ((st.tool==='broom'||st.tool==='wand')&&d<r+40)) highlight=true;
         }
-        if(highlight){ cx.strokeStyle='var(--gold)'; cx.lineWidth=6+(pulse*4); cx.beginPath(); cx.arc(0,0,r+3,0,6.28); cx.stroke(); }
+        if(highlight){ cx.strokeStyle='var(--gold)'; cx.lineWidth=5+(pulse*5); cx.beginPath(); cx.arc(0,0,r+2,0,6.28); cx.stroke(); }
 
-        cx.shadowColor=COLORS[b.tier]; cx.shadowBlur=15; cx.fillStyle='#fff'; cx.beginPath(); cx.arc(0,0,r,0,6.28); cx.fill(); cx.shadowBlur=0;
+        cx.shadowColor=COLORS[b.tier]; cx.shadowBlur=12; cx.fillStyle='#fff'; cx.beginPath(); cx.arc(0,0,r,0,6.28); cx.fill(); cx.shadowBlur=0;
         if(st.eq.ot==='rainbow') cx.strokeStyle=`hsl(${Date.now()/5%360},100%,50%)`;
         else cx.strokeStyle=st.eq.ot==='white'?'#fff':(st.eq.ot==='black'?'#000':'#0001');
-        cx.lineWidth=3; cx.stroke();
+        cx.lineWidth=2.5; cx.stroke();
         cx.font=`bold ${r*1.4}px serif`; cx.textAlign='center'; cx.textBaseline='middle'; cx.fillText(SKINS[st.eq.sk][b.tier],0,0);
         cx.rotate(-b.angle); cx.translate(-b.position.x,-b.position.y);
     });
 
     if(st.tool){
-        cx.beginPath(); cx.arc(st.x, st.y, st.tool==='bomb'?120:45, 0, 6.28);
+        cx.beginPath(); cx.arc(st.x, st.y, st.tool==='bomb'?85:40, 0, 6.28);
         cx.strokeStyle='#fff'; cx.setLineDash([5,5]); cx.stroke(); cx.setLineDash([]);
     } else if(st.drag && st.drop){
         let gx=Math.max(50,Math.min(W-50,st.x));
-        cx.font="40px serif"; cx.globalAlpha=0.4; cx.fillText(SKINS[st.eq.sk][st.next],gx,DL+25); cx.globalAlpha=1;
+        cx.font="35px serif"; cx.globalAlpha=0.4; cx.fillText(SKINS[st.eq.sk][st.next],gx,DL+10); cx.globalAlpha=1;
     }
     chkAfford(); requestAnimationFrame(loop);
 }
@@ -167,23 +180,23 @@ window.addEventListener('pointerup', ()=>{
 });
 
 function dropFruit(){
-    const b=B.circle(Math.max(50,Math.min(W-50,st.x)),DL+25,10+(st.next*7.5),{restitution:0.3});
+    const b=B.circle(Math.max(50,Math.min(W-50,st.x)),80,8+(st.next*6.5),{restitution:0.3, friction:0.2});
     b.tier=st.next; C.add(eng.world,b);
-    st.next=Math.floor(Math.random()*5); updUI(); st.drop=0; setTimeout(()=>st.drop=1,400);
+    st.next=Math.floor(Math.random()*5); updUI(); st.drop=0; setTimeout(()=>st.drop=1,450);
 }
 
 function useTool(){
     let bs=C.allBodies(eng.world), used=false;
     if(st.tool==='bomb'){
-        C.remove(eng.world, bs.filter(b=>!b.isStatic && b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y}))<120));
+        C.remove(eng.world, bs.filter(b=>!b.isStatic && b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y}))<85));
         used=true;
     } else {
-        let target=bs.find(b=>b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y})) < b.circleRadius+45);
+        let target=bs.find(b=>b.tier!==undefined && M.Vector.magnitude(M.Vector.sub(b.position,{x:st.x,y:st.y})) < b.circleRadius+40);
         if(target){
             if(st.tool==='broom') C.remove(eng.world, bs.filter(b=>b.tier===target.tier));
             if(st.tool==='wand' && target.tier<11){
                 let t=target.tier, p=target.position; C.remove(eng.world, target);
-                let nb=B.circle(p.x,p.y,10+((t+1)*7.5),{restitution:0.3}); nb.tier=t+1; C.add(eng.world,nb);
+                let nb=B.circle(p.x,p.y,8+((t+1)*6.5),{restitution:0.3}); nb.tier=t+1; C.add(eng.world,nb);
             }
             used=true;
         }
@@ -214,31 +227,44 @@ function updUI(){
 
 function renderPrg(){
     const d=document.getElementById('prog'); d.innerHTML='';
-    for(let i=0;i<12;i++) d.innerHTML+=`<div class="dot ${i<=st.max?'on':''}" style="background:${i<=st.max?COLORS[i]:'rgba(0,0,0,0.1)'}"></div>`;
+    for(let i=0;i<12;i++){
+        const unlocked = i <= st.max;
+        d.innerHTML+=`<div class="dot ${unlocked?'on':''}" style="border:1px solid ${unlocked?COLORS[i]:'#0001'}">${unlocked?SKINS[st.eq.sk][i]:''}</div>`;
+    }
 }
 
 function save(){
-    localStorage.setItem('f12_w',st.w); localStorage.setItem('f12_h',st.h);
-    localStorage.setItem('f12_i',JSON.stringify(st.inv)); localStorage.setItem('f12_e',JSON.stringify(st.eq));
+    localStorage.setItem('f13_w',st.w); localStorage.setItem('f13_h',st.h);
+    localStorage.setItem('f13_i',JSON.stringify(st.inv)); localStorage.setItem('f13_e',JSON.stringify(st.eq));
 }
 
 function toggleModal(id){ document.getElementById(id).classList.toggle('open'); }
 function toggleStore(){ document.getElementById('m-store').classList.toggle('open'); if(document.getElementById('m-store').classList.contains('open')) renderShop(); }
 
 function renderShop(){
-    document.getElementById('shop-wallet').innerText=st.w;
     const g=document.getElementById('shop-container'); g.innerHTML='<div class="grid" id="sg"></div>'; const sg=document.getElementById('sg');
-    const cats=[{n:'Skins',k:'sk',m:SKINS,p:500},{n:'Outlines',k:'ot',m:OUTLINES,p:2000},{n:'Themes',k:'th',m:THEMES,p:300},{n:'Borders',k:'bd',m:BORDERS,p:200}];
+    const cats=[
+        {n:'Skins',k:'sk',m:SKINS,p:500},
+        {n:'Outlines',k:'ot',m:OUTLINES,p:2000},
+        {n:'Themes',k:'th',m:THEMES,p:300},
+        {n:'Borders',k:'bd',m:BORDERS,p:200}
+    ];
     cats.forEach(c=>{
         sg.innerHTML+=`<div class="cat-title">${c.n}</div>`;
         Object.keys(c.m).forEach(key=>{
             const id=c.k+'_'+key, own=st.inv.includes(id), eq=st.eq[c.k]===key;
+            let preview = '';
+            if(c.n==='Skins') preview = `<span style="font-size:30px">${SKINS[key][0]}</span>`;
+            if(c.n==='Themes') preview = `<div style="width:30px;height:30px;background:${THEMES[key]};border-radius:50%;margin:0 auto;border:2px solid #ccc"></div>`;
+            if(c.n==='Borders') preview = `<div style="width:30px;height:30px;background:${BORDERS[key]};border-radius:50%;margin:0 auto;border:2px solid #ccc"></div>`;
+            if(c.n==='Outlines') preview = `<div style="width:30px;height:30px;border:3px ${key==='Rainbow'?'dashed':'solid'} ${key==='Black'?'#000':'#ccc'};border-radius:50%;margin:0 auto"></div>`;
+            
             const el=document.createElement('div'); el.className=`item ${eq?'eq':''}`;
-            el.innerHTML=`<b>${key}</b><br><small>${eq?'Equipped':(own?'Owned':'$'+c.p)}</small>`;
+            el.innerHTML=`<div style="margin-bottom:8px">${preview}</div><b>${key}</b><br><small>${eq?'Equipped':(own?'Owned':'$'+c.p)}</small>`;
             el.onclick=()=>{
                 if(own){ st.eq[c.k]=key; }
                 else if(st.w>=c.p){ st.w-=c.p; st.inv.push(id); st.eq[c.k]=key; }
-                save(); renderShop(); updUI();
+                save(); renderShop(); updUI(); renderPrg();
             };
             sg.appendChild(el);
         });
