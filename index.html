@@ -7,38 +7,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.95); }
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: var(--font); height: 100vh; display: flex; flex-direction: column; touch-action: none; }
         
         /* UI LAYOUT */
         .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
         .top-bar { top: 0; height: 115px; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; padding-top: env(safe-area-inset-top); }
         .bot-bar { bottom: 0; height: 100px; background: var(--panel); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; padding-bottom: env(safe-area-inset-bottom); }
+        .divider { width: 2px; height: 40px; background: #ccc; margin: 0 5px; }
         
         .score-box { text-align: center; min-width: 60px; }
         #next-preview { width: 55px; height: 55px; border: 3px solid #333; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: #fff; box-shadow: 0 4px 0 #333; }
         
-        /* BUTTONS */
         .pwr-btn { width: 48px; height: 48px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; }
         .btn-small { width: 32px; height: 32px; font-size: 16px; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; }
-        #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
-        .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-5px); }
-
-        /* MODALS & SCROLLING */
-        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; }
-        .modal.open { display: flex; }
-        .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .modal-content { flex: 1; overflow-y: auto; padding: 15px; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
         
-        /* STORE */
+        #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
+        .pwr-btn:active { transform: scale(0.9); }
+        .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+
+        /* MODALS - FIXED SCROLLING */
+        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; touch-action: auto; }
+        .modal.open { display: flex; }
+        .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .modal-content { flex: 1; overflow-y: scroll; padding: 15px; -webkit-overflow-scrolling: touch; }
+        
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 20px; }
-        .card { background: #f9f9f9; padding: 10px; border-radius: 15px; text-align: center; border: 2px solid #eee; }
+        .card { background: #f9f9f9; padding: 10px; border-radius: 15px; text-align: center; border: 2px solid #eee; cursor: pointer; }
         .card.equipped { border-color: #2ecc71; background: #f0fff4; }
         .preview-swatch { width: 40px; height: 40px; border-radius: 50%; margin: 5px auto; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; }
         
         #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
         #toast { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
-        .divider { width: 2px; height: 40px; background: #ccc; }
     </style>
 </head>
 <body>
@@ -47,15 +47,15 @@
 
 <div id="game-over">
     <h1>GAME OVER</h1>
-    <p>Score: <span id="final-score">0</span></p>
-    <button onclick="restartGame()" style="padding:15px 40px; background:#2ecc71; color:white; border:none; border-radius:15px; font-weight:bold;">PLAY AGAIN</button>
+    <p>Final Score: <span id="final-score">0</span></p>
+    <button onclick="restartGame()" style="padding:15px 40px; background:#2ecc71; color:white; border:none; border-radius:15px; font-weight:bold;">RETRY</button>
 </div>
 
 <div class="ui-panel top-bar">
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="score-box"><b>SCORE</b><div id="cur-score" style="font-size:24px">0</div></div>
         <div id="next-preview"></div>
-        <div class="score-box"><b>CASH</b><div id="wallet-ui" style="font-size:24px; color:#2ecc71">0</div></div>
+        <div class="score-box"><b>WALLET</b><div id="wallet-ui" style="font-size:24px; color:#2ecc71">0</div></div>
     </div>
     <div id="prog-bar" style="display:flex; justify-content:space-around; margin-top:10px; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 5px;"></div>
 </div>
@@ -73,7 +73,7 @@
 </div>
 
 <div id="shop-modal" class="modal">
-    <div class="modal-header"><h2>Store</h2><b onclick="toggleModal('shop-modal')" style="font-size:24px; cursor:pointer;">✕</b></div>
+    <div class="modal-header"><h2>Market</h2><b onclick="toggleModal('shop-modal')" style="font-size:24px; cursor:pointer;">✕</b></div>
     <div class="modal-content" id="store-container"></div>
 </div>
 
@@ -81,20 +81,20 @@
     <div class="modal-header"><h2>How to Play</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer;">✕</b></div>
     <div class="modal-content">
         <h3>Objective</h3>
-        <p>Drop items and merge matching pairs to evolve them. Reach the final tier to win!</p>
-        <h3>Rules</h3>
+        <p>Drop items to merge matching pairs. Each merge evolves the item into a larger, more valuable tier. Reach the final Tier 12 to become a Master!</p>
+        <h3>Controls</h3>
         <ul>
-            <li>Items merge when they touch a matching item.</li>
-            <li>Don't let items stay above the <b>Red Death Line</b> for more than 2 seconds.</li>
-            <li>Earn Cash by merging items. Use Cash in the Shop for themes and skins!</li>
+            <li><b>Tap/Drag:</b> Move the preview item across the top.</li>
+            <li><b>Release:</b> Drop the item into the arena.</li>
+            <li><b>Fullscreen:</b> Use the button below to toggle immersive mode (best for mobile).</li>
         </ul>
         <h3>Power Ups</h3>
-        <p><b>💣 Bomb ($500):</b> Destroys all items in a small radius.</p>
-        <p><b>🧹 Wipe ($1000):</b> Clears every item of a specific tier from the board.</p>
-        <p><b>🪄 Evolve ($1500):</b> Instantly levels up every item of the selected tier.</p>
-        <hr>
-        <button onclick="requestFullscreen()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">ENTER FULLSCREEN</button>
-        <p style="font-size:12px; text-align:center; color:#666; margin-top:10px;">Fullscreen improves experience on mobile devices.</p>
+        <p><b>💣 Bomb ($500):</b> Destroys everything in a small radius. Great for clearing jams.</p>
+        <p><b>🧹 Wipe ($1000):</b> Remove all items of a specific tier from the board. Tap Wipe, then tap the item type you want gone.</p>
+        <p><b>🪄 Evolve ($1500):</b> Instantly upgrade every item of a chosen tier to the next level. Tap Evolve, then tap the target item.</p>
+        <h3>Rules</h3>
+        <p><b style="color:red">Death Line:</b> If any item rests above the red dotted line for more than 2 seconds, the game ends. Keep the board clear!</p>
+        <button onclick="toggleFull()" style="width:100%; padding:20px; background:var(--accent); color:white; border:none; border-radius:15px; font-weight:bold; margin: 20px 0;">TOGGLE FULLSCREEN</button>
     </div>
 </div>
 
@@ -103,31 +103,33 @@
 <script>
 const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events;
 
+// 44 ITEMS TOTAL: 8 Skins, 4 Outlines, 16 Themes, 16 Borders
 const SKINS = { 
-    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], 
-    Animals: ["🐞"," frogs ","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], 
-    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"], 
-    Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], 
-    Nature: ["🍀","🌸","🌵","🌴","🌲","🍁","🍄","🌻","🌊","🔥","🌪️","🌈"],
-    Sports: ["⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏒","🥊","🏆"]
+    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"],
+    Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"],
+    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"],
+    Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"],
+    Sports: ["⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏒","🥊","🛹"],
+    Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"],
+    Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"],
+    Ocean: ["🐚","🦀","🦞","🦐","🦑","🐙","🐡","🐠","🐟","🐬","🐳","🦈"]
 };
 const THEMES = { 
     Mellow: "#FDF6E3", Matcha: "#E8F5E9", Midnight: "#1a1b26", Lavender: "#F3E5F5", Sky: "#E1F5FE", 
-    Rose: "#FFF1F0", Slate: "#ECEFF1", Coffee: "#EFEBE9", Forest: "#E8F5E9", Lemon: "#FFFDE7", Mint: "#F1F8E9"
+    Rose: "#FFF1F0", Sunset: "#FFF5E6", Forest: "#1B5E20", DeepSea: "#01579B", Charcoal: "#212121",
+    Sand: "#F4A460", Mint: "#F0FFF0", Plum: "#4B0082", Peach: "#FFDAB9", Slate: "#708090", Ghost: "#F8F9FA"
 };
 const BORDERS = { 
-    Slate: "#657B83", Gold: "#DAA520", Red: "#DC143C", Neon: "#B026FF", Black: "#000000", 
-    Blue: "#0D47A1", White: "#FFFFFF", Silver: "#C0C0C0", Pink: "#FF69B4", Green: "#2E7D32", Orange: "#EF6C00"
+    Gold: "#DAA520", Neon: "#B026FF", Red: "#DC143C", Slate: "#657B83", Black: "#000000",
+    Silver: "#C0C0C0", Bronze: "#CD7F32", Electric: "#00FFFF", Lime: "#32CD32", Pink: "#FF69B4",
+    Wine: "#800000", Navy: "#000080", Olive: "#808000", Teal: "#008080", Orange: "#FF8C00", White: "#FFFFFF"
 };
-const OUTLINES = { 
-    Default: "def", Rainbow: "rainbow", White: "white", Black: "black", Thin: "thin", 
-    Thick: "thick", Dotted: "dotted", Glow: "glow", Blue: "blue", Red: "red", Gold: "gold"
-};
+const OUTLINES = { Default: "def", Rainbow: "rainbow", White: "white", Black: "black" };
 const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
 
 let st = {
-    score: 0, high: 0, wallet: 0, muted: false,
-    eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'Default' },
+    score: 0, wallet: 0, muted: false,
+    eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' },
     owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'],
     found: new Set([0])
 };
@@ -142,7 +144,8 @@ function init() {
     window.addEventListener('resize', resize);
 
     engine = E.create({ gravity: { y: 1.2 } });
-    
+    updatePhysicsBounds();
+
     Ev.on(engine, 'collisionStart', e => {
         e.pairs.forEach(p => {
             const a = p.bodyA, b = p.bodyB;
@@ -151,8 +154,7 @@ function init() {
                 C.remove(engine.world, [a, b]);
                 spawnFruit(pos.x, pos.y, t + 1, false);
                 st.score += (t+1)*10; st.wallet += (t+1);
-                st.found.add(t+1);
-                playPop(); updUI(); save();
+                st.found.add(t+1); playPop(); updUI(); save();
             }
         });
     });
@@ -164,19 +166,25 @@ function resize() {
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-    DL = 125; FY = H - 105; 
-    
-    if(engine) {
-        if(floor) C.remove(engine.world, [floor, wallL, wallR]);
-        floor = B.rectangle(W/2, FY + 50, W, 100, { isStatic: true, friction: 0.5 });
-        wallL = B.rectangle(-25, H/2, 50, H*2, { isStatic: true });
-        wallR = B.rectangle(W+25, H/2, 50, H*2, { isStatic: true });
-        C.add(engine.world, [floor, wallL, wallR]);
-    }
+    DL = 125; FY = H - 100; // Recalculated Floor Y
+    updatePhysicsBounds();
+}
+
+function updatePhysicsBounds() {
+    if(!engine) return;
+    if(floor) C.remove(engine.world, [floor, wallL, wallR]);
+    // Floor positioned so bodies rest exactly on the UI bar top
+    floor = B.rectangle(W/2, FY + 250, W, 500, { isStatic: true, friction: 0.5 });
+    wallL = B.rectangle(-25, H/2, 50, H*2, { isStatic: true });
+    wallR = B.rectangle(W+25, H/2, 50, H*2, { isStatic: true });
+    C.add(engine.world, [floor, wallL, wallR]);
 }
 
 function spawnFruit(x, y, t, isDrop) {
-    const b = B.circle(x, y, SIZES[t], { restitution: 0.3, friction: 0.1, plugin: { t: t } });
+    const b = B.circle(x, y, SIZES[t], { 
+        restitution: 0.3, friction: 0.1, slop: 0.05,
+        plugin: { t: t } 
+    });
     C.add(engine.world, b);
     if(isDrop) {
         curIdx = nextIdx; nextIdx = Math.floor(Math.random()*5);
@@ -189,18 +197,17 @@ function loop() {
     E.update(engine, 16);
     ctx.clearRect(0, 0, W, H);
     
-    document.body.style.background = THEMES[st.eq.th] || THEMES.Mellow;
-    ctx.fillStyle = BORDERS[st.eq.bd] || BORDERS.Slate;
+    document.body.style.background = THEMES[st.eq.th];
+    ctx.fillStyle = BORDERS[st.eq.bd];
     ctx.fillRect(0, 0, 15, H); ctx.fillRect(W-15, 0, 15, H);
-    // Draw visual floor
-    ctx.fillRect(0, FY, W, 5);
-
+    
     // Death Line
     ctx.setLineDash([8,8]); ctx.strokeStyle="rgba(255,0,0,0.5)"; ctx.beginPath(); ctx.moveTo(15, DL); ctx.lineTo(W-15, DL); ctx.stroke(); ctx.setLineDash([]);
 
     const now = Date.now();
     C.allBodies(engine.world).forEach(b => {
         if(b.isStatic || !b.plugin) return;
+        
         if(b.position.y - b.circleRadius < DL && b.speed < 0.5) {
             if(!b.tm) b.tm = now;
             if(now - b.tm > 2000) triggerGameOver();
@@ -210,18 +217,12 @@ function loop() {
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
         ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
         
-        ctx.lineWidth = st.eq.ot === 'thick' ? 6 : 3;
         if(st.eq.ot === 'rainbow') ctx.strokeStyle = `hsl(${now/5%360},100%,50%)`;
         else if(st.eq.ot === 'white') ctx.strokeStyle = "#fff";
         else if(st.eq.ot === 'black') ctx.strokeStyle = "#000";
-        else if(st.eq.ot === 'blue') ctx.strokeStyle = "#3498db";
-        else if(st.eq.ot === 'red') ctx.strokeStyle = "#e74c3c";
-        else if(st.eq.ot === 'gold') ctx.strokeStyle = "#f1c40f";
         else ctx.strokeStyle = "#0002";
         
-        if(st.eq.ot === 'dotted') ctx.setLineDash([4,4]);
-        ctx.stroke();
-        
+        ctx.lineWidth = 3; ctx.stroke();
         ctx.font = `${r*1.3}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(SKINS[st.eq.sk][t], 0, r*0.05);
         ctx.restore();
@@ -235,23 +236,12 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-function prepPower(type) {
-    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
-    if(st.wallet >= costs[type]) {
-        activePower = (activePower === type) ? null : type;
-        document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
-        if(activePower) document.getElementById('p-'+type).classList.add('active');
-    } else showToast("NEED MORE CASH!");
-}
-
 function handlePower(x, y) {
     const bodies = C.allBodies(engine.world).filter(b => b.plugin);
     const costs = { bomb: 500, wipe: 1000, evo: 1500 };
-    let success = false;
 
     if(activePower === 'bomb') {
         bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 80) C.remove(engine.world, b); });
-        success = true;
     } else {
         const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
         if(target) {
@@ -260,16 +250,111 @@ function handlePower(x, y) {
             if(activePower === 'evo' && t < 11) bodies.forEach(b => { 
                 if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); }
             });
-            success = true;
-        }
+        } else return;
     }
+    st.wallet -= costs[activePower]; activePower = null;
+    document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
+    playPop(); updUI(); save();
+}
 
-    if(success) {
-        st.wallet -= costs[activePower];
-        activePower = null;
+function prepPower(type) {
+    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
+    if(st.wallet >= costs[type]) {
+        activePower = (activePower === type) ? null : type;
         document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
-        playPop(); updUI(); save();
+        if(activePower) document.getElementById('p-'+type).classList.add('active');
+    } else showToast("NEED MORE POINTS!");
+}
+
+function renderStore() {
+    const container = document.getElementById('store-container'); container.innerHTML = '';
+    const cats = [
+        {title: 'Skins', key: 'sk', data: SKINS, cost: 1500},
+        {title: 'Outlines', key: 'ot', data: OUTLINES, cost: 1000},
+        {title: 'Backgrounds', key: 'th', data: THEMES, cost: 500},
+        {title: 'Borders', key: 'bd', data: BORDERS, cost: 500}
+    ];
+
+    cats.forEach(cat => {
+        container.innerHTML += `<h3 style="margin-top:20px; border-left: 4px solid var(--accent); padding-left: 10px;">${cat.title}</h3><div class="grid" id="grid-${cat.key}"></div>`;
+        const grid = document.getElementById(`grid-${cat.key}`);
+        Object.keys(cat.data).forEach(item => {
+            const id = cat.key + '_' + item;
+            const isOwned = st.owned.includes(id);
+            const isEq = st.eq[cat.key] === (cat.key === 'ot' ? OUTLINES[item] : item);
+            
+            const card = document.createElement('div');
+            card.className = `card ${isEq ? 'equipped' : ''}`;
+            
+            let preview = '';
+            if(cat.key === 'sk') preview = `<div class="preview-swatch">${cat.data[item][0]}</div>`;
+            else if(cat.key === 'th') preview = `<div class="preview-swatch" style="background:${cat.data[item]}"></div>`;
+            else if(cat.key === 'bd') preview = `<div class="preview-swatch" style="border: 4px solid ${cat.data[item]}"></div>`;
+            else preview = `<div class="preview-swatch" style="border: 2px solid #000">Aa</div>`;
+
+            card.innerHTML = `${preview}<b>${item}</b><div style="font-size:10px; color:${isOwned?'#2ecc71':'#e67e22'}">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.cost}</div>`;
+            card.onclick = (e) => {
+                e.stopPropagation();
+                if(isOwned) { st.eq[cat.key] = (cat.key === 'ot' ? OUTLINES[item] : item); }
+                else if(st.wallet >= cat.cost) { st.wallet -= cat.cost; st.owned.push(id); st.eq[cat.key] = (cat.key === 'ot' ? OUTLINES[item] : item); }
+                else showToast("NOT ENOUGH CASH!");
+                save(); renderStore(); updUI();
+            };
+            grid.appendChild(card);
+        });
+    });
+}
+
+function toggleFull() {
+    const el = document.documentElement;
+    const request = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (request) request.call(el).catch(e => console.log(e));
+    } else {
+        if (exit) exit.call(document);
     }
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast'); t.innerText = msg; t.style.display='block';
+    setTimeout(()=>t.style.display='none', 2000);
+}
+
+function triggerGameOver() {
+    document.getElementById('final-score').innerText = st.score;
+    document.getElementById('game-over').style.display = 'flex';
+    save();
+}
+
+function restartGame() {
+    st.score = 0; st.found = new Set([0]);
+    document.getElementById('game-over').style.display = 'none';
+    C.clear(engine.world, false);
+    updatePhysicsBounds();
+    updUI();
+}
+
+function updUI() {
+    document.getElementById('cur-score').innerText = st.score;
+    document.getElementById('wallet-ui').innerText = st.wallet;
+    document.getElementById('next-preview').innerText = SKINS[st.eq.sk][nextIdx];
+    const pb = document.getElementById('prog-bar'); pb.innerHTML = '';
+    for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.has(i)?1:0.2}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`;
+}
+
+function save() { localStorage.setItem('fm_v125', JSON.stringify({...st, found: Array.from(st.found)})); }
+function load() { 
+    const d = localStorage.getItem('fm_v125'); 
+    if(d) { let p = JSON.parse(d); Object.assign(st, p); st.found = new Set(p.found); } 
+}
+
+function toggleModal(id) { 
+    const m = document.getElementById(id);
+    const isOpen = m.classList.contains('open');
+    document.querySelectorAll('.modal').forEach(mod => mod.classList.remove('open'));
+    if(!isOpen) { m.classList.add('open'); if(id === 'shop-modal') renderStore(); }
 }
 
 function playPop() {
@@ -283,75 +368,20 @@ function playPop() {
     o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.1);
 }
 
-function requestFullscreen() {
-    const de = document.documentElement;
-    if (de.requestFullscreen) de.requestFullscreen();
-    else if (de.webkitRequestFullscreen) de.webkitRequestFullscreen();
-    else if (de.msRequestFullscreen) de.msRequestFullscreen();
+function toggleMute() {
+    st.muted = !st.muted;
+    document.getElementById('mute-btn').innerText = st.muted ? "🔇" : "🔊";
+    save();
 }
 
-function renderStore() {
-    const container = document.getElementById('store-container'); container.innerHTML = '';
-    const cats = [
-        {title: 'Skins', key: 'sk', data: SKINS, cost: 1500},
-        {title: 'Themes', key: 'th', data: THEMES, cost: 500},
-        {title: 'Borders', key: 'bd', data: BORDERS, cost: 500},
-        {title: 'Outlines', key: 'ot', data: OUTLINES, cost: 1000}
-    ];
+// TOUCH HANDLING - Corrected to allow modal scrolling
+window.addEventListener('pointermove', e => { 
+    if (e.target.closest('.modal')) return;
+    lastX = Math.max(45, Math.min(W-45, e.clientX)); 
+});
 
-    cats.forEach(cat => {
-        container.innerHTML += `<h3 style="margin:20px 0 10px; border-left: 4px solid var(--accent); padding-left:10px;">${cat.title}</h3><div class="grid" id="grid-${cat.key}"></div>`;
-        const grid = document.getElementById(`grid-${cat.key}`);
-        Object.keys(cat.data).forEach(item => {
-            const id = cat.key + '_' + item;
-            const isOwned = st.owned.includes(id);
-            const isEq = st.eq[cat.key] === item;
-            const card = document.createElement('div');
-            card.className = `card ${isEq ? 'equipped' : ''}`;
-            
-            let swatch = '';
-            if(cat.key === 'sk') swatch = `<div class="preview-swatch">${cat.data[item][0]}</div>`;
-            else if(cat.key === 'th') swatch = `<div class="preview-swatch" style="background:${cat.data[item]}"></div>`;
-            else if(cat.key === 'bd') swatch = `<div class="preview-swatch" style="border:4px solid ${cat.data[item]}"></div>`;
-            else swatch = `<div class="preview-swatch" style="border:2px solid #333">Aa</div>`;
-
-            card.innerHTML = `${swatch}<b>${item}</b><br><small style="color:${isOwned?'#2ecc71':'#e67e22'}">${isEq?'ACTIVE':isOwned?'OWNED':'$'+cat.cost}</small>`;
-            card.onclick = () => {
-                if(isOwned) { st.eq[cat.key] = item; }
-                else if(st.wallet >= cat.cost) { st.wallet -= cat.cost; st.owned.push(id); st.eq[cat.key] = item; }
-                else return showToast("NOT ENOUGH CASH!");
-                save(); renderStore(); updUI();
-            };
-            grid.appendChild(card);
-        });
-    });
-}
-
-function toggleMute() { st.muted = !st.muted; document.getElementById('mute-btn').innerText = st.muted ? "🔇" : "🔊"; save(); }
-function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
-function triggerGameOver() { document.getElementById('final-score').innerText = st.score; document.getElementById('game-over').style.display = 'flex'; if(st.score > st.high) st.high = st.score; save(); }
-function restartGame() { st.score = 0; st.found = new Set([0]); document.getElementById('game-over').style.display = 'none'; C.clear(engine.world, false); resize(); updUI(); }
-function updUI() {
-    document.getElementById('cur-score').innerText = st.score;
-    document.getElementById('wallet-ui').innerText = st.wallet;
-    document.getElementById('next-preview').innerText = SKINS[st.eq.sk][nextIdx];
-    const pb = document.getElementById('prog-bar'); pb.innerHTML = '';
-    for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.has(i)?1:0.2}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`;
-}
-function save() { localStorage.setItem('fm_v125_save', JSON.stringify({...st, found: Array.from(st.found)})); }
-function load() { 
-    const d = localStorage.getItem('fm_v125_save'); 
-    if(d) { let p = JSON.parse(d); Object.assign(st, p); st.found = new Set(p.found); } 
-}
-function toggleModal(id) { 
-    document.querySelectorAll('.modal').forEach(m => { if(m.id !== id) m.classList.remove('open'); });
-    document.getElementById(id).classList.toggle('open');
-    if(id === 'shop-modal') renderStore();
-}
-
-window.addEventListener('pointermove', e => { lastX = Math.max(45, Math.min(W-45, e.clientX)); });
 window.addEventListener('pointerup', e => {
-    if(e.clientY < 115 || e.clientY > H-100) return;
+    if (e.target.closest('.modal') || e.target.closest('.ui-panel')) return;
     if(activePower) handlePower(e.clientX, e.clientY);
     else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
 });
