@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v62.1</title>
+    <title>Fruit Merge v63</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #222; font-family: sans-serif; touch-action: none; }
@@ -19,11 +19,11 @@
         #controls-overlay { position: absolute; top: 140px; right: 10px; z-index: 1001; display: flex; flex-direction: column; gap: 8px; }
         .sub-btn { background: #3498db; color: white; border: 2px solid #333; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
         .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 5px solid #333; border-radius: 20px; padding: 15px; overflow-y: auto; }
+        .store-cat { margin-bottom: 20px; border-top: 2px solid #eee; padding-top: 10px; }
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 5px; }
         .item-card { border: 2px solid #ccc; padding: 10px; border-radius: 12px; text-align: center; position: relative; background: #fafafa; }
         .item-card.selected { border-color: #2ecc71; background: #e8f8f0; border-width: 3px; }
         .badge { font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 8px; position: absolute; top: -8px; right: -5px; border: 1.5px solid #333; color: #fff; }
-        #status-msg { position: absolute; top: 180px; width: 100%; text-align: center; font-weight: bold; color: #e67e22; z-index: 500; display: none; pointer-events: none; }
         .combo-text { position: absolute; pointer-events: none; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; z-index: 1500; animation: fUp 1s ease-out forwards; }
         @keyframes fUp { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5) translateY(-80px); opacity: 0; } }
     </style>
@@ -36,11 +36,7 @@
         <div id="progress-wrap"><div id="progress-bar"></div><div id="progress-icons"></div></div>
         <div class="stats" style="margin-top:5px"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer">🔊</span></div>
     </div>
-    <div id="status-msg">RELEASE TO USE POWERUP</div>
-    <div id="controls-overlay">
-        <div class="sub-btn" onclick="openHelp()" style="background:#f1c40f; color:#333;">?</div>
-        <div class="sub-btn" onclick="toggleFS()">⛶</div>
-    </div>
+    <div id="controls-overlay"><div class="sub-btn" onclick="openHelp()" style="background:#f1c40f; color:#333;">?</div><div class="sub-btn" onclick="toggleFS()">⛶</div></div>
     <div id="bottom-ui">
         <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣<span>$500</span></div>
         <div class="btn" style="background:#9b59b6" onpointerdown="prepPwr('wipe', event)">🧹<span>$1k</span></div>
@@ -49,88 +45,107 @@
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="helpModal" class="modal">
-        <h2 style="text-align:center">How to Play</h2>
-        <p>Drop items to merge. Merge quickly for <b>Combos</b>! Drag powerup buttons onto the field to use them.</p>
-        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:10px; margin-top:10px; height:45px;">START</button>
+        <h2 style="text-align:center">Instructions</h2>
+        <p><b>Merge:</b> Drop identical items to evolve them.</p>
+        <p><b>Combos:</b> Chain merges within 1.5s for up to 5x points!</p>
+        <p><b>Power-Ups:</b><br>💣 <i>Bomb</i>: Explodes a small area.<br>🧹 <i>Broom</i>: Removes all items of one type.<br>✨ <i>Sparkle</i>: Upgrades all items of one type.</p>
+        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:10px; margin-top:10px; height:45px;">PLAY</button>
     </div>
     <div id="shopModal" class="modal">
         <div style="display:flex; justify-content:space-between;"><h2>Store</h2><button onclick="closeModal()">X</button></div>
         <p style="text-align:center; font-weight:bold; color:#2ecc71;">Wallet: $<span id="shop-wallet">0</span></p>
-        <div id="skin-grid" class="grid"></div><div id="theme-grid" class="grid"></div><div id="border-grid" class="grid"></div>
+        <div class="store-cat"><h3>Skins</h3><div id="skin-grid" class="grid"></div></div>
+        <div class="store-cat"><h3>Outlines</h3><div id="outline-grid" class="grid"></div></div>
+        <div class="store-cat"><h3>Themes</h3><div id="theme-grid" class="grid"></div></div>
+        <div class="store-cat"><h3>Borders</h3><div id="border-grid" class="grid"></div></div>
     </div>
 </div>
 <script>
-const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], Animals: ["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], Retro: ["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"], Space: ["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"], Desserts: ["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"], Plants: ["🌱","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"] };
-const MSGS = { Fruit: "JUICY!", Animals: "WILD!", Retro: "8-BIT!", Space: "COSMIC!", Desserts: "SWEET!", Plants: "BLOOM!" };
-const THEMES = { Lilac: "#E6E6FA", Sunset: "#ff7675", Forest: "#55efc4", Midnight: "#2d3436", Gold: "#fdcb6e", Slate: "#718093", Ocean: "#0984e3", Cherry: "#d63031", Mint: "#00b894", Grass: "#26de81" };
+const SKINS = { Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], Retro:["▲","■","⬢","◆","★","✚","✖","⬤","⬟","▼","⬓","⌬"], Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"], Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"], Plants:["🌱","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"], Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚀"] };
+const MSGS = { Fruit:"JUICY!", Animals:"WILD!", Retro:"LEVEL UP!", Space:"COSMIC!", Desserts:"SWEET!", Plants:"BLOOM!", Cars:"VROOM!" };
+const THEMES = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3", Cherry:"#d63031" };
 const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185], COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
-let state = { score: 0, best: 0, pts: 0, skin: 'Fruit', theme: 'Lilac', border: '#333', owned: ['Fruit', 'Lilac', '#333'], muted: false, maxT: 0 };
-const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let engine, runner, currentIdx = 0, nextIdx = 1, lastX = 200, isDragging = false, activePwr = null, pwrX = 0, pwrY = 0, combo = 0, lastM = 0;
+let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', border:'#333', outline:false, owned:['Fruit', 'Lilac', '#333'], muted:false, maxT:0 };
+const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), aCtx = new (window.AudioContext || window.webkitAudioContext)();
+let engine, runner, currentIdx=0, nextIdx=1, lastX=200, isDragging=false, activePwr=null, pwrX=0, pwrY=0, combo=0, lastM=0;
 
-function playS(t, f = 440) {
-    if(state.muted) return; if(audioCtx.state==='suspended') audioCtx.resume();
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.connect(g); g.connect(audioCtx.destination); o.type = (t==='pop'||state.skin!=='Retro')?'sine':'square';
-    o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); o.start(); o.stop(audioCtx.currentTime + 0.1);
+function playS(t, f=440) {
+    if(state.muted) return; if(aCtx.state==='suspended') aCtx.resume();
+    const o=aCtx.createOscillator(), g=aCtx.createGain(); o.connect(g); g.connect(aCtx.destination);
+    o.type = (t==='pop')?'sine':'triangle'; f = Math.min(f, 1200); // CLAMP PITCH
+    o.frequency.setValueAtTime(f, aCtx.currentTime); g.gain.setValueAtTime(0.1, aCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, aCtx.currentTime + 0.1); o.start(); o.stop(aCtx.currentTime + 0.1);
 }
 
 function init() {
-    const s = localStorage.getItem('fm_v62_s'); if(s) Object.assign(state, JSON.parse(s));
-    engine = Matter.Engine.create(); setupD();
+    const s=localStorage.getItem('fm_v63_s'); if(s) Object.assign(state, JSON.parse(s));
+    engine = Matter.Engine.create(); engine.timing.timeScale = 1;
+    setupD();
     Matter.Events.on(engine, 'collisionStart', (e) => {
         e.pairs.forEach(p => {
-            const a = p.bodyA, b = p.bodyB;
+            const a=p.bodyA, b=p.bodyB;
             if(a.plugin?.t === b.plugin?.t && a.plugin?.t < 11) {
-                const nt = a.plugin.t + 1; const pos = { x: (a.position.x+b.position.x)/2, y: (a.position.y+b.position.y)/2 };
-                const now = Date.now(); combo = (now-lastM < 1500) ? combo+1 : 1; lastM = now;
+                const nt=a.plugin.t+1, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
+                combo = (Date.now()-lastM < 1500) ? Math.min(combo+1, 5) : 1; lastM = Date.now();
                 if(combo > 1) showC(pos.x, pos.y, combo);
-                state.maxT = Math.max(state.maxT, nt); playS('pop', 450 + (nt*50) + (combo*40));
+                state.maxT = Math.max(state.maxT, nt); playS('pop', 400 + (nt*40) + (combo*30));
                 Matter.Composite.remove(engine.world, [a, b]);
-                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { plugin: {t: nt, dT: null} }));
+                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { friction: 0.1, plugin: {t:nt, dT:null} }));
                 state.score += (nt*10)*combo; state.pts += (nt*5)*combo; save(); updateUI();
-            } else if(p.collision.depth > 1) playS('thud', 100 + (a.plugin?a.plugin.t*10:0));
+            } else if(p.collision.depth > 1) playS('thud', 80 + (a.plugin?a.plugin.t*10:0));
         });
     });
     runner = Matter.Runner.create(); Matter.Runner.run(runner, engine);
-    window.addEventListener('resize', () => { const oW = canvas.width; setupD(); Matter.Composite.allBodies(engine.world).forEach(b => { if(!b.isStatic) Matter.Body.setPosition(b, {x: b.position.x*(canvas.width/oW), y: b.position.y}); })});
-    requestAnimationFrame(render); updateUI();
+    window.addEventListener('resize', setupD); requestAnimationFrame(render); updateUI();
 }
 
-function showC(x, y, c) { const d = document.createElement('div'); d.className = 'combo-text'; d.style.left = x+'px'; d.style.top = y+'px'; d.innerHTML = (MSGS[state.skin]||'COMBO')+' x'+c; document.body.appendChild(d); setTimeout(()=>d.remove(), 800); }
-function setupD() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; const fY = canvas.height-95; Matter.Composite.allBodies(engine.world).forEach(b => { if(b.isStatic) Matter.Composite.remove(engine.world, b); }); Matter.Composite.add(engine.world, [Matter.Bodies.rectangle(canvas.width/2, fY+100, canvas.width, 200, {isStatic:true}), Matter.Bodies.rectangle(-25, fY/2, 50, fY*2, {isStatic:true}), Matter.Bodies.rectangle(canvas.width+25, fY/2, 50, fY*2, {isStatic:true})]); }
+function showC(x, y, c) { const d=document.createElement('div'); d.className='combo-text'; d.style.left=x+'px'; d.style.top=y+'px'; d.innerHTML=(MSGS[state.skin]||'COMBO')+' x'+c; document.body.appendChild(d); setTimeout(()=>d.remove(), 800); }
+function setupD() { 
+    canvas.width=window.innerWidth; canvas.height=window.innerHeight; const fY=canvas.height-95; 
+    Matter.Composite.clear(engine.world); 
+    Matter.Composite.add(engine.world, [
+        Matter.Bodies.rectangle(canvas.width/2, fY+50, canvas.width, 100, {isStatic:true}), // FLOOR
+        Matter.Bodies.rectangle(5, fY/2, 20, fY*2, {isStatic:true}), // LEFT
+        Matter.Bodies.rectangle(canvas.width-5, fY/2, 20, fY*2, {isStatic:true}) // RIGHT
+    ]);
+}
 
 function render() {
-    ctx.fillStyle = THEMES[state.theme]; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle=THEMES[state.theme]; ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.strokeStyle="red"; ctx.setLineDash([10,5]); ctx.beginPath(); ctx.moveTo(0,175); ctx.lineTo(canvas.width,175); ctx.stroke(); ctx.setLineDash([]);
     if(isDragging && !activePwr) { ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(SKINS[state.skin][currentIdx], lastX, 160); }
     const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
-    let tT = -1; if(activePwr && activePwr !== 'bomb') { const h = bodies.find(b => Math.hypot(b.position.x-pwrX, b.position.y-pwrY) < b.circleRadius+40); if(h) tT = h.plugin.t; }
+    let tT = -1; if(activePwr && activePwr !== 'bomb') { const h=bodies.find(b=>Math.hypot(b.position.x-pwrX, b.position.y-pwrY)<b.circleRadius+40); if(h) tT=h.plugin.t; }
     bodies.forEach(b => {
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-        if((activePwr==='bomb'&&Math.hypot(b.position.x-pwrX, b.position.y-pwrY)<100) || (tT!==-1&&b.plugin.t===tT)) { ctx.shadowBlur=25; ctx.shadowColor="white"; ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius+5,0,Math.PI*2); ctx.fill(); }
-        ctx.fillStyle = COLORS[b.plugin.t]; if(state.skin==='Retro'){ctx.strokeStyle="#000"; ctx.lineWidth=2;} ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill(); if(state.skin==='Retro')ctx.stroke();
+        if((activePwr==='bomb'&&Math.hypot(b.position.x-pwrX, b.position.y-pwrY)<80) || (tT!==-1&&b.plugin.t===tT)) { ctx.shadowBlur=30; ctx.shadowColor="white"; ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius+6,0,Math.PI*2); ctx.fill(); }
+        ctx.fillStyle = (state.skin==='Retro') ? "#fff" : COLORS[b.plugin.t]; 
+        ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill(); 
+        if(state.skin==='Retro' || state.outline) { ctx.strokeStyle="#000"; ctx.lineWidth=3; ctx.stroke(); }
         ctx.font = (b.circleRadius*1.3)+"px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(SKINS[state.skin][b.plugin.t], 0,0); ctx.restore();
-        if(b.position.y < 175 && !isDragging) { if(!b.plugin.dT) b.plugin.dT = Date.now(); if(Date.now()-b.plugin.dT > 2000) { state.score=0; state.maxT=0; save(); alert("GAME OVER!"); location.reload(); } } else b.plugin.dT = null;
+        if(b.position.y < 175 && !isDragging) { if(!b.plugin.dT) b.plugin.dT=Date.now(); if(Date.now()-b.plugin.dT > 2000) { state.score=0; state.maxT=0; save(); alert("GAME OVER!"); location.reload(); } } else b.plugin.dT=null;
     });
-    if(activePwr) { ctx.strokeStyle="white"; ctx.lineWidth=3; ctx.beginPath(); if(activePwr==='bomb') ctx.arc(pwrX, pwrY, 100, 0, Math.PI*2); else { ctx.moveTo(pwrX-30,pwrY); ctx.lineTo(pwrX+30,pwrY); ctx.moveTo(pwrX,pwrY-30); ctx.lineTo(pwrX,pwrY+30); ctx.arc(pwrX,pwrY,20,0,Math.PI*2); } ctx.stroke(); }
+    if(activePwr) { ctx.strokeStyle="white"; ctx.lineWidth=3; ctx.beginPath(); if(activePwr==='bomb') ctx.arc(pwrX, pwrY, 80, 0, Math.PI*2); else { ctx.moveTo(pwrX-40,pwrY); ctx.lineTo(pwrX+40,pwrY); ctx.moveTo(pwrX,pwrY-40); ctx.lineTo(pwrX,pwrY+40); ctx.arc(pwrX,pwrY,25,0,Math.PI*2); } ctx.stroke(); }
     requestAnimationFrame(render);
 }
 
-function prepPwr(t, e) { const c = {bomb:500, wipe:1000, evo:1500}[t]; if(state.pts < c) return alert("No funds!"); activePwr = t; pwrX = e.clientX; pwrY = e.clientY; document.getElementById('status-msg').style.display='block'; }
-canvas.addEventListener('pointerdown', (e) => { if(e.clientY < canvas.height-95 && e.clientY > 130) { isDragging=true; lastX=e.clientX; if(audioCtx.state==='suspended') audioCtx.resume(); } });
-canvas.addEventListener('pointermove', (e) => { if(activePwr){pwrX=e.clientX; pwrY=e.clientY;} if(isDragging) lastX=e.clientX; });
+function prepPwr(t, e) { 
+    const c={bomb:500, wipe:1000, evo:1500}[t]; if(state.pts<c) return alert("No funds!"); 
+    activePwr=t; pwrX=e.clientX; pwrY=e.clientY; isDragging=true; // AUTO-START DRAG
+}
+
+canvas.addEventListener('pointerdown', (e) => { if(e.clientY < canvas.height-95 && e.clientY > 130) { isDragging=true; lastX=e.clientX; if(aCtx.state==='suspended') aCtx.resume(); } });
+canvas.addEventListener('pointermove', (e) => { if(isDragging) { pwrX=e.clientX; pwrY=e.clientY; lastX=e.clientX; } });
 canvas.addEventListener('pointerup', (e) => {
-    if(activePwr) { usePwr(e.clientX, e.clientY); activePwr = null; document.getElementById('status-msg').style.display='none'; }
-    else if(isDragging) { Matter.Composite.add(engine.world, Matter.Bodies.circle(lastX, 135, SIZES[currentIdx], {restitution:0.3, plugin:{t:currentIdx, dT:null}})); currentIdx=nextIdx; nextIdx=Math.floor(Math.random()*4); updateUI(); }
+    if(activePwr) { usePwr(e.clientX, e.clientY); activePwr=null; }
+    else if(isDragging) { Matter.Composite.add(engine.world, Matter.Bodies.circle(lastX, 135, SIZES[currentIdx], {restitution:0.4, plugin:{t:currentIdx, dT:null}})); currentIdx=nextIdx; nextIdx=Math.floor(Math.random()*4); updateUI(); }
     isDragging = false;
 });
 
 function usePwr(x, y) {
-    const bds = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
-    const h = bds.find(b => Math.hypot(b.position.x-x, b.position.y-y) < b.circleRadius+40);
-    if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<100) Matter.Composite.remove(engine.world,b);}); state.pts-=500; }
+    const bds=Matter.Composite.allBodies(engine.world).filter(b=>b.plugin?.t!==undefined);
+    const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+40);
+    if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<80) Matter.Composite.remove(engine.world,b);}); state.pts-=500; }
     else if(activePwr==='wipe'&&h){ bds.forEach(b=>{if(b.plugin.t===h.plugin.t) Matter.Composite.remove(engine.world,b);}); state.pts-=1000; }
     else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{plugin:{t:nt, dT:null}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; }
     save(); updateUI();
@@ -142,18 +157,23 @@ function updateUI() {
     document.getElementById('game-container').style.background=THEMES[state.theme]; document.getElementById('game-container').style.borderColor=state.border;
     document.getElementById('progress-bar').style.width=(state.maxT/11*100)+"%"; document.getElementById('progress-icons').innerHTML=SKINS[state.skin].map(e=>`<span>${e}</span>`).join('');
 }
-function save() { localStorage.setItem('fm_v62_s', JSON.stringify(state)); }
+function save() { localStorage.setItem('fm_v63_s', JSON.stringify(state)); }
 function openShop() {
     document.getElementById('shopModal').style.display='block'; document.getElementById('shop-wallet').innerText=state.pts;
-    const sG=document.getElementById('skin-grid'), tG=document.getElementById('theme-grid'), bG=document.getElementById('border-grid');
-    sG.innerHTML='Skins'; tG.innerHTML='Themes'; bG.innerHTML='Borders';
+    const sG=document.getElementById('skin-grid'), tG=document.getElementById('theme-grid'), bG=document.getElementById('border-grid'), oG=document.getElementById('outline-grid');
+    sG.innerHTML=''; tG.innerHTML=''; bG.innerHTML=''; oG.innerHTML='';
     Object.keys(SKINS).forEach(id => sG.innerHTML += `<div class="item-card ${state.skin===id?'selected':''}" onclick="buy('${id}','skin',500)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'OWNED':'$500'}</span>${SKINS[id][0]}<br>${id}</div>`);
+    oG.innerHTML = `<div class="item-card ${state.outline?'selected':''}" onclick="buy('outline','outline',1000)"><span class="badge" style="background:${state.owned.includes('outline')?'#2ecc71':'#f1c40f'}">${state.owned.includes('outline')?'OWNED':'$1k'}</span><b>BLACK OUTLINE</b></div>`;
     Object.keys(THEMES).forEach(id => { 
         tG.innerHTML += `<div class="item-card ${state.theme===id?'selected':''}" onclick="buy('${id}','theme',300)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'OWNED':'$300'}</span><div style="height:20px;background:${THEMES[id]}"></div>${id}</div>`;
         bG.innerHTML += `<div class="item-card ${state.border===THEMES[id]?'selected':''}" onclick="buy('${THEMES[id]}','border',200)"><span class="badge" style="background:${state.owned.includes('b_'+THEMES[id])?'#2ecc71':'#f1c40f'}">${state.owned.includes('b_'+THEMES[id])?'OWNED':'$200'}</span><div style="height:20px;background:${THEMES[id]}"></div>${id}</div>`;
     });
 }
-function buy(id, t, c) { const k=(t==='border'?'b_':'')+id; if(!state.owned.includes(k)){ if(state.pts>=c){state.pts-=c; state.owned.push(k);} else return; } state[t]=id; save(); updateUI(); openShop(); }
+function buy(id, t, c) { 
+    if(t==='outline') { if(!state.owned.includes('outline')) { if(state.pts>=c){state.pts-=c; state.owned.push('outline');} else return; } state.outline=!state.outline; }
+    else { const k=(t==='border'?'b_':'')+id; if(!state.owned.includes(k)){ if(state.pts>=c){state.pts-=c; state.owned.push(k);} else return; } state[t]=id; }
+    save(); updateUI(); openShop(); 
+}
 function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
 function openHelp() { document.getElementById('helpModal').style.display='block'; }
 function toggleMute() { state.muted=!state.muted; document.getElementById('mute-btn').innerText=state.muted?"🔇":"🔊"; save(); }
