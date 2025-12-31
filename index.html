@@ -2,309 +2,245 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v90</title>
-    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fruit Merge v91</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
-        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; }
+        :root {
+            --bg-color: #f0f4f8;
+            --ui-border: #d1d9e6;
+            --accent: #a3b1c6;
+            --text: #4a4a4a;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-color); touch-action: none;
+        }
+
+        /* UI Layout */
+        #top-ui { height: 175px; position: absolute; top: 0; width: 100%; border-bottom: 2px solid var(--ui-border); display: flex; flex-direction: column; justify-content: space-around; padding: 10px; box-sizing: border-box; z-index: 10; background: inherit; }
+        #bottom-ui { height: 100px; position: absolute; bottom: 0; width: 100%; border-top: 2px solid var(--ui-border); display: flex; justify-content: space-around; align-items: center; z-index: 10; background: inherit; }
         
-        #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; border: 8px solid #333; }
-        #gameCanvas { position: absolute; inset: 0; z-index: 1; }
+        #game-container { position: absolute; top: 175px; bottom: 100px; width: 100%; overflow: hidden; }
+        
+        /* Progress Bar */
+        #progress-wrapper { width: 90%; margin: 0 auto; height: 30px; position: relative; background: rgba(0,0,0,0.05); border-radius: 15px; }
+        #progress-list { display: flex; justify-content: space-between; padding: 0 10px; position: absolute; top: -20px; width: 100%; }
+        .tier-icon { opacity: 0.3; transition: 0.3s; font-size: 1.2rem; }
+        .tier-icon.unlocked { opacity: 1; transform: scale(1.2); }
 
-        /* TOP UI */
-        #top-ui { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 165px; 
-            background: rgba(255,255,255,0.98); border-bottom: 4px solid #333; 
-            z-index: 100; padding: 10px; display: flex; flex-direction: column;
-        }
-
-        #p-bar-container { position: relative; width: 100%; height: 30px; margin: 10px 0; }
-        #p-bg { width: 100%; height: 12px; background: #eee; border: 3px solid #333; border-radius: 10px; position: absolute; top: 9px; }
-        #p-fill { width: 0%; height: 100%; background: #2ecc71; transition: width 0.3s; }
-        #p-emojis { position: absolute; width: 100%; display: flex; justify-content: space-between; top: -8px; }
-        .p-em { font-size: 14px; filter: grayscale(1); opacity: 0.3; }
-        .p-em.on { filter: grayscale(0); opacity: 1; transform: scale(1.2); }
-
-        #bottom-ui { 
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; 
-            background: #fff; border-top: 4px solid #333; z-index: 100;
-            display: flex; align-items: center; justify-content: space-around;
-        }
-
-        .btn { 
-            pointer-events: auto; width: 50px; height: 50px; border-radius: 12px; 
-            border: 3px solid #333; display: flex; align-items: center; justify-content: center; 
-            font-size: 22px; background: #eee; cursor: pointer; box-shadow: 0 4px 0 #bbb;
-        }
-
-        /* CRITICAL SCROLL FIX */
-        .modal { 
-            display: none; position: fixed; inset: 0; background: white; z-index: 2000; 
-            flex-direction: column; padding: 25px; 
-            pointer-events: auto; /* Allow interaction */
-        }
-        .scroll-content { 
-            flex: 1; 
-            overflow-y: auto !important; 
-            touch-action: pan-y !important; /* Forces the browser to allow scrolling */
-            -webkit-overflow-scrolling: touch; 
-            margin: 15px 0; 
-            border: 2px solid #eee; 
-            padding: 15px;
-            z-index: 2001;
-        }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .item { border: 3px solid #eee; padding: 15px; border-radius: 15px; text-align: center; font-weight: 900; pointer-events: auto; }
-        .item.active { border-color: #2ecc71; background: #f0fff4; }
-
-        #start-overlay { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        /* Modals */
+        .modal { display: none; position: fixed; top: 10%; left: 5%; width: 90%; height: 80%; background: white; border-radius: 20px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.2); flex-direction: column; }
+        .modal-content { flex: 1; overflow-y: auto; padding: 20px; touch-action: pan-y; }
+        
+        .btn { padding: 10px 20px; border-radius: 10px; border: 1px solid var(--ui-border); background: #fff; cursor: pointer; }
+        .danger-line { position: absolute; top: 195px; width: 100%; border-top: 2px dashed #ff4d4d; opacity: 0.5; pointer-events: none; }
+        
+        canvas { display: block; }
     </style>
 </head>
 <body>
 
-<div id="start-overlay" onclick="startAudio()">
-    <h1 style="font-size: 50px; margin-bottom: 5px;">Fruit Merge</h1>
-    <p style="color: #2ecc71; font-weight: bold; margin-bottom: 25px;">[ VERSION 90 ]</p>
-    <div style="background: white; color: black; padding: 20px 50px; border-radius: 15px; font-weight: 900; font-size: 20px;">START GAME</div>
-</div>
-
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="top-ui">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div><small>SCORE</small><div id="s-val" style="font-size:26px;">0</div></div>
-            <div id="next-disp" style="font-size:55px;">🍒</div>
-            <div style="display:flex; gap:10px;">
-                <div class="btn" style="width:40px; height:40px; background:#f1c40f" onclick="openModal('helpModal')">?</div>
-                <div class="btn" style="width:40px; height:40px; background:#3498db" onclick="toggleFS()">⛶</div>
-            </div>
-        </div>
-        <div id="p-bar-container">
-            <div id="p-bg"><div id="p-fill"></div></div>
-            <div id="p-emojis"></div>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-weight:900;">
-            <span>Wallet: <span style="color:green">$</span><span id="w-val">0</span></span>
-            <span onclick="toggleMute()" id="mute-btn" style="cursor:pointer;">🔊</span>
+<div id="top-ui">
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <div>Score: <span id="score">0</span> | Best: <span id="best">0</span></div>
+        <div>Next: <span id="next-preview"></span></div>
+        <div>
+            <button class="btn" onclick="toggleFullscreen()">⛶</button>
+            <button class="btn" onclick="showModal('help')">?</button>
         </div>
     </div>
-
-    <div id="bottom-ui">
-        <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣</div>
-        <div class="btn" style="background:#9b59b6" onpointerdown="prepPwr('wipe', event)">🧹</div>
-        <div class="btn" style="background:#f1c40f" onpointerdown="prepPwr('evo', event)">✨</div>
-        <div class="btn" style="background:#2ecc71; width: 100px; color:white; font-size:16px;" onclick="openModal('shopModal')">STORE</div>
+    <div id="progress-wrapper">
+        <div id="progress-list"></div>
     </div>
+    <div style="text-align:center">Wallet: $<span id="wallet">0</span></div>
 </div>
 
-<div id="helpModal" class="modal">
-    <h2 style="margin:0;">Fruit Manual</h2>
-    <div class="scroll-content">
-        <p><b>HOW TO PLAY:</b> Drag and release to drop your fruit. Merge matching fruit to evolve them into larger types.</p>
-        <p><b>WALLET:</b> Merging earns you cash ($). Your balance and shop purchases stay with you forever, even after a Game Over.</p>
-        <p><b>POWER-UPS:</b> 
-            <br>1. Tap a power-up icon at the bottom.
-            <br>2. Drag your finger to the fruit you want to target.
-            <br>3. Release to activate.
-        </p>
-        <p><b>STRATEGY:</b> Keep larger fruit at the bottom. If any fruit stays above the Red Line for 2 seconds, the game ends!</p>
-    </div>
-    <button class="btn" onclick="closeModal()" style="width:100%; background:#333; color:white;">BACK</button>
+<div class="danger-line"></div>
+<div id="game-container"></div>
+
+<div id="bottom-ui">
+    <button class="btn power-up" data-type="bomb">💣 Bomb</button>
+    <button class="btn power-up" data-type="broom">🧹 Broom</button>
+    <button class="btn power-up" data-type="wand">🪄 Wand</button>
+    <button class="btn" onclick="showModal('store')">🏪 Store</button>
 </div>
 
-<div id="shopModal" class="modal">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="margin:0;">Store</h2>
-        <div style="font-weight:900; color:#2ecc71;">$ <span id="shop-wallet">0</span></div>
+<div id="store-modal" class="modal">
+    <div class="modal-content">
+        <h2>Store (44 Items)</h2>
+        <div id="store-items"></div>
     </div>
-    <div class="scroll-content" id="shop-scroller">
-        <div id="shop-grid" class="grid"></div>
-    </div>
-    <button class="btn" onclick="closeModal()" style="width:100%; background:#ff4757; color:white;">EXIT</button>
+    <button class="btn" onclick="closeModals()">Close</button>
 </div>
 
 <script>
-const SKINS = { Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"], Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"], Plants:["🌱","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"], Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚁"], Weather:["☁️","🌤️","⚡","☀️","🌦️","🌧️","🌨️","⛈️","❄️","🌬️","🌈","🌪️"], Shapes:["▲","■","⬓","⬢","⬦","⬗","★","◆","✚","⬙","⬣","⬤"] };
-const THEMES = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3", Cherry:"#d63031", Mint:"#00b894", Grape:"#6c5ce7", Pumpkin:"#e67e22", Coffee:"#634832", Rose:"#fd79a8", Sky:"#81ecec", Grass:"#26de81", Charcoal:"#2f3640" };
-const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185], COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
+/** * CONFIGURATION & DATA
+ */
+const SKINS = {
+    Fruit: ['🍒','🍓','🍇','🍊','🍎','🍐','🍑',' Pineapple ','🍈','🍉','🥥','🎃'],
+    Plants: ['🌱','🌵','🪴','🌲','🌳','🌴','🎋','🌿','🍀','🍄','🌻','🌹'],
+    Weather: ['☁️','🌤️','⚡','☀️','🌦️','🌧️','🌨️','⛈️','❄️','🌬️','🌈','🌪️'],
+    Shapes: ['▲','■','⬓','⬢','⬦','⬗','★','◆','✚','⬙','⬣','⬤'],
+    Space: ['☄️','🛰️','🪐','🌙','☀️','🔭','🚀','👽','🛸','🌌','🌠','👩‍🚀'],
+    Dessert: ['🍪','🍩','🧁','🍦','🍰','🥧','🍫','🍬','🍭','🍮','🍯','🎂']
+    // ... other skins added via shop
+};
 
-let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', border:'#333', owned:['Fruit', 'Lilac', '#333'], muted:false, maxT:0 };
-let engine, aCtx, currentIdx=0, nextIdx=1, isDragging=false, activePwr=null, touchX=0, touchY=0, canDrop=true;
-const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+let state = {
+    score: 0,
+    highScore: localStorage.getItem('highScore') || 0,
+    wallet: parseInt(localStorage.getItem('wallet')) || 0,
+    currentSkin: 'Fruit',
+    unlockedTiers: new Set([0]),
+    nextTier: 0
+};
 
-function startAudio() {
-    aCtx = new (window.AudioContext || window.webkitAudioContext)();
-    document.getElementById('start-overlay').style.display = 'none';
-    init();
+/** * AUDIO ENGINE (Web Audio API)
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type = 'sine', duration = 0.2) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
 }
 
-function fx(type) {
-    if(!aCtx || state.muted) return;
-    const o = aCtx.createOscillator(), g = aCtx.createGain();
-    o.connect(g); g.connect(aCtx.destination);
-    o.type = type === 'drop' ? 'square' : 'sine';
-    o.frequency.setValueAtTime(type === 'drop' ? 100 : 500, aCtx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(type === 'drop' ? 40 : 800, aCtx.currentTime + 0.1);
-    g.gain.setValueAtTime(0.05, aCtx.currentTime);
-    o.start(); o.stop(aCtx.currentTime + 0.1);
+const skinSounds = {
+    Fruit: 200, Space: 100, Shapes: 400, Dessert: 300, Plants: 150
+};
+
+/** * MATTER.JS PHYSICS
+ */
+const { Engine, Render, Runner, Bodies, Composite, Events, Mouse, MouseConstraint } = Matter;
+const container = document.getElementById('game-container');
+const engine = Engine.create();
+const render = Render.create({
+    element: container,
+    engine: engine,
+    options: {
+        width: window.innerWidth,
+        height: window.innerHeight - 275,
+        wireframes: false,
+        background: 'transparent'
+    }
+});
+
+const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight - 275, window.innerWidth, 20, { 
+    isStatic: true, render: { fillStyle: 'transparent' } 
+});
+Composite.add(engine.world, ground);
+
+/** * GAME LOGIC
+ */
+function createFruit(x, y, tier, isStatic = false) {
+    const size = 20 + (tier * 8);
+    const fruit = Bodies.circle(x, y, size, {
+        restitution: 0.4,
+        friction: 0.1,
+        label: 'fruit',
+        plugin: { tier: tier }
+    });
+    
+    fruit.render.sprite = null; // We use Canvas drawing for emojis
+    Composite.add(engine.world, fruit);
+    return fruit;
 }
 
+// Render Loop for Emojis
+Events.on(render, 'afterRender', () => {
+    const ctx = render.context;
+    const bodies = Composite.allBodies(engine.world);
+    
+    bodies.forEach(body => {
+        if(body.label === 'fruit') {
+            const tier = body.plugin.tier;
+            const emoji = SKINS[state.currentSkin][tier];
+            const size = 20 + (tier * 8);
+            ctx.font = `${size * 1.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.save();
+            ctx.translate(body.position.x, body.position.y);
+            ctx.rotate(body.angle);
+            ctx.fillText(emoji, 0, 0);
+            ctx.restore();
+        }
+    });
+});
+
+// Merging Logic
+Events.on(engine, 'collisionStart', (event) => {
+    event.pairs.forEach(pair => {
+        const { bodyA, bodyB } = pair;
+        if(bodyA.label === 'fruit' && bodyB.label === 'fruit' && bodyA.plugin.tier === bodyB.plugin.tier) {
+            const nextTier = bodyA.plugin.tier + 1;
+            if(nextTier < 12) {
+                const midX = (bodyA.position.x + bodyB.position.x) / 2;
+                const midY = (bodyA.position.y + bodyB.position.y) / 2;
+                
+                Composite.remove(engine.world, [bodyA, bodyB]);
+                createFruit(midX, midY, nextTier);
+                
+                state.score += (nextTier * 10);
+                updateUI(nextTier);
+                playTone(500 + (nextTier * 50), 'triangle'); // Merge "pop"
+            }
+        }
+    });
+});
+
+/** * INITIALIZATION & CONTROLS
+ */
 function init() {
-    const saved = localStorage.getItem('fm_v90');
-    if(saved) Object.assign(state, JSON.parse(saved));
-    state.score = 0; state.maxT = 0;
-    engine = Matter.Engine.create();
-    updateLayout();
-    
-    Matter.Events.on(engine, 'collisionStart', (e) => {
-        e.pairs.forEach(p => {
-            const a=p.bodyA, b=p.bodyB;
-            if(a.plugin?.t === b.plugin?.t && a.plugin?.t < 11 && !a.isMerging && !b.isMerging) {
-                a.isMerging = b.isMerging = true; fx('pop');
-                const nt = a.plugin.t + 1;
-                Matter.Composite.remove(engine.world, [a, b]);
-                Matter.Composite.add(engine.world, Matter.Bodies.circle((a.position.x+b.position.x)/2, (a.position.y+b.position.y)/2, SIZES[nt], { restitution: 0.4, plugin: {t:nt} }));
-                state.score += (nt*10); state.pts += (nt*5); 
-                if(nt > state.maxT) state.maxT = nt;
-                updateUI();
-            }
-        });
-    });
-
-    Matter.Runner.run(Matter.Runner.create(), engine);
-    requestAnimationFrame(render);
     updateUI();
-}
-
-function updateLayout() {
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    const floorY = canvas.height - 100;
-    Matter.Composite.clear(engine.world);
-    Matter.Composite.add(engine.world, [
-        Matter.Bodies.rectangle(canvas.width/2, floorY + 50, canvas.width, 100, {isStatic:true}),
-        Matter.Bodies.rectangle(-20, canvas.height/2, 40, canvas.height, {isStatic:true}),
-        Matter.Bodies.rectangle(canvas.width+20, canvas.height/2, 40, canvas.height, {isStatic:true})
-    ]);
-}
-
-function render() {
-    ctx.fillStyle = THEMES[state.theme];
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle = "red"; ctx.setLineDash([8,8]);
-    ctx.beginPath(); ctx.moveTo(0,195); ctx.lineTo(canvas.width,195); ctx.stroke(); ctx.setLineDash([]);
-
-    if(isDragging && !activePwr) {
-        ctx.font = "bold 44px Arial"; ctx.textAlign = "center";
-        ctx.fillText(SKINS[state.skin][currentIdx], touchX, 185);
-    }
-
-    const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
-    bodies.forEach(b => {
-        ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-        ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
-        ctx.font = "bold " + (b.circleRadius*1.1) + "px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillStyle = "white"; ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
-
-        if(b.position.y < 195 && !isDragging) {
-            if(!b.t0) b.t0 = Date.now();
-            if(Date.now() - b.t0 > 2000) { alert("Game Over!"); location.reload(); }
-        } else b.t0 = null;
-    });
-
-    if(activePwr) {
-        ctx.strokeStyle = "cyan"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(touchX, touchY, 40, 0, Math.PI*2); ctx.stroke();
-    }
-    requestAnimationFrame(render);
-}
-
-// Power-up Execution
-function runPwr(x, y) {
-    const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
-    const target = bodies.find(b => Math.hypot(b.position.x - x, b.position.y - y) < b.circleRadius + 40);
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
     
-    if(activePwr === 'bomb') {
-        bodies.forEach(b => { if(Math.hypot(b.position.x - x, b.position.y - y) < 120) Matter.Composite.remove(engine.world, b); });
-        state.pts -= 500;
-    } else if(activePwr === 'wipe' && target) {
-        const typeToKill = target.plugin.t;
-        bodies.forEach(b => { if(b.plugin.t === typeToKill) Matter.Composite.remove(engine.world, b); });
-        state.pts -= 1000;
-    } else if(activePwr === 'evo' && target && target.plugin.t < 11) {
-        const typeToEvolve = target.plugin.t;
-        bodies.forEach(b => {
-            if(b.plugin.t === typeToEvolve) {
-                const nt = typeToEvolve + 1;
-                Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x, b.position.y, SIZES[nt], {plugin:{t:nt}}));
-                Matter.Composite.remove(engine.world, b);
-            }
-        });
-        state.pts -= 1500;
-    }
-    activePwr = null; updateUI();
+    container.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        const x = touch.clientX;
+        dropFruit(x);
+    });
 }
 
-window.addEventListener('touchstart', (e) => {
-    if(e.target.closest('.btn') || e.target.closest('.modal')) return;
-    isDragging = true; touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
-});
-window.addEventListener('touchmove', (e) => { 
-    if(isDragging) { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }
-});
-window.addEventListener('touchend', (e) => {
-    if(!isDragging) return;
-    if(activePwr) { runPwr(touchX, touchY); }
-    else if(touchY > 165 && touchY < canvas.height - 100 && canDrop) {
-        fx('drop');
-        Matter.Composite.add(engine.world, Matter.Bodies.circle(touchX, 170, SIZES[currentIdx], { restitution:0.4, plugin:{t:currentIdx} }));
-        currentIdx = nextIdx; nextIdx = Math.floor(Math.random()*4);
-        canDrop = false; setTimeout(() => canDrop = true, 400);
-    }
-    isDragging = false; updateUI();
-});
-
-function prepPwr(p, e) {
-    const cost = p === 'bomb' ? 500 : p === 'wipe' ? 1000 : 1500;
-    if(state.pts >= cost) { activePwr = p; isDragging = true; }
-    else alert("Need more cash!");
+function dropFruit(x) {
+    const tier = state.nextTier;
+    createFruit(x, 50, tier);
+    state.nextTier = Math.floor(Math.random() * 3);
+    document.getElementById('next-preview').innerText = SKINS[state.currentSkin][state.nextTier];
+    playTone(skinSounds[state.currentSkin] || 200, 'sine', 0.1);
 }
 
-function updateUI() {
-    document.getElementById('s-val').innerText = state.score;
-    document.getElementById('h-val').innerText = state.best = Math.max(state.best, state.score);
-    document.getElementById('w-val').innerText = state.pts;
-    document.getElementById('next-disp').innerText = SKINS[state.skin][nextIdx];
-    document.getElementById('p-fill').style.width = (state.maxT/11*100) + "%";
-    let h = ''; SKINS[state.skin].forEach((em, i) => h += `<span class="p-em ${i<=state.maxT?'on':''}">${em}</span>`);
-    document.getElementById('p-emojis').innerHTML = h;
-    document.getElementById('game-container').style.borderColor = state.border;
-    localStorage.setItem('fm_v90', JSON.stringify(state));
+function updateUI(unlockedTier = null) {
+    if(unlockedTier !== null) state.unlockedTiers.add(unlockedTier);
+    document.getElementById('score').innerText = state.score;
+    document.getElementById('wallet').innerText = state.wallet;
+    
+    const list = document.getElementById('progress-list');
+    list.innerHTML = '';
+    SKINS[state.currentSkin].forEach((emoji, i) => {
+        const span = document.createElement('span');
+        span.className = `tier-icon ${state.unlockedTiers.has(i) ? 'unlocked' : ''}`;
+        span.innerText = emoji;
+        list.appendChild(span);
+    });
 }
 
-function openModal(id) { 
-    document.getElementById(id).style.display = 'flex'; 
-    if(id === 'shopModal') {
-        document.getElementById('shop-wallet').innerText = state.pts;
-        let h = '<h3>Skins ($500)</h3><div class="grid">';
-        Object.keys(SKINS).forEach(k => h += `<div class="item ${state.skin===k?'active':''}" onclick="buy('${k}','skin',500)">${SKINS[k][0]} ${k}</div>`);
-        h += '</div><h3>Themes ($300)</h3><div class="grid">';
-        Object.keys(THEMES).forEach(k => h += `<div class="item ${state.theme===k?'active':''}" onclick="buy('${k}','theme',300)"><div style="background:${THEMES[k]};height:12px;border-radius:6px"></div>${k}</div>`);
-        h += '</div><h3>Borders ($200)</h3><div class="grid">';
-        Object.keys(THEMES).forEach(k => h += `<div class="item ${state.border===THEMES[k]?'active':''}" onclick="buy('${THEMES[k]}','border',200)">${k} Border</div>`);
-        document.getElementById('shop-grid').innerHTML = h + '</div>';
-    }
-}
+function showModal(id) { document.getElementById(id + '-modal').style.display = 'flex'; }
+function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 
-function buy(id, type, cost) {
-    if(!state.owned.includes(id)) { if(state.pts >= cost) { state.pts -= cost; state.owned.push(id); } else return; }
-    state[type] = id; updateUI(); openModal('shopModal');
-}
-
-function closeModal() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-function toggleMute() { state.muted = !state.muted; document.getElementById('mute-btn').innerText = state.muted ? "🔇" : "🔊"; }
-function toggleFS() { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
-window.addEventListener('resize', updateLayout);
+init();
 </script>
 </body>
 </html>
