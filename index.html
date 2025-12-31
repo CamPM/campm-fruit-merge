@@ -3,128 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge - Cameron's Edition</title>
+    <title>Fruit Merge v1.20 - Cameron Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; }
         * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: var(--font); height: 100vh; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: var(--font); height: 100vh; display: flex; flex-direction: column; }
         
-        /* UI LAYOUT */
-        .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
-        .top-bar { top: 0; height: 110px; background: rgba(255,255,255,0.9); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; }
-        .bot-bar { bottom: 0; height: 100px; background: rgba(255,255,255,0.95); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+        /* UI PANELS */
+        .ui-layer { position: relative; z-index: 100; pointer-events: none; }
+        .top-bar { height: 120px; background: rgba(255,255,255,0.92); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; }
+        .bot-bar { margin-top: auto; height: 100px; background: rgba(255,255,255,0.95); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: center; gap: 15px; padding-bottom: env(safe-area-inset-bottom); }
         
-        .score-box { text-align: center; }
-        #next-preview { width: 50px; height: 50px; border: 2px dashed #999; border-radius: 50%; display: grid; place-items: center; font-size: 30px; }
+        /* SCORE & PREVIEW */
+        .score-box { text-align: center; flex: 1; }
+        #next-box { width: 45px; height: 45px; border: 2px dashed #999; border-radius: 50%; display: grid; place-items: center; font-size: 28px; background: #fff; margin: 0 auto; }
         
-        /* POWER UPS */
-        .pwr-btn { width: 45px; height: 45px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
-        .pwr-btn:active { transform: scale(0.9); }
-        .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-5px); }
+        /* POWER UPS & BUTTONS */
+        .btn-grp { display: flex; align-items: center; gap: 10px; }
+        .divider { width: 2px; height: 50px; background: #ddd; margin: 0 5px; position: relative; }
+        #mute-btn { position: absolute; top: -35px; left: -15px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid #ccc; background: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; }
+        
+        .pwr-btn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 18px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.1s; background: #333; }
+        .pwr-btn span { font-size: 9px; font-weight: bold; margin-top: 2px; }
+        #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; color: #333; }
+        .pwr-btn.active { transform: scale(1.15); outline: 4px solid #2ecc71; z-index: 10; }
 
         /* MODALS */
-        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; }
         .modal.open { display: flex; }
         .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
         
-        /* STORE GRID (v48 Style) */
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-bottom: 30px; }
-        .card { background: #f9f9f9; padding: 12px; border-radius: 15px; text-align: center; border: 2px solid #eee; display: flex; flex-direction: column; align-items: center; }
-        .card.equipped { border-color: #2ecc71; background: #f0fff4; }
-        .price-tag { font-size: 11px; font-weight: bold; margin-top: 5px; padding: 3px 8px; border-radius: 6px; }
+        /* STORE CARDS */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 20px; }
+        .card { background: #f9f9f9; padding: 12px; border-radius: 15px; text-align: center; border: 2px solid #eee; transition: 0.2s; }
+        .card.active { border-color: #2ecc71; background: #f0fff4; }
+        .price-tag { font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 6px; margin-top: 5px; display: inline-block; }
         .tag-buy { background: #ffeaa7; color: #d35400; }
         .tag-owned { background: #dfe6e9; color: #636e72; }
 
-        /* DEATH / TOAST */
-        #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        #toast { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
+        #toast { position: absolute; top: 140px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
     </style>
 </head>
 <body>
 
-<div id="toast">NEED MORE POINTS!</div>
+<div id="toast">INSUFFICIENT FUNDS</div>
 
-<div id="game-over">
-    <h1>GAME OVER</h1>
-    <p>Final Score: <span id="final-score">0</span></p>
-    <button onclick="restartGame()" style="padding:15px 40px; background:#2ecc71; color:white; border:none; border-radius:15px; font-weight:bold;">RETRY</button>
-</div>
-
-<div class="ui-panel top-bar">
+<div class="ui-layer top-bar">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="score-box"><b>SCORE</b><div id="cur-score" style="font-size:24px">0</div></div>
-        <div id="next-preview"></div>
-        <div class="score-box"><b>WALLET</b><div id="wallet-ui" style="font-size:24px; color:#2ecc71">0</div></div>
+        <div class="score-box"><b style="font-size:10px">SCORE</b><div id="cur-score" style="font-size:22px">0</div></div>
+        <div style="text-align:center;"><b style="font-size:10px">NEXT</b><div id="next-box"></div></div>
+        <div class="score-box"><b style="font-size:10px">WALLET</b><div id="wallet-ui" style="font-size:22px; color:#2ecc71">0</div></div>
     </div>
-    <div id="prog-bar" style="display:flex; justify-content:space-between; margin-top:10px;"></div>
+    <div id="prog-bar" style="display:flex; justify-content:space-between; margin-top:12px; background:rgba(0,0,0,0.05); padding:5px; border-radius:10px;"></div>
 </div>
 
-<div class="ui-panel bot-bar">
-    <div id="p-bomb" class="pwr-btn" onclick="prepPower('bomb')">💣</div>
-    <div id="p-wipe" class="pwr-btn" onclick="prepPower('wipe')">🧹</div>
-    <div id="p-evo" class="pwr-btn" onclick="prepPower('evo')">🪄</div>
-    <div class="pwr-btn" style="background:#95a5a6" onclick="toggleModal('help-modal')">?</div>
-    <div class="pwr-btn" style="background:#3498db; width:80px" onclick="toggleModal('shop-modal')">SHOP</div>
+<div class="ui-layer bot-bar">
+    <div class="btn-grp">
+        <div id="p-bomb" class="pwr-btn" onclick="prepPower('bomb')">💣<span>$500</span></div>
+        <div id="p-wipe" class="pwr-btn" onclick="prepPower('wipe')">🧹<span>$1k</span></div>
+        <div id="p-evo" class="pwr-btn" onclick="prepPower('evo')">🪄<span>$1.5k</span></div>
+    </div>
+    
+    <div class="divider">
+        <div id="mute-btn" onclick="toggleMute()">🔊</div>
+    </div>
+
+    <div class="btn-grp">
+        <div class="pwr-btn" style="background:#95a5a6" onclick="toggleModal('help-modal')">?<span>Help</span></div>
+        <div class="pwr-btn" style="background:#3498db; width:65px;" onclick="toggleModal('shop-modal')">🛒<span>Shop</span></div>
+    </div>
 </div>
 
 <div id="shop-modal" class="modal">
-    <div class="modal-header"><h2>Market</h2><b onclick="toggleModal('shop-modal')" style="font-size:24px">✕</b></div>
+    <div class="modal-header"><h2>Market</h2><b onclick="toggleModal('shop-modal')" style="font-size:24px; cursor:pointer">✕</b></div>
     <div class="modal-content" id="store-container"></div>
 </div>
 
 <div id="help-modal" class="modal">
-    <div class="modal-header"><h2>Help</h2><b onclick="toggleModal('help-modal')" style="font-size:24px">✕</b></div>
+    <div class="modal-header"><h2>How To Play</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer">✕</b></div>
     <div class="modal-content">
-        <p><b>Goal:</b> Merge identical items to reach Tier 12.</p>
-        <p>🔴 <b>Red Line:</b> Don't let items stay above the dotted line for 2 seconds!</p>
+        <h3>Basics</h3>
+        <p>Drop items and merge pairs to grow. Reach the 12th tier to master the game.</p>
+        <p>🛑 <b>Death Line:</b> If an item sits above the red dashed line for 2 seconds, the game resets!</p>
         <hr>
-        <p>💣 <b>Bomb ($500):</b> Blast area.</p>
-        <p>🧹 <b>Wipe ($1000):</b> Delete all of one type.</p>
-        <p>🪄 <b>Evolve ($1500):</b> Upgrade all of one type.</p>
-        <button onclick="toggleFull()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px;">TOGGLE FULLSCREEN</button>
+        <h3>Power Ups</h3>
+        <p>💣 <b>Bomb:</b> Tap to activate, then tap the board. It clears all items in a medium radius around the blast zone.</p>
+        <p>🧹 <b>Wipe:</b> Tap to activate, then tap a specific fruit. Every single fruit of that same type will be removed from the board.</p>
+        <p>🪄 <b>Evolve:</b> Tap to activate, then tap a fruit. It will instantly upgrade that fruit and all others of the same type to the next tier.</p>
+        <button onclick="toggleFull()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:12px; font-weight:bold;">FULLSCREEN MODE</button>
     </div>
 </div>
 
 <canvas id="c"></canvas>
 
 <script>
-const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events, R=M.Render;
-const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"], Weather: ["💧","❄️","🌪️","🌈","☀️","☁️","⛈️","🌩️","🌫️","🌤️","🌬️","☂️"], Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], Shapes: ["🔴","🟠","🟡","🟢","🔵","🟣","🟤","⚫","⬜","🟦","🟧","🟥"], Music: ["🎵","🎶","🎸","🎹","🎺","🎻","🎷","🥁","🎤","🎧","📻","🎼"], Plants: ["🌱","🌿","☘️","🍀","🌵","🌴","🌳","🌲","🍂","🍁","🍄","🌹"] };
-const THEMES = { Mellow: "#FDF6E3", Matcha: "#E8F5E9", Midnight: "#1a1b26", Lavender: "#F3E5F5", Sky: "#E1F5FE", Sunset: "#FFF3E0", Slate: "#263238", Rose: "#FCE4EC", Mint: "#D0F0C0", Ocean: "#E0F7FA", Lemon: "#FFFDE7", Plum: "#D8BFD8", Coffee: "#EFEBE9", Storm: "#ECEFF1", Forest: "#F1F8E9", Blush: "#FFF5F8" };
-const BORDERS = { Slate: "#657B83", Gold: "#DAA520", Red: "#DC143C", Neon: "#B026FF", Black: "#000000", White: "#FFFFFF", Grey: "#95A5A6", Blue: "#2980B9", Green: "#27AE60", Teal: "#16A085", Orange: "#E67E22", Pink: "#E91E63", Purple: "#8E44AD", Brown: "#795548", Mint: "#1ABC9C", Navy: "#2C3E50" };
+const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events;
+const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"], Weather: ["💧","❄️","🌪️","🌈","☀️","☁️","⛈️","🌩️","🌫️","🌤️","🌬️","☂️"], Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], Music: ["🎵","🎶","🎸","🎹","🎺","🎻","🎷","🥁","🎤","🎧","📻","🎼"], Plants: ["🌱","🌿","☘️","🍀","🌵","🌴","🌳","🌲","🍂","🍁","🍄","🌹"], Shapes: ["🔴","🟠","🟡","🟢","🔵","🟣","🟤","⚫","⬜","🟦","🟧","🟥"] };
+const THEMES = { Mellow: "#FDF6E3", Matcha: "#E8F5E9", Midnight: "#1a1b26", Lavender: "#F3E5F5", Sky: "#E1F5FE", Sunset: "#FFF3E0", Slate: "#263238", Rose: "#FCE4EC", Mint: "#D0F0C0", Ocean: "#E0F7FA", Coffee: "#EFEBE9", Blush: "#FFF5F8", Lemon: "#FFFDE7", Plum: "#D8BFD8", Storm: "#ECEFF1", Forest: "#F1F8E9" };
+const BORDERS = { Slate: "#657B83", Gold: "#DAA520", Red: "#DC143C", Neon: "#B026FF", Black: "#000000", White: "#FFFFFF", Grey: "#95A5A6", Blue: "#2980B9", Green: "#27AE60", Teal: "#16A085", Orange: "#E67E22", Pink: "#E91E63", Purple: "#8E44AD" };
 const OUTLINES = { Default: "def", Rainbow: "rainbow", White: "white", Black: "black" };
-const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
+const SIZES = [20, 26, 32, 40, 48, 58, 68, 80, 92, 105, 120, 138];
 
 let st = {
     score: 0, high: 0, wallet: 0,
     eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' },
     owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'],
-    found: new Set([0]), maxTier: 0
+    found: new Set([0]), mute: false
 };
 
-let engine, render, canvas, ctx, W, H, DL, FY, audioCtx;
-let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 0, activePower = null;
+let engine, canvas, ctx, W, H, DL, FY, audioCtx;
+let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 0, activePower = null, cycleTick = 0;
 
 function init() {
     load();
     canvas = document.getElementById('c'); ctx = canvas.getContext('2d');
-    W = window.innerWidth; H = window.innerHeight;
-    canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    DL = 115; FY = H - 100;
-
-    engine = E.create({ gravity: { y: 1.2 }, positionIterations: 10 });
+    resize();
+    engine = E.create({ gravity: { y: 1.2 } });
     
-    // THICK WALLS (v48 Style but reinforced)
-    C.add(engine.world, [
-        B.rectangle(W/2, FY + 250, W, 500, { isStatic: true, label: 'floor', friction: 0.5 }),
-        B.rectangle(-25, H/2, 50, H*2, { isStatic: true, label: 'wall' }),
-        B.rectangle(W+25, H/2, 50, H*2, { isStatic: true, label: 'wall' })
-    ]);
-
     Ev.on(engine, 'collisionStart', e => {
         e.pairs.forEach(p => {
             const a = p.bodyA, b = p.bodyB;
@@ -133,15 +132,28 @@ function init() {
                 C.remove(engine.world, [a, b]);
                 spawnFruit(pos.x, pos.y, t + 1, false);
                 st.score += (t+1)*10; st.wallet += (t+1);
-                st.found.add(t+1); if(t+1 > st.maxTier) st.maxTier = t+1;
-                playPop(); updUI(); save();
-            } else if(a.label === 'floor' || b.label === 'floor') {
-                playThud((a.plugin?a:b).speed);
+                st.found.add(t+1); playPop(); updUI(); save();
             }
         });
     });
 
+    setInterval(() => { cycleTick++; if(document.getElementById('shop-modal').classList.contains('open')) renderStore(); }, 800);
     loop();
+}
+
+function resize() {
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    DL = H * 0.16; FY = H - 100;
+    if(engine) {
+        C.clear(engine.world, false);
+        C.add(engine.world, [
+            B.rectangle(W/2, FY + 250, W, 500, { isStatic: true, label: 'floor' }),
+            B.rectangle(-25, H/2, 50, H*4, { isStatic: true }), // Extra tall walls
+            B.rectangle(W+25, H/2, 50, H*4, { isStatic: true })
+        ]);
+    }
 }
 
 function spawnFruit(x, y, t, isDrop) {
@@ -160,9 +172,9 @@ function spawnFruit(x, y, t, isDrop) {
 function loop() {
     E.update(engine, 16);
     ctx.clearRect(0, 0, W, H);
-    
-    // Background & Borders
     document.body.style.background = THEMES[st.eq.th];
+    
+    // Borders
     ctx.fillStyle = BORDERS[st.eq.bd];
     ctx.fillRect(0, 0, 15, H); ctx.fillRect(W-15, 0, 15, H);
     
@@ -171,133 +183,60 @@ function loop() {
 
     const now = Date.now();
     C.allBodies(engine.world).forEach(b => {
-        if(b.isStatic || b.plugin === undefined) return;
-        
-        // Game Over Logic
+        if(b.isStatic || !b.plugin) return;
         if(b.position.y - b.circleRadius < DL && b.speed < 0.5) {
-            if(!b.tm) b.tm = now;
-            if(now - b.tm > 2000) triggerGameOver();
+            if(!b.tm) b.tm = now; if(now - b.tm > 2000) resetGame();
         } else b.tm = null;
 
-        // Draw Fruit
         const r = b.circleRadius, t = b.plugin.t;
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
         
-        // Glow if targeted
+        // Targeted Glow
         if(activePower) {
             const d = M.Vector.magnitude(M.Vector.sub(b.position, {x: lastX, y: 150}));
-            if(d < r + 40) { ctx.shadowBlur = 20; ctx.shadowColor = "#D4AF37"; ctx.strokeStyle="#D4AF37"; ctx.lineWidth=4; ctx.stroke(); }
+            if(d < r + 40) { ctx.shadowBlur = 15; ctx.shadowColor = "#D4AF37"; }
         }
 
         ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
         
-        // Outline Logic
-        if(st.eq.ot === 'rainbow') ctx.strokeStyle = `hsl(${now/5%360},100%,50%)`;
-        else if(st.eq.ot === 'white') ctx.strokeStyle = "#fff";
-        else ctx.strokeStyle = "#0003";
+        ctx.strokeStyle = st.eq.ot === 'rainbow' ? `hsl(${now/5%360},100%,50%)` : (st.eq.ot==='white'?'#fff':(st.eq.ot==='black'?'#000':'#0002'));
         ctx.lineWidth = 2; ctx.stroke();
-
         ctx.font = `${r*1.3}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(SKINS[st.eq.sk][t], 0, r*0.05);
         ctx.restore();
     });
 
-    // Drop Preview
-    if(canDrop && !activePower) {
+    // Drop Preview (The "Ghost" fruit)
+    if(canDrop && !activePower && lastX > 30 && lastX < W-30) {
         ctx.strokeStyle="rgba(0,0,0,0.1)"; ctx.beginPath(); ctx.moveTo(lastX, DL); ctx.lineTo(lastX, FY); ctx.stroke();
-        ctx.font="40px serif"; ctx.globalAlpha=0.5; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, DL-20); ctx.globalAlpha=1;
-    }
-    
-    // Power Up Crosshair
-    if(activePower) {
-        ctx.strokeStyle="rgba(212,175,55,0.8)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.arc(lastX, 150, 50, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+        ctx.font="45px serif"; ctx.textAlign="center"; ctx.globalAlpha=0.6;
+        ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, DL - 15); ctx.globalAlpha=1;
     }
 
     requestAnimationFrame(loop);
 }
 
-// POWER UPS
-function prepPower(type) {
-    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
-    if(st.wallet >= costs[type]) {
-        activePower = type;
-        document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('p-'+type).classList.add('active');
-    } else {
-        const t = document.getElementById('toast'); t.style.display='block'; setTimeout(()=>t.style.display='none', 2000);
-    }
-}
-
-function handlePower(x, y) {
-    const bodies = C.allBodies(engine.world).filter(b => !b.isStatic);
-    const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
-    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
-
-    if(activePower === 'bomb') {
-        bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 100) C.remove(engine.world, b); });
-    } else if (target && target.plugin) {
-        const t = target.plugin.t;
-        if(activePower === 'wipe') bodies.forEach(b => { if(b.plugin.t === t) C.remove(engine.world, b); });
-        if(activePower === 'evo' && t < 11) bodies.forEach(b => { 
-            if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); }
-        });
-    } else { activePower = null; return; }
-
-    st.wallet -= costs[activePower];
-    activePower = null;
-    document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
-    playPop(); updUI(); save();
-}
-
-// AUDIO (v1.17 Style)
-function playPop() {
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-    o.frequency.setValueAtTime(400, audioCtx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
-    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0, audioCtx.currentTime+0.1);
-    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.1);
-}
-
-function playThud(v) {
-    if(!audioCtx || v < 2) return;
-    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-    o.type='triangle'; o.frequency.setValueAtTime(60 + Object.keys(SKINS).indexOf(st.eq.sk)*10, audioCtx.currentTime);
-    g.gain.setValueAtTime(Math.min(0.1, v/50), audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0, audioCtx.currentTime+0.2);
-    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.2);
-}
-
-// STORE LOGIC
+// MODALS & STORE
 function renderStore() {
     const container = document.getElementById('store-container'); container.innerHTML = '';
-    const cats = [
-        {title: 'Skins', key: 'sk', data: SKINS, cost: 1500},
-        {title: 'Themes', key: 'th', data: THEMES, cost: 500},
-        {title: 'Borders', key: 'bd', data: BORDERS, cost: 500},
-        {title: 'Outlines', key: 'ot', data: OUTLINES, cost: 2000}
-    ];
-
+    const cats = [{t:'Skins',k:'sk',d:SKINS,c:1500},{t:'Themes',k:'th',d:THEMES,c:500},{t:'Borders',k:'bd',d:BORDERS,c:500},{t:'Outlines',k:'ot',d:OUTLINES,c:2000}];
     cats.forEach(cat => {
-        container.innerHTML += `<h3 style="margin-top:20px">${cat.title}</h3><div class="grid" id="grid-${cat.key}"></div>`;
-        const grid = document.getElementById(`grid-${cat.key}`);
-        Object.keys(cat.data).forEach(item => {
-            const id = cat.key + '_' + item;
-            const isOwned = st.owned.includes(id);
-            const isEq = st.eq[cat.key] === (cat.key === 'ot' ? OUTLINES[item] : item);
+        container.innerHTML += `<h3 style="margin:15px 0 10px">${cat.t}</h3><div class="grid" id="grid-${cat.k}"></div>`;
+        const grid = document.getElementById(`grid-${cat.k}`);
+        Object.keys(cat.d).forEach(item => {
+            const id = cat.k+'_'+item, isEq = st.eq[cat.k] === (cat.k==='ot'?OUTLINES[item]:item), isOwn = st.owned.includes(id);
+            const card = document.createElement('div'); card.className = `card ${isEq?'active':''}`;
+            let preview = '';
+            if(cat.k==='sk') preview = `<div style="font-size:30px">${SKINS[item][cycleTick % 12]}</div>`;
+            else if(cat.k==='th') preview = `<div style="width:30px;height:30px;border-radius:50%;background:${THEMES[item]};margin:0 auto;border:1px solid #ddd"></div>`;
+            else if(cat.k==='bd') preview = `<div style="width:30px;height:10px;background:${BORDERS[item]};margin:0 auto;border-radius:5px"></div>`;
+            else preview = `<div style="font-size:20px; font-weight:bold; color:${item==='White'?'#ccc':'#000'}">Abc</div>`;
             
-            const card = document.createElement('div');
-            card.className = `card ${isEq ? 'equipped' : ''}`;
-            card.innerHTML = `
-                <div style="font-size:30px; margin-bottom:5px">${cat.key==='sk'?SKINS[item][0]:'●'}</div>
-                <b style="font-size:12px">${item}</b>
-                <span class="price-tag ${isEq?'tag-owned':isOwned?'tag-owned':'tag-buy'}">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.cost}</span>
-            `;
+            card.innerHTML = `${preview}<b style="font-size:11px;display:block;margin-top:5px">${item}</b><span class="price-tag ${isEq?'tag-owned':isOwn?'tag-owned':'tag-buy'}">${isEq?'EQUIPPED':isOwn?'OWNED':'$'+cat.c}</span>`;
             card.onclick = () => {
-                if(isOwned) { st.eq[cat.key] = (cat.key === 'ot' ? OUTLINES[item] : item); }
-                else if(st.wallet >= cat.cost) { st.wallet -= cat.cost; st.owned.push(id); st.eq[cat.key] = (cat.key === 'ot' ? OUTLINES[item] : item); }
-                else { const t = document.getElementById('toast'); t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
+                if(isOwn) st.eq[cat.k] = (cat.k==='ot'?OUTLINES[item]:item);
+                else if(st.wallet >= cat.c) { st.wallet -= cat.c; st.owned.push(id); st.eq[cat.k] = (cat.k==='ot'?OUTLINES[item]:item); }
+                else showToast();
                 save(); renderStore(); updUI();
             };
             grid.appendChild(card);
@@ -305,60 +244,50 @@ function renderStore() {
     });
 }
 
-// UTILS
-function triggerGameOver() {
-    document.getElementById('final-score').innerText = st.score;
-    document.getElementById('game-over').style.display = 'flex';
-    if(st.score > st.high) st.high = st.score;
-    save();
+function prepPower(type) {
+    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
+    if(st.wallet < costs[type]) { showToast(); return; }
+    activePower = (activePower === type) ? null : type;
+    document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
+    if(activePower) document.getElementById('p-'+type).classList.add('active');
 }
 
-function restartGame() {
-    st.score = 0; st.maxTier = 0; st.found = new Set([0]);
-    document.getElementById('game-over').style.display = 'none';
-    C.clear(engine.world, false);
-    init();
-}
+function handlePower(x, y) {
+    const bodies = C.allBodies(engine.world).filter(b => !b.isStatic);
+    const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
+    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
+    let success = false;
 
-function updUI() {
-    document.getElementById('cur-score').innerText = st.score;
-    document.getElementById('wallet-ui').innerText = st.wallet;
-    document.getElementById('next-preview').innerText = SKINS[st.eq.sk][nextIdx];
-    const pb = document.getElementById('prog-bar'); pb.innerHTML = '';
-    for(let i=0; i<12; i++) {
-        pb.innerHTML += `<div style="opacity:${st.found.has(i)?1:0.2}; font-size:12px">${SKINS[st.eq.sk][i]}</div>`;
+    if(activePower === 'bomb') {
+        bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 120) C.remove(engine.world, b); });
+        success = true;
+    } else if (target && target.plugin) {
+        const t = target.plugin.t;
+        if(activePower === 'wipe') { bodies.forEach(b => { if(b.plugin.t === t) C.remove(engine.world, b); }); success = true; }
+        if(activePower === 'evo' && t < 11) { bodies.forEach(b => { if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); } }); success = true; }
     }
+    if(success) { st.wallet -= costs[activePower]; playPop(); save(); updUI(); }
+    activePower = null;
+    document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
 }
 
-function save() { 
-    localStorage.setItem('fm_cam_v1', JSON.stringify({...st, found: Array.from(st.found)})); 
-}
-function load() { 
-    const d = localStorage.getItem('fm_cam_v1'); 
-    if(d) { Object.assign(st, JSON.parse(d)); st.found = new Set(st.found); } 
-}
+// SYSTEM
+function showToast() { const t = document.getElementById('toast'); t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
+function toggleMute() { st.mute = !st.mute; document.getElementById('mute-btn').innerText = st.mute ? '🔇' : '🔊'; }
+function playPop() { if(st.mute) return; if(!audioCtx) audioCtx = new AudioContext(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.setValueAtTime(400, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0, audioCtx.currentTime+0.1); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.1); }
+function resetGame() { if(st.score > st.high) st.high = st.score; st.score = 0; st.found = new Set([0]); C.allBodies(engine.world).forEach(b => { if(!b.isStatic) C.remove(engine.world, b); }); updUI(); save(); }
+function updUI() { document.getElementById('cur-score').innerText = st.score; document.getElementById('wallet-ui').innerText = st.wallet; document.getElementById('next-box').innerText = SKINS[st.eq.sk][nextIdx]; const pb = document.getElementById('prog-bar'); pb.innerHTML = ''; for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.has(i)?1:0.1}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`; }
+function save() { localStorage.setItem('fm_cam_v20', JSON.stringify({...st, found: Array.from(st.found)})); }
+function load() { const d = localStorage.getItem('fm_cam_v20'); if(d) { Object.assign(st, JSON.parse(d)); st.found = new Set(st.found); } }
+function toggleModal(id) { document.getElementById(id).classList.toggle('open'); if(id==='shop-modal') renderStore(); }
+function toggleFull() { const de = document.documentElement; if(!document.fullscreenElement && !document.webkitFullscreenElement) { (de.requestFullscreen || de.webkitRequestFullscreen).call(de); } else { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } setTimeout(resize, 500); }
 
-function toggleModal(id) { 
-    const m = document.getElementById(id);
-    m.classList.toggle('open');
-    if(id === 'shop-modal') renderStore();
-}
-
-function toggleFull() {
-    const de = document.documentElement;
-    if(!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if(de.requestFullscreen) de.requestFullscreen(); else de.webkitRequestFullscreen();
-    } else {
-        if(document.exitFullscreen) document.exitFullscreen(); else document.webkitExitFullscreen();
-    }
-}
-
-window.addEventListener('pointermove', e => { lastX = Math.max(40, Math.min(W-40, e.clientX)); });
+window.addEventListener('pointermove', e => { lastX = e.clientX; });
 window.addEventListener('pointerup', e => {
     if(activePower) handlePower(e.clientX, e.clientY);
     else if(canDrop && e.clientY > DL && e.clientY < FY) spawnFruit(lastX, DL, curIdx, true);
 });
-
+window.onresize = resize;
 window.onload = init;
 </script>
 </body>
