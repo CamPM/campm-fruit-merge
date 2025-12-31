@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge Ultimate v70</title>
+    <title>Fruit Merge v71</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; touch-action: none; }
@@ -16,10 +16,12 @@
         .stats { display: flex; justify-content: space-between; font-weight: 900; font-size: 14px; color: #333; }
         .btn { width: 56px; height: 56px; border-radius: 15px; border: 3px solid #333; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #bbb; position: relative; }
         .btn span { position: absolute; bottom: -14px; font-size: 10px; background: white; border: 1.5px solid #333; padding: 1px 5px; border-radius: 6px; font-weight: 900; }
-        .sub-btn { background: #3498db; color: white; border: 3px solid #333; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
+        #controls-overlay { position: absolute; top: 155px; right: 15px; z-index: 1001; display: flex; flex-direction: column; gap: 12px; }
+        .sub-btn { background: #3498db; color: white; border: 3px solid #333; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-size: 20px; }
         .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 6px solid #333; border-radius: 28px; padding: 25px; overflow-y: auto; }
+        .store-cat { margin-bottom: 30px; border-top: 2px solid #eee; padding-top: 15px; }
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px; }
-        .item-card { border: 3px solid #eee; padding: 15px; border-radius: 18px; text-align: center; position: relative; font-weight: bold; }
+        .item-card { border: 3px solid #eee; padding: 15px; border-radius: 18px; text-align: center; position: relative; font-weight: bold; background: #fff; }
         .item-card.selected { border-color: #2ecc71; background: #f0fff4; }
         .badge { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; position: absolute; top: -12px; right: -5px; border: 2px solid #333; color: #fff; text-transform: uppercase; }
     </style>
@@ -28,10 +30,14 @@
 <div id="game-container">
     <div id="top-ui">
         <div class="stats"><span>SCORE: <span id="s-val">0</span></span><span>BEST: <span id="h-val">0</span></span></div>
-        <div id="next-disp" style="text-align:center; font-size:40px; height: 45px;"></div>
+        <div id="next-disp" style="text-align:center; font-size:40px; height: 45px; line-height:45px;"></div>
         <div id="progress-icons"></div>
         <div id="progress-wrap"><div id="progress-bar"></div></div>
         <div class="stats" style="margin-top:8px"><span>WALLET: $<span id="w-val">0</span></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer;">🔊</span></div>
+    </div>
+    <div id="controls-overlay">
+        <div class="sub-btn" onclick="openHelp()" style="background:#f1c40f; color:#333;">?</div>
+        <div class="sub-btn" onclick="toggleFS()">⛶</div>
     </div>
     <div id="bottom-ui">
         <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣<span>$500</span></div>
@@ -40,8 +46,16 @@
         <div class="btn" style="background:#3498db; width: 90px; color:white;" onclick="openShop()">STORE</div>
     </div>
     <canvas id="gameCanvas"></canvas>
+    <div id="helpModal" class="modal">
+        <h2 style="text-align:center">How to Play</h2>
+        <p>Combine identical items to grow them. Don't let items cross the <b>Danger Line</b>!</p>
+        <p><b>💣 Bomb:</b> Explodes an area. Drag to aim.</p>
+        <p><b>🧹 Broom:</b> Select an item to delete ALL of that type.</p>
+        <p><b>✨ Sparkle:</b> Select an item to upgrade ALL of that type.</p>
+        <button class="sub-btn" onclick="closeModal()" style="width:100%; border-radius:12px; margin-top:15px; height:48px;">Got it!</button>
+    </div>
     <div id="shopModal" class="modal">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>The Store</h2><button class="sub-btn" onclick="closeModal()">×</button></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>The Store</h2><button class="sub-btn" style="width:30px; height:30px;" onclick="closeModal()">×</button></div>
         <p style="text-align:center; font-weight:bold; color:#2ecc71;">Wallet: $<span id="shop-wallet">0</span></p>
         <div id="shop-scroll"></div>
     </div>
@@ -57,7 +71,8 @@ const SKINS = {
     Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚁"], 
     Weather:["☁️","🌤️","⚡","☀️","🌦️","🌧️","🌨️","⛈️","❄️","🌬️","🌈","🌪️"] 
 };
-const SQUISH_VALS = { Fruit:0.6, Animals:0.6, Shapes:0, Space:0, Desserts:0.6, Plants:0.2, Cars:0, Weather:0.2 };
+const SQUISH_VALS = { Fruit:0.6, Animals:0.6, Desserts:0.6, Weather:0.25, Plants:0.25, Shapes:0, Space:0, Cars:0 };
+const BOUNCE = { Fruit:0.5, Animals:0.5, Desserts:0.5, Weather:0.3, Plants:0.3, Shapes:0.1, Space:0.1, Cars:0.1 };
 const THEME_DATA = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3", Cherry:"#d63031", Mint:"#00b894", Grape:"#6c5ce7", Pumpkin:"#e67e22", Coffee:"#634832", Rose:"#fd79a8", Sky:"#81ecec", Grass:"#26de81", Charcoal:"#2f3640" };
 const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185], COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
 
@@ -65,8 +80,15 @@ let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', border:'#333'
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), aCtx = new (window.AudioContext || window.webkitAudioContext)();
 let engine, currentIdx=0, nextIdx=1, lastX=200, isDragging=false, activePwr=null, pwrX=0, pwrY=0, canDrop=true;
 
+function playS(f=440) {
+    if(state.muted) return; if(aCtx.state==='suspended') aCtx.resume();
+    const o=aCtx.createOscillator(), g=aCtx.createGain(); o.connect(g); g.connect(aCtx.destination);
+    o.frequency.setValueAtTime(f, aCtx.currentTime); g.gain.setValueAtTime(0.05, aCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, aCtx.currentTime + 0.1); o.start(); o.stop(aCtx.currentTime + 0.1);
+}
+
 function init() {
-    const s=localStorage.getItem('fm_ult_v70'); if(s) Object.assign(state, JSON.parse(s));
+    const s=localStorage.getItem('fm_ult_v71'); if(s) Object.assign(state, JSON.parse(s));
     engine = Matter.Engine.create(); setupD();
     Matter.Events.on(engine, 'collisionStart', (e) => {
         e.pairs.forEach(p => {
@@ -74,10 +96,12 @@ function init() {
             if(a.plugin?.t === b.plugin?.t && a.plugin?.t < 11 && !a.isMerging && !b.isMerging) {
                 a.isMerging = b.isMerging = true;
                 const nt=a.plugin.t+1, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
-                state.maxT = Math.max(state.maxT, nt);
+                state.maxT = Math.max(state.maxT, nt); playS(300+(nt*40));
                 Matter.Composite.remove(engine.world, [a, b]);
-                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { restitution: 0.2, plugin: {t:nt, dT:null} }));
+                Matter.Composite.add(engine.world, Matter.Bodies.circle(pos.x, pos.y, SIZES[nt], { restitution: BOUNCE[state.skin], plugin: {t:nt, dT:null} }));
                 state.score += (nt*10); state.pts += (nt*5); updateUI();
+            } else if (p.collision.depth > 1) {
+                const s = SQUISH_VALS[state.skin]; if(a.plugin) a.sq = 1 - s*0.3; if(b.plugin) b.sq = 1 - s*0.3;
             }
         });
     });
@@ -87,19 +111,17 @@ function init() {
 
 function setupD() {
     const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
-    const data = bodies.map(b => ({ t: b.plugin.t, rx: b.position.x / canvas.width, ry: b.position.y / canvas.height }));
-    
+    const data = bodies.map(b => ({ t: b.plugin.t, rx: b.position.x / canvas.width, ry: b.position.y / canvas.height, a: b.angle }));
     canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-    const fY=canvas.height-95, bW = 12;
+    const bW = 12, fY = canvas.height - 95;
     Matter.Composite.clear(engine.world); 
     Matter.Composite.add(engine.world, [
-        Matter.Bodies.rectangle(canvas.width/2, fY + 250, canvas.width, 500, {isStatic:true}), // DEEP FLOOR
+        Matter.Bodies.rectangle(canvas.width/2, fY + 44, canvas.width, 100, {isStatic:true}), // FLOOR precisely at visual bottom
         Matter.Bodies.rectangle(bW/2, canvas.height/2, bW, canvas.height, {isStatic:true}), 
         Matter.Bodies.rectangle(canvas.width - bW/2, canvas.height/2, bW, canvas.height, {isStatic:true})
     ]);
-    
     data.forEach(d => {
-        const nb = Matter.Bodies.circle(d.rx * canvas.width, d.ry * canvas.height, SIZES[d.t], { plugin: {t:d.t, dT:null} });
+        const nb = Matter.Bodies.circle(d.rx * canvas.width, d.ry * canvas.height, SIZES[d.t], { angle: d.a, restitution: BOUNCE[state.skin], plugin: {t:d.t, dT:null} });
         Matter.Composite.add(engine.world, nb);
     });
 }
@@ -107,21 +129,18 @@ function setupD() {
 function render(time) {
     ctx.fillStyle=THEME_DATA[state.theme]; ctx.fillRect(0,0,canvas.width,canvas.height);
     
-    // VIBRANT NEON DANGER LINE
-    ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = "red"; ctx.strokeStyle = `rgba(255, 0, 50, ${0.6 + Math.sin(time/150)*0.3})`;
-    ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 185); ctx.lineTo(canvas.width, 185); ctx.stroke(); ctx.restore();
-
-    // CLAMPED GHOST
+    // GHOST ITEM
     if(isDragging && !activePwr) { 
         const bW = 15; lastX = Math.max(bW + SIZES[currentIdx], Math.min(canvas.width - bW - SIZES[currentIdx], lastX));
-        ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(SKINS[state.skin][currentIdx], lastX, 170);
+        ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(SKINS[state.skin][currentIdx], lastX, 175);
     }
 
     const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
     bodies.forEach(b => {
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+        if(!b.sq) b.sq = 1; b.sq += (1 - b.sq) * 0.1; ctx.scale(b.sq, 1/b.sq);
         ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill(); 
-        if(state.outline !== 'none') { ctx.strokeStyle = state.outline==='white'?'#fff':'#000'; ctx.lineWidth=2; ctx.stroke(); }
+        if(state.outline !== 'none') { ctx.strokeStyle = state.outline==='white'?'#fff':'#000'; ctx.lineWidth=3; ctx.stroke(); }
         ctx.font = (b.circleRadius*1.3)+"px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; 
         ctx.fillStyle = "#fff"; ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
 
@@ -131,24 +150,28 @@ function render(time) {
         } else b.plugin.dT = null;
     });
 
+    // DANGER LINE
+    ctx.save(); ctx.strokeStyle = "rgba(255,0,0,0.6)"; ctx.shadowBlur = 10; ctx.shadowColor = "red"; ctx.lineWidth = 4; ctx.setLineDash([10, 10]);
+    ctx.beginPath(); ctx.moveTo(0, 185); ctx.lineTo(canvas.width, 185); ctx.stroke(); ctx.restore();
+
+    // CROSSHAIR
     if(activePwr) { 
-        ctx.save(); ctx.strokeStyle="white"; ctx.lineWidth=4; ctx.shadowBlur=10; ctx.shadowColor="black";
-        ctx.beginPath(); ctx.arc(pwrX, pwrY, activePwr==='bomb'?80:35, 0, Math.PI*2);
-        ctx.moveTo(pwrX-50, pwrY); ctx.lineTo(pwrX+50, pwrY); ctx.moveTo(pwrX, pwrY-50); ctx.lineTo(pwrX, pwrY+50);
-        ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.lineWidth=3; ctx.strokeStyle="white"; ctx.beginPath(); ctx.arc(pwrX, pwrY, 40, 0, Math.PI*2); ctx.stroke();
+        ctx.strokeStyle="black"; ctx.beginPath(); ctx.arc(pwrX, pwrY, 43, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pwrX-60, pwrY); ctx.lineTo(pwrX+60, pwrY); ctx.moveTo(pwrX, pwrY-60); ctx.lineTo(pwrX, pwrY+60); ctx.stroke(); ctx.restore();
     }
     requestAnimationFrame(render);
 }
 
-function prepPwr(t, e) { if(state.pts < {bomb:500, wipe:1000, evo:1500}[t]) return; activePwr = t; isDragging = true; }
+function prepPwr(t, e) { if(state.pts < {bomb:500, wipe:1000, evo:1500}[t]) return; activePwr = t; isDragging = true; pwrX=e.clientX; pwrY=e.clientY; }
 
-canvas.addEventListener('pointerdown', (e) => { if(e.clientY < canvas.height-95 && e.clientY > 145) { isDragging=true; lastX=e.clientX; if(aCtx.state==='suspended') aCtx.resume(); } });
-canvas.addEventListener('pointermove', (e) => { if(isDragging) { pwrX = e.clientX; pwrY = e.clientY; lastX = e.clientX; } });
-canvas.addEventListener('pointerup', (e) => {
-    if(activePwr) { usePwr(pwrX, pwrY); activePwr=null; }
-    else if(isDragging && canDrop) { 
+canvas.addEventListener('pointerdown', (e) => { if(!activePwr && e.clientY > 145 && e.clientY < canvas.height-95) { isDragging=true; lastX=e.clientX; if(aCtx.state==='suspended') aCtx.resume(); } });
+canvas.addEventListener('pointermove', (e) => { pwrX = e.clientX; pwrY = e.clientY; if(isDragging) lastX = e.clientX; });
+canvas.addEventListener('pointerup', () => {
+    if(activePwr) { usePwr(pwrX, pwrY); activePwr = null; }
+    else if(isDragging && canDrop) {
         const bW = 15; const dropX = Math.max(bW + SIZES[currentIdx], Math.min(canvas.width - bW - SIZES[currentIdx], lastX));
-        Matter.Composite.add(engine.world, Matter.Bodies.circle(dropX, 145, SIZES[currentIdx], { plugin:{t:currentIdx} }));
+        Matter.Composite.add(engine.world, Matter.Bodies.circle(dropX, 145, SIZES[currentIdx], { restitution: BOUNCE[state.skin], plugin:{t:currentIdx} }));
         currentIdx=nextIdx; nextIdx=Math.floor(Math.random()*4); canDrop=false; setTimeout(()=>canDrop=true, 500); 
     }
     isDragging = false; updateUI();
@@ -174,12 +197,15 @@ function updateUI() {
 
 function openShop() {
     document.getElementById('shopModal').style.display='block'; document.getElementById('shop-wallet').innerText=state.pts;
-    let h = '<div class="grid">';
+    let h = '<div class="store-cat"><h3>Skins</h3><div class="grid">';
     Object.keys(SKINS).forEach(id => h += `<div class="item-card ${state.skin===id?'selected':''}" onclick="buy('${id}','skin',500)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'Owned':'$500'}</span>${SKINS[id][0]}<br>${id}</div>`);
+    h += '</div></div><div class="store-cat"><h3>Outlines</h3><div class="grid">';
     ['None', 'Black', 'White'].forEach(id => h += `<div class="item-card ${state.outline===id.toLowerCase()?'selected':''}" onclick="buy('${id.toLowerCase()}','outline',1000)"><span class="badge" style="background:${state.owned.includes('o_'+id.toLowerCase())?'#2ecc71':'#f1c40f'}">${state.owned.includes('o_'+id.toLowerCase())?'Owned':'$1k'}</span>${id}</div>`);
+    h += '</div></div><div class="store-cat"><h3>Themes</h3><div class="grid">';
     Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.theme===id?'selected':''}" onclick="buy('${id}','theme',300)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'Owned':'$300'}</span><div style="height:15px;background:${THEME_DATA[id]};border-radius:4px;"></div>${id}</div>`);
-    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.border===THEME_DATA[id]?'selected':''}" onclick="buy('${THEME_DATA[id]}','border',200)"><span class="badge" style="background:${state.owned.includes('b_'+THEME_DATA[id])?'#2ecc71':'#f1c40f'}">${state.owned.includes('b_'+THEME_DATA[id])?'Owned':'$200'}</span><div style="height:15px;background:${THEME_DATA[id]};border-radius:4px;"></div>${id} Border</div>`);
-    document.getElementById('shop-scroll').innerHTML = h + '</div>';
+    h += '</div></div><div class="store-cat"><h3>Borders</h3><div class="grid">';
+    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.border===THEME_DATA[id]?'selected':''}" onclick="buy('${THEME_DATA[id]}','border',200)"><span class="badge" style="background:${state.owned.includes('b_'+THEME_DATA[id])?'#2ecc71':'#f1c40f'}">${state.owned.includes('b_'+THEME_DATA[id])?'Owned':'$200'}</span><div style="height:15px;background:${THEME_DATA[id]};border-radius:4px;"></div>${id}</div>`);
+    document.getElementById('shop-scroll').innerHTML = h + '</div></div>';
 }
 
 function buy(id, t, c) { 
@@ -187,9 +213,11 @@ function buy(id, t, c) {
     if(!state.owned.includes(k)){ if(state.pts>=c){state.pts-=c; state.owned.push(k);} else return; }
     state[t]=id; updateUI(); openShop(); 
 }
-function save() { localStorage.setItem('fm_ult_v70', JSON.stringify(state)); }
+function save() { localStorage.setItem('fm_ult_v71', JSON.stringify(state)); }
 function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
+function openHelp() { document.getElementById('helpModal').style.display='block'; }
 function toggleMute() { state.muted=!state.muted; document.getElementById('mute-btn').innerText=state.muted?"🔇":"🔊"; save(); }
+function toggleFS() { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
 init();
 </script>
 </body>
