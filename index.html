@@ -3,40 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge - v1.27</title>
+    <title>Fruit Merge - v1.28</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: var(--font); height: 100vh; display: flex; flex-direction: column; touch-action: none; }
         
+        /* UI PANELS */
         .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
-        .top-bar { top: 0; height: 115px; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; padding-top: env(safe-area-inset-top); }
+        .top-bar { top: 0; height: 135px; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; padding-top: env(safe-area-inset-top); }
         .bot-bar { bottom: 0; height: 100px; background: var(--panel); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; padding-bottom: env(safe-area-inset-bottom); }
         
         .score-box { text-align: center; min-width: 60px; }
-        #next-preview { width: 55px; height: 55px; border: 3px solid #333; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: #fff; box-shadow: 0 4px 0 #333; }
+        #next-preview { width: 50px; height: 50px; border: 3px solid #333; border-radius: 50%; display: grid; place-items: center; font-size: 28px; background: #fff; box-shadow: 0 4px 0 #333; }
         
         .pwr-btn { width: 46px; height: 46px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; }
-        .btn-small { width: 30px; height: 30px; font-size: 14px; position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; }
+        .btn-small { width: 30px; height: 30px; font-size: 14px; position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; border: 2px solid #333; }
         
         #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
         .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-8px); }
 
+        /* MODALS */
         .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; }
         .modal.open { display: flex; }
         .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .modal-content { flex: 1; overflow-y: scroll; padding: 15px; -webkit-overflow-scrolling: touch; }
+        .modal-content { flex: 1; overflow-y: scroll; padding: 15px; -webkit-overflow-scrolling: touch; line-height: 1.5; }
         
+        /* STORE ELEMENTS */
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 20px; }
         .card { background: #f9f9f9; padding: 10px; border-radius: 15px; text-align: center; border: 2px solid #eee; cursor: pointer; }
         .card.equipped { border-color: #2ecc71; background: #f0fff4; }
         
         @keyframes rotate-emoji { 0% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.1) rotate(10deg); } 100% { transform: scale(1) rotate(0deg); } }
-        .preview-swatch { width: 50px; height: 50px; border-radius: 50%; margin: 5px auto; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 24px; background: white; animation: rotate-emoji 2s infinite ease-in-out; }
+        .preview-swatch { width: 50px; height: 50px; border-radius: 50%; margin: 5px auto; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 24px; background: white; }
+        .skin-preview { animation: rotate-emoji 2s infinite ease-in-out; }
+        
+        .rainbow-grad { background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff); background-size: 200% 200%; animation: rainbow-shift 3s linear infinite; }
+        @keyframes rainbow-shift { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 
-        #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
-        #toast { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
+        #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
+        #toast { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
+        
+        hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -44,9 +53,10 @@
 <div id="toast">NEED MORE POINTS!</div>
 
 <div id="game-over">
-    <h1>GAME OVER</h1>
-    <p>Score: <span id="final-score">0</span></p>
-    <button onclick="restartGame()" style="padding:15px 40px; background:#2ecc71; color:white; border:none; border-radius:15px; font-weight:bold;">RETRY</button>
+    <h1 style="font-size: 3rem; margin-bottom: 0;">GAME OVER</h1>
+    <p style="font-size: 1.2rem;">Score: <span id="final-score">0</span></p>
+    <p style="color: #f1c40f;">Best: <span id="final-best">0</span></p>
+    <button onclick="restartGame()" style="margin-top:20px; padding:15px 50px; background:#2ecc71; color:white; border:none; border-radius:15px; font-size:1.2rem; font-weight:bold; cursor:pointer;">PLAY AGAIN</button>
 </div>
 
 <div class="ui-panel top-bar">
@@ -56,6 +66,7 @@
         <div class="score-box"><b>WALLET</b><div id="wallet-ui" style="font-size:24px; color:#2ecc71">0</div></div>
     </div>
     <div id="prog-bar" style="display:flex; justify-content:space-around; margin-top:10px; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 5px;"></div>
+    <div style="text-align:center; font-size: 12px; margin-top: 5px; font-weight: bold; color: #7f8c8d;">HIGH SCORE: <span id="high-score-ui">0</span></div>
 </div>
 
 <div class="ui-panel bot-bar">
@@ -73,22 +84,35 @@
 
 <div id="shop-modal" class="modal">
     <div class="modal-header">
-        <div><h2>Market</h2><div id="shop-wallet" style="color:#2ecc71; font-weight:bold;">$0</div></div>
+        <div><h2 style="margin:0">Market</h2><div id="shop-wallet" style="color:#2ecc71; font-weight:bold;">$0</div></div>
         <b onclick="toggleModal('shop-modal')" style="font-size:24px; cursor:pointer;">✕</b>
     </div>
     <div class="modal-content" id="store-container"></div>
 </div>
 
 <div id="help-modal" class="modal">
-    <div class="modal-header"><h2>How to Play</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer;">✕</b></div>
+    <div class="modal-header"><h2 style="margin:0">How to Play</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer;">✕</b></div>
     <div class="modal-content">
-        <h3>Rules</h3>
-        <p>Merge matching emojis to evolve them. Reach Tier 12 to win!</p>
-        <p><b>Death Line:</b> Don't let items sit above the red line for 2 seconds.</p>
-        <h3>Power Ups</h3>
-        <p><b>Bomb:</b> Clears a small area.</p>
-        <p><b>Wipe:</b> Removes all of one kind.</p>
-        <p><b>Evolve:</b> Upgrades all of one kind.</p>
+        <h3>Objective</h3>
+        <p>Drop items to merge matching pairs. Merged items evolve into the next tier (larger and more valuable). Reach the ultimate <b>Tier 12</b> emoji to master the board!</p>
+        
+        <h3>Controls</h3>
+        <ul>
+            <li><b>Move:</b> Drag or tap your finger along the top area.</li>
+            <li><b>Drop:</b> Release to let the item fall.</li>
+            <li><b>Fullscreen:</b> Use the ⛶ button for an immersive experience.</li>
+        </ul>
+
+        <h3>The Death Line ⚠️</h3>
+        <p>If items stack too high and cross the <b>red dotted line</b> for more than 2 seconds, the game ends. Keep your board clear by merging!</p>
+
+        <h3>Power-Ups (Cost Points)</h3>
+        <p><b>💣 Bomb ($500):</b> Explodes in a small radius, clearing out jammed items.</p>
+        <p><b>🧹 Wipe ($1000):</b> Tap a specific item on the board to remove <i>all</i> items of that tier instantly.</p>
+        <p><b>🪄 Evolve ($1500):</b> Tap an item to upgrade <i>every</i> instance of that tier to the next level.</p>
+        
+        <h3>Customization</h3>
+        <p>Earn points by merging to buy new <b>Skins</b>, <b>Borders</b>, and <b>Backgrounds</b> in the Shop. You can also change the <b>Outline</b> style of the hitboxes for better visibility!</p>
     </div>
 </div>
 
@@ -105,14 +129,14 @@ const SKINS = {
     Polygons: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"],
     Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"],
     Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"],
-    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"]
+    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","伸縮","🌌","🪐","☀️","🌀","👽"]
 };
 const THEMES = { Mellow: "#FDF6E3", Matcha: "#E8F5E9", Midnight: "#1a1b26", Lavender: "#F3E5F5", Sky: "#E1F5FE", Rose: "#FFF1F0", Sunset: "#FFF5E6", Forest: "#1B5E20", DeepSea: "#01579B", Charcoal: "#212121", Sand: "#F4A460", Mint: "#F0FFF0", Plum: "#4B0082", Peach: "#FFDAB9", Slate: "#708090", Ghost: "#E8ECEF" };
 const BORDERS = { Slate: "#657B83", Gold: "#DAA520", Neon: "#B026FF", Red: "#DC143C", Black: "#000000", Silver: "#C0C0C0", Bronze: "#CD7F32", Electric: "#00FFFF", Lime: "#32CD32", Pink: "#FF69B4", Wine: "#800000", Navy: "#000080", Olive: "#808000", Teal: "#008080", Orange: "#FF8C00", White: "#FFFFFF" };
 const OUTLINES = { Default: "def", Rainbow: "rainbow", White: "white", Black: "black" };
 const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
 
-let st = { score: 0, wallet: 0, muted: false, eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' }, owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found: new Set([0]) };
+let st = { score: 0, best: 0, wallet: 0, muted: false, eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' }, owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found: new Set([0]) };
 let engine, canvas, ctx, W, H, DL, FY, audioCtx, floor, wallL, wallR;
 let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, activePower = null, shopTimer = 0;
 
@@ -123,17 +147,18 @@ function init() {
     window.addEventListener('resize', resize);
     engine = E.create({ gravity: { y: 1.2 } });
     updatePhysicsBounds();
+    
     Ev.on(engine, 'collisionStart', e => {
         e.pairs.forEach(p => {
             const a = p.bodyA, b = p.bodyB;
-            if(a.label === 'floor' || b.label === 'floor') { 
-                if(a.plugin?.t !== undefined || b.plugin?.t !== undefined) playSound('thud'); 
-            }
+            if((a.label === 'floor' || b.label === 'floor') && (a.plugin?.t !== undefined || b.plugin?.t !== undefined)) playSound('thud'); 
+            
             if(a.plugin?.t !== undefined && b.plugin?.t !== undefined && a.plugin.t === b.plugin.t && a.plugin.t < 11) {
                 const t = a.plugin.t, pos = { x: (a.position.x+b.position.x)/2, y: (a.position.y+b.position.y)/2 };
                 C.remove(engine.world, [a, b]);
                 spawnFruit(pos.x, pos.y, t + 1, false);
                 st.score += (t+1)*10; st.wallet += (t+1);
+                if(st.score > st.best) st.best = st.score;
                 st.found.add(t+1); playSound('pop'); updUI(); save();
             }
         });
@@ -145,7 +170,8 @@ function resize() {
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-    DL = 125; FY = H - 100;
+    // Lowered spawning and death line to accommodate the top bar height
+    DL = 165; FY = H - 100;
     updatePhysicsBounds();
 }
 
@@ -153,7 +179,6 @@ function updatePhysicsBounds() {
     if(!engine) return;
     if(floor) C.remove(engine.world, [floor, wallL, wallR]);
     floor = B.rectangle(W/2, FY + 250, W, 500, { isStatic: true, label: 'floor', friction: 0.5 });
-    // Collide with visual borders (15px width)
     wallL = B.rectangle(7.5, H/2, 15, H*2, { isStatic: true });
     wallR = B.rectangle(W-7.5, H/2, 15, H*2, { isStatic: true });
     C.add(engine.world, [floor, wallL, wallR]);
@@ -178,11 +203,10 @@ function playSound(type) {
         o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
         g.gain.setValueAtTime(0.1, audioCtx.currentTime);
     } else {
-        // Unique Thud based on skin
-        const baseFreq = 100 + (Object.keys(SKINS).indexOf(st.eq.sk) * 20);
+        const baseFreq = 100 + (Object.keys(SKINS).indexOf(st.eq.sk) * 15);
         o.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
         o.frequency.linearRampToValueAtTime(10, audioCtx.currentTime+0.2);
-        g.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.04, audioCtx.currentTime);
     }
     o.connect(g); g.connect(audioCtx.destination);
     o.start(); o.stop(audioCtx.currentTime + (type==='pop'?0.1:0.2));
@@ -195,7 +219,7 @@ function loop() {
     ctx.fillStyle = BORDERS[st.eq.bd];
     ctx.fillRect(0, 0, 15, H); ctx.fillRect(W-15, 0, 15, H);
     
-    ctx.setLineDash([8,8]); ctx.strokeStyle="rgba(255,0,0,0.5)"; ctx.beginPath(); ctx.moveTo(15, DL); ctx.lineTo(W-15, DL); ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash([8,8]); ctx.strokeStyle="rgba(255,0,0,0.6)"; ctx.beginPath(); ctx.moveTo(15, DL); ctx.lineTo(W-15, DL); ctx.stroke(); ctx.setLineDash([]);
 
     const now = Date.now();
     C.allBodies(engine.world).forEach(b => {
@@ -204,13 +228,16 @@ function loop() {
             if(!b.tm) b.tm = now;
             if(now - b.tm > 2000) triggerGameOver();
         } else b.tm = null;
+        
         const r = b.circleRadius, t = b.plugin.t;
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
         ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+        
         if(st.eq.ot === 'rainbow') ctx.strokeStyle = `hsl(${now/5%360},100%,50%)`;
         else if(st.eq.ot === 'white') ctx.strokeStyle = "#fff";
         else if(st.eq.ot === 'black') ctx.strokeStyle = "#000";
         else ctx.strokeStyle = "#0002";
+        
         ctx.lineWidth = 3; ctx.stroke();
         ctx.font = `${r*1.3}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(SKINS[st.eq.sk][t], 0, r*0.05);
@@ -218,12 +245,11 @@ function loop() {
     });
 
     if(canDrop && !activePower) {
-        ctx.strokeStyle="rgba(0,0,0,0.05)"; ctx.beginPath(); ctx.moveTo(lastX, DL); ctx.lineTo(lastX, FY); ctx.stroke();
+        ctx.strokeStyle="rgba(0,0,0,0.08)"; ctx.beginPath(); ctx.moveTo(lastX, DL); ctx.lineTo(lastX, FY); ctx.stroke();
         ctx.font="40px serif"; ctx.globalAlpha=0.4; ctx.textAlign="center";
         ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, DL-20); ctx.globalAlpha=1;
     }
     
-    // Rotate store emojis
     if(now - shopTimer > 1000) { shopTimer = now; updateStoreEmojis(); }
     requestAnimationFrame(loop);
 }
@@ -258,7 +284,11 @@ function renderStore() {
             if(cat.key === 'sk') prev = `<div class="preview-swatch skin-preview" data-skin="${item}">${SKINS[item][0]}</div>`;
             else if(cat.key === 'th') prev = `<div class="preview-swatch" style="background:${cat.data[item]}"></div>`;
             else if(cat.key === 'bd') prev = `<div class="preview-swatch" style="border:4px solid ${cat.data[item]}"></div>`;
-            else prev = `<div class="preview-swatch" style="${item==='Rainbow'?'background:linear-gradient(45deg,red,blue)':(item==='White'?'background:#fff':'background:#000')}"></div>`;
+            else {
+                let cl = item === 'Rainbow' ? 'rainbow-grad' : '';
+                let bg = item === 'White' ? '#fff' : (item === 'Black' ? '#000' : 'transparent');
+                prev = `<div class="preview-swatch ${cl}" style="background:${bg}; border:${item==='Default'?'2px dashed #ccc':'2px solid #333'}"></div>`;
+            }
             card.innerHTML = `${prev}<b>${item}</b><div style="font-size:10px; color:${isOwned?'#2ecc71':'#e67e22'}">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.cost}</div>`;
             card.onclick = () => {
                 if(isOwned) st.eq[cat.key] = (cat.key === 'ot' ? OUTLINES[item] : item);
@@ -309,11 +339,11 @@ function toggleFull() {
 }
 
 function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
-function triggerGameOver() { document.getElementById('final-score').innerText = st.score; document.getElementById('game-over').style.display = 'flex'; }
+function triggerGameOver() { document.getElementById('final-score').innerText = st.score; document.getElementById('final-best').innerText = st.best; document.getElementById('game-over').style.display = 'flex'; }
 function restartGame() { st.score = 0; st.found = new Set([0]); document.getElementById('game-over').style.display = 'none'; C.clear(engine.world, false); updatePhysicsBounds(); updUI(); }
-function updUI() { document.getElementById('cur-score').innerText = st.score; document.getElementById('wallet-ui').innerText = st.wallet; document.getElementById('shop-wallet').innerText = '$'+st.wallet; document.getElementById('next-preview').innerText = SKINS[st.eq.sk][nextIdx]; const pb = document.getElementById('prog-bar'); pb.innerHTML = ''; for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.has(i)?1:0.2}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`; }
-function save() { localStorage.setItem('fm_v127', JSON.stringify({...st, found: Array.from(st.found)})); }
-function load() { const d = localStorage.getItem('fm_v127'); if(d) { let p = JSON.parse(d); Object.assign(st, p); st.found = new Set(p.found); } }
+function updUI() { document.getElementById('cur-score').innerText = st.score; document.getElementById('wallet-ui').innerText = st.wallet; document.getElementById('shop-wallet').innerText = '$'+st.wallet; document.getElementById('high-score-ui').innerText = st.best; document.getElementById('next-preview').innerText = SKINS[st.eq.sk][nextIdx]; const pb = document.getElementById('prog-bar'); pb.innerHTML = ''; for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.has(i)?1:0.2}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`; }
+function save() { localStorage.setItem('fm_v128', JSON.stringify({...st, found: Array.from(st.found)})); }
+function load() { const d = localStorage.getItem('fm_v128'); if(d) { let p = JSON.parse(d); Object.assign(st, p); st.found = new Set(p.found); } }
 function toggleModal(id) { const m = document.getElementById(id); const isOpen = m.classList.contains('open'); document.querySelectorAll('.modal').forEach(mod => mod.classList.remove('open')); if(!isOpen) { m.classList.add('open'); if(id === 'shop-modal') renderStore(); } }
 function toggleMute() { st.muted = !st.muted; document.getElementById('mute-btn').innerText = st.muted ? "🔇" : "🔊"; save(); }
 
