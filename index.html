@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v89</title>
+    <title>Fruit Merge v90</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
@@ -12,7 +12,7 @@
         #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; border: 8px solid #333; }
         #gameCanvas { position: absolute; inset: 0; z-index: 1; }
 
-        /* UI OVERLAY */
+        /* TOP UI */
         #top-ui { 
             position: absolute; top: 0; left: 0; width: 100%; height: 165px; 
             background: rgba(255,255,255,0.98); border-bottom: 4px solid #333; 
@@ -30,7 +30,6 @@
             position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; 
             background: #fff; border-top: 4px solid #333; z-index: 100;
             display: flex; align-items: center; justify-content: space-around;
-            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .btn { 
@@ -39,17 +38,24 @@
             font-size: 22px; background: #eee; cursor: pointer; box-shadow: 0 4px 0 #bbb;
         }
 
-        /* MODALS WITH SCROLL FIX */
+        /* CRITICAL SCROLL FIX */
         .modal { 
             display: none; position: fixed; inset: 0; background: white; z-index: 2000; 
-            flex-direction: column; padding: 25px; pointer-events: auto; touch-action: auto; 
+            flex-direction: column; padding: 25px; 
+            pointer-events: auto; /* Allow interaction */
         }
         .scroll-content { 
-            flex: 1; overflow-y: scroll !important; touch-action: pan-y !important; 
-            -webkit-overflow-scrolling: touch; margin: 15px 0; border: 2px solid #eee; padding: 10px;
+            flex: 1; 
+            overflow-y: auto !important; 
+            touch-action: pan-y !important; /* Forces the browser to allow scrolling */
+            -webkit-overflow-scrolling: touch; 
+            margin: 15px 0; 
+            border: 2px solid #eee; 
+            padding: 15px;
+            z-index: 2001;
         }
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .item { border: 3px solid #eee; padding: 15px; border-radius: 15px; text-align: center; font-weight: 900; }
+        .item { border: 3px solid #eee; padding: 15px; border-radius: 15px; text-align: center; font-weight: 900; pointer-events: auto; }
         .item.active { border-color: #2ecc71; background: #f0fff4; }
 
         #start-overlay { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
@@ -59,7 +65,7 @@
 
 <div id="start-overlay" onclick="startAudio()">
     <h1 style="font-size: 50px; margin-bottom: 5px;">Fruit Merge</h1>
-    <p style="color: #2ecc71; font-weight: bold; margin-bottom: 25px;">[ VERSION 89 ]</p>
+    <p style="color: #2ecc71; font-weight: bold; margin-bottom: 25px;">[ VERSION 90 ]</p>
     <div style="background: white; color: black; padding: 20px 50px; border-radius: 15px; font-weight: 900; font-size: 20px;">START GAME</div>
 </div>
 
@@ -86,25 +92,24 @@
     </div>
 
     <div id="bottom-ui">
-        <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb')">💣</div>
-        <div class="btn" style="background:#9b59b6" onpointerdown="prepPwr('wipe')">🧹</div>
-        <div class="btn" style="background:#f1c40f" onpointerdown="prepPwr('evo')">✨</div>
+        <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣</div>
+        <div class="btn" style="background:#9b59b6" onpointerdown="prepPwr('wipe', event)">🧹</div>
+        <div class="btn" style="background:#f1c40f" onpointerdown="prepPwr('evo', event)">✨</div>
         <div class="btn" style="background:#2ecc71; width: 100px; color:white; font-size:16px;" onclick="openModal('shopModal')">STORE</div>
     </div>
 </div>
 
 <div id="helpModal" class="modal">
-    <h2 style="margin:0;">Manual</h2>
+    <h2 style="margin:0;">Fruit Manual</h2>
     <div class="scroll-content">
-        <p><b>HOW TO PLAY:</b> Drag your finger and release to drop items. Merge matching pairs to reach the 12th evolution!</p>
-        <p><b>WALLET:</b> Every merge earns cash. Your balance and store unlocks are <u>permanently saved</u>.</p>
-        <p><b>THE 12 TIERS:</b> The progress bar at the top shows exactly which stage you are on. Light up all 12 icons!</p>
-        <p><b>STRATEGY:</b> Avoid letting emojis cross the RED dashed line for more than 2 seconds. Use power-ups to clear space when the board gets crowded.</p>
-        <p><b>POWER-UPS:</b>
-            <br>💣 <b>Bomb:</b> Area damage.
-            <br>🧹 <b>Broom:</b> Deletes all of one type.
-            <br>✨ <b>Magic:</b> Instantly evolves all of one type.
+        <p><b>HOW TO PLAY:</b> Drag and release to drop your fruit. Merge matching fruit to evolve them into larger types.</p>
+        <p><b>WALLET:</b> Merging earns you cash ($). Your balance and shop purchases stay with you forever, even after a Game Over.</p>
+        <p><b>POWER-UPS:</b> 
+            <br>1. Tap a power-up icon at the bottom.
+            <br>2. Drag your finger to the fruit you want to target.
+            <br>3. Release to activate.
         </p>
+        <p><b>STRATEGY:</b> Keep larger fruit at the bottom. If any fruit stays above the Red Line for 2 seconds, the game ends!</p>
     </div>
     <button class="btn" onclick="closeModal()" style="width:100%; background:#333; color:white;">BACK</button>
 </div>
@@ -139,20 +144,15 @@ function fx(type) {
     if(!aCtx || state.muted) return;
     const o = aCtx.createOscillator(), g = aCtx.createGain();
     o.connect(g); g.connect(aCtx.destination);
-    if(type === 'drop') {
-        o.type = 'square'; o.frequency.setValueAtTime(150, aCtx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(40, aCtx.currentTime + 0.1);
-        g.gain.setValueAtTime(0.05, aCtx.currentTime);
-    } else {
-        o.type = 'sine'; o.frequency.setValueAtTime(400, aCtx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(800, aCtx.currentTime + 0.1);
-        g.gain.setValueAtTime(0.1, aCtx.currentTime);
-    }
+    o.type = type === 'drop' ? 'square' : 'sine';
+    o.frequency.setValueAtTime(type === 'drop' ? 100 : 500, aCtx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(type === 'drop' ? 40 : 800, aCtx.currentTime + 0.1);
+    g.gain.setValueAtTime(0.05, aCtx.currentTime);
     o.start(); o.stop(aCtx.currentTime + 0.1);
 }
 
 function init() {
-    const saved = localStorage.getItem('fm_v89');
+    const saved = localStorage.getItem('fm_v90');
     if(saved) Object.assign(state, JSON.parse(saved));
     state.score = 0; state.maxT = 0;
     engine = Matter.Engine.create();
@@ -182,9 +182,8 @@ function updateLayout() {
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     const floorY = canvas.height - 100;
     Matter.Composite.clear(engine.world);
-    // THICKER FLOOR FOR BETTER COLLISION
     Matter.Composite.add(engine.world, [
-        Matter.Bodies.rectangle(canvas.width/2, floorY + 100, canvas.width, 200, {isStatic:true}),
+        Matter.Bodies.rectangle(canvas.width/2, floorY + 50, canvas.width, 100, {isStatic:true}),
         Matter.Bodies.rectangle(-20, canvas.height/2, 40, canvas.height, {isStatic:true}),
         Matter.Bodies.rectangle(canvas.width+20, canvas.height/2, 40, canvas.height, {isStatic:true})
     ]);
@@ -220,7 +219,32 @@ function render() {
     requestAnimationFrame(render);
 }
 
-// Input Controllers
+// Power-up Execution
+function runPwr(x, y) {
+    const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
+    const target = bodies.find(b => Math.hypot(b.position.x - x, b.position.y - y) < b.circleRadius + 40);
+    
+    if(activePwr === 'bomb') {
+        bodies.forEach(b => { if(Math.hypot(b.position.x - x, b.position.y - y) < 120) Matter.Composite.remove(engine.world, b); });
+        state.pts -= 500;
+    } else if(activePwr === 'wipe' && target) {
+        const typeToKill = target.plugin.t;
+        bodies.forEach(b => { if(b.plugin.t === typeToKill) Matter.Composite.remove(engine.world, b); });
+        state.pts -= 1000;
+    } else if(activePwr === 'evo' && target && target.plugin.t < 11) {
+        const typeToEvolve = target.plugin.t;
+        bodies.forEach(b => {
+            if(b.plugin.t === typeToEvolve) {
+                const nt = typeToEvolve + 1;
+                Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x, b.position.y, SIZES[nt], {plugin:{t:nt}}));
+                Matter.Composite.remove(engine.world, b);
+            }
+        });
+        state.pts -= 1500;
+    }
+    activePwr = null; updateUI();
+}
+
 window.addEventListener('touchstart', (e) => {
     if(e.target.closest('.btn') || e.target.closest('.modal')) return;
     isDragging = true; touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
@@ -228,10 +252,10 @@ window.addEventListener('touchstart', (e) => {
 window.addEventListener('touchmove', (e) => { 
     if(isDragging) { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }
 });
-window.addEventListener('touchend', () => {
-    if(!isDragging || !canDrop) return;
-    if(activePwr) { runPwr(touchX, touchY); activePwr = null; }
-    else if(touchY > 165 && touchY < canvas.height - 100) {
+window.addEventListener('touchend', (e) => {
+    if(!isDragging) return;
+    if(activePwr) { runPwr(touchX, touchY); }
+    else if(touchY > 165 && touchY < canvas.height - 100 && canDrop) {
         fx('drop');
         Matter.Composite.add(engine.world, Matter.Bodies.circle(touchX, 170, SIZES[currentIdx], { restitution:0.4, plugin:{t:currentIdx} }));
         currentIdx = nextIdx; nextIdx = Math.floor(Math.random()*4);
@@ -240,13 +264,10 @@ window.addEventListener('touchend', () => {
     isDragging = false; updateUI();
 });
 
-function prepPwr(p) { if(state.pts >= (p==='bomb'?500:p==='wipe'?1000:1500)) { activePwr = p; isDragging = true; } }
-function runPwr(x, y) {
-    const bds = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
-    const target = bds.find(b => Math.hypot(b.position.x-x, b.position.y-y) < b.circleRadius + 40);
-    if(activePwr==='bomb') { bds.forEach(b => { if(Math.hypot(b.position.x-x, b.position.y-y) < 100) Matter.Composite.remove(engine.world, b); }); state.pts-=500; }
-    else if(activePwr==='wipe' && target) { const t=target.plugin.t; bds.forEach(b => { if(b.plugin.t===t) Matter.Composite.remove(engine.world, b); }); state.pts-=1000; }
-    else if(activePwr==='evo' && target && target.plugin.t < 11) { const t=target.plugin.t; bds.forEach(b => { if(b.plugin.t===t) { const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x, b.position.y, SIZES[nt], {plugin:{t:nt}})); Matter.Composite.remove(engine.world, b); }}); state.pts-=1500; }
+function prepPwr(p, e) {
+    const cost = p === 'bomb' ? 500 : p === 'wipe' ? 1000 : 1500;
+    if(state.pts >= cost) { activePwr = p; isDragging = true; }
+    else alert("Need more cash!");
 }
 
 function updateUI() {
@@ -258,7 +279,7 @@ function updateUI() {
     let h = ''; SKINS[state.skin].forEach((em, i) => h += `<span class="p-em ${i<=state.maxT?'on':''}">${em}</span>`);
     document.getElementById('p-emojis').innerHTML = h;
     document.getElementById('game-container').style.borderColor = state.border;
-    localStorage.setItem('fm_v89', JSON.stringify(state));
+    localStorage.setItem('fm_v90', JSON.stringify(state));
 }
 
 function openModal(id) { 
@@ -266,11 +287,11 @@ function openModal(id) {
     if(id === 'shopModal') {
         document.getElementById('shop-wallet').innerText = state.pts;
         let h = '<h3>Skins ($500)</h3><div class="grid">';
-        Object.keys(SKINS).forEach(id => h += `<div class="item ${state.skin===id?'active':''}" onclick="buy('${id}','skin',500)">${SKINS[id][0]} ${id}</div>`);
+        Object.keys(SKINS).forEach(k => h += `<div class="item ${state.skin===k?'active':''}" onclick="buy('${k}','skin',500)">${SKINS[k][0]} ${k}</div>`);
         h += '</div><h3>Themes ($300)</h3><div class="grid">';
-        Object.keys(THEMES).forEach(id => h += `<div class="item ${state.theme===id?'active':''}" onclick="buy('${id}','theme',300)"><div style="background:${THEMES[id]};height:12px;border-radius:6px"></div>${id}</div>`);
+        Object.keys(THEMES).forEach(k => h += `<div class="item ${state.theme===k?'active':''}" onclick="buy('${k}','theme',300)"><div style="background:${THEMES[k]};height:12px;border-radius:6px"></div>${k}</div>`);
         h += '</div><h3>Borders ($200)</h3><div class="grid">';
-        Object.keys(THEMES).forEach(id => h += `<div class="item ${state.border===THEMES[id]?'active':''}" onclick="buy('${THEMES[id]}','border',200)">${id} Border</div>`);
+        Object.keys(THEMES).forEach(k => h += `<div class="item ${state.border===THEMES[k]?'active':''}" onclick="buy('${THEMES[k]}','border',200)">${k} Border</div>`);
         document.getElementById('shop-grid').innerHTML = h + '</div>';
     }
 }
