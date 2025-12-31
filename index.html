@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v73</title>
+    <title>Fruit Merge v74</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; touch-action: none; }
@@ -19,8 +19,11 @@
         #controls-overlay { position: absolute; top: 155px; right: 15px; z-index: 1001; display: flex; flex-direction: column; gap: 12px; }
         .sub-btn { background: #3498db; color: white; border: 3px solid #333; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-size: 20px; }
         .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 6px solid #333; border-radius: 28px; padding: 25px; overflow-y: auto; }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px; }
-        .item-card { border: 3px solid #eee; padding: 15px; border-radius: 18px; text-align: center; position: relative; font-weight: bold; background: #fff; cursor: pointer; }
+        .store-cat { margin-bottom: 25px; border-top: 2px solid #eee; padding-top: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+        .item-card { border: 3px solid #eee; padding: 10px; border-radius: 15px; text-align: center; position: relative; font-weight: bold; cursor: pointer; background: #fff; }
+        .item-card.selected { border-color: #2ecc71; background: #f0fff4; }
+        .badge { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 10px; position: absolute; top: -10px; right: -5px; border: 2px solid #333; color: #fff; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -44,7 +47,7 @@
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="shopModal" class="modal">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>The Store</h2><button class="sub-btn" onclick="closeModal()">×</button></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>The Store</h2><button class="sub-btn" style="width:35px;height:35px" onclick="closeModal()">×</button></div>
         <p style="text-align:center; font-weight:bold; color:#2ecc71;">Wallet: $<span id="shop-wallet">0</span></p>
         <div id="shop-scroll"></div>
     </div>
@@ -53,18 +56,19 @@
 const SKINS = { 
     Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], 
     Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], 
-    Shapes:["🔺","🟦","🔶"," pentagon "," hexagon "," octagon "," star "," diamond "," cross "," heptagon "," decagon "," circle "],
-    Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"] 
+    Shapes:["▲","■","⬓","⬢","⬦","⬗","★","◆","✚","⬙","⬣","⬤"],
+    Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"],
+    Desserts:["🍪","🍩","🧁","🍦","🍰","🥧","🍫","🍬","🍭","🍮","🍯","🎂"],
+    Plants:["🌱","🌵","🪴","🌲","🌳","🌴","🎋","🌿","🍀","🍄","🌻","🌹"],
+    Cars:["🏎️","🚗","🚕","🚙","🚌","🚐","🚛","🚜","🚓","🚑","🚒","🚁"],
+    Weather:["☁️","🌤️","⚡","☀️","🌦️","🌧️","🌨️","⛈️","❄️","🌬️","🌈","🌪️"]
 };
-// Mapping polygonal names to actual shapes for the "Shapes" skin
-SKINS.Shapes = ["▲","■","⬓","⬢","⬦","⬗","★","◆","✚","⬙","⬣","⬤"];
-
-const THEME_DATA = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3" };
+const THEME_DATA = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Gold:"#fdcb6e", Slate:"#718093", Ocean:"#0984e3", Cherry:"#d63031", Mint:"#00b894", Grape:"#6c5ce7", Pumpkin:"#e67e22", Coffee:"#634832", Rose:"#fd79a8", Sky:"#81ecec", Grass:"#26de81", Charcoal:"#2f3640" };
 const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185], COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
 
 let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', border:'#333', outline:'none', owned:['Fruit', 'Lilac', '#333', 'o_none'], muted:false, maxT:0 };
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), aCtx = new (window.AudioContext || window.webkitAudioContext)();
-let engine, currentIdx=0, nextIdx=1, lastX=200, isDragging=false, activePwr=null, pwrX=0, pwrY=0, canDrop=true, lastGameOverTime=0;
+let engine, currentIdx=0, nextIdx=1, lastX=200, isDragging=false, activePwr=null, pwrX=0, pwrY=0, canDrop=true, jinglePlayed=false;
 
 function playS(f=440, type='sine', dur=0.1) {
     if(state.muted) return; if(aCtx.state==='suspended') aCtx.resume();
@@ -73,8 +77,16 @@ function playS(f=440, type='sine', dur=0.1) {
     g.gain.exponentialRampToValueAtTime(0.001, aCtx.currentTime + dur); o.start(); o.stop(aCtx.currentTime + dur);
 }
 
+function playGameOver() {
+    if(jinglePlayed || state.muted) return; jinglePlayed = true;
+    const o=aCtx.createOscillator(), g=aCtx.createGain(); o.type='sawtooth'; o.connect(g); g.connect(aCtx.destination);
+    o.frequency.setValueAtTime(200, aCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, aCtx.currentTime+1);
+    g.gain.setValueAtTime(0.1, aCtx.currentTime); g.gain.linearRampToValueAtTime(0, aCtx.currentTime+1);
+    o.start(); o.stop(aCtx.currentTime+1);
+}
+
 function init() {
-    const s=localStorage.getItem('fm_ult_v73'); if(s) Object.assign(state, JSON.parse(s));
+    const s=localStorage.getItem('fm_ult_v74'); if(s) Object.assign(state, JSON.parse(s));
     engine = Matter.Engine.create(); setupD();
     Matter.Events.on(engine, 'collisionStart', (e) => {
         e.pairs.forEach(p => {
@@ -83,7 +95,7 @@ function init() {
                 a.isMerging = b.isMerging = true;
                 const nt=a.plugin.t+1; playS(300+(nt*40));
                 Matter.Composite.remove(engine.world, [a, b]);
-                Matter.Composite.add(engine.world, Matter.Bodies.circle((a.position.x+b.position.x)/2, (a.position.y+b.position.y)/2, SIZES[nt], { plugin: {t:nt, dT:null} }));
+                Matter.Composite.add(engine.world, Matter.Bodies.circle((a.position.x+b.position.x)/2, (a.position.y+b.position.y)/2, SIZES[nt], { restitution: 0.4, plugin: {t:nt, dT:null} }));
                 state.score += (nt*10); state.pts += (nt*5); state.maxT = Math.max(state.maxT, nt); updateUI();
             }
         });
@@ -99,9 +111,9 @@ function setupD() {
     const fY = canvas.height - 107;
     Matter.Composite.clear(engine.world); 
     Matter.Composite.add(engine.world, [
-        Matter.Bodies.rectangle(canvas.width/2, fY + 50, canvas.width, 100, {isStatic:true}), // Floor
-        Matter.Bodies.rectangle(6, canvas.height/2, 12, canvas.height, {isStatic:true}), // Left
-        Matter.Bodies.rectangle(canvas.width-6, canvas.height/2, 12, canvas.height, {isStatic:true}) // Right
+        Matter.Bodies.rectangle(canvas.width/2, fY + 50, canvas.width, 100, {isStatic:true}), // FLOOR
+        Matter.Bodies.rectangle(6, canvas.height/2, 12, canvas.height, {isStatic:true}), 
+        Matter.Bodies.rectangle(canvas.width-6, canvas.height/2, 12, canvas.height, {isStatic:true})
     ]);
     data.forEach(d => Matter.Composite.add(engine.world, Matter.Bodies.circle(d.rx * canvas.width, d.ry * canvas.height, SIZES[d.t], { plugin: {t:d.t, dT:null} })));
 }
@@ -109,7 +121,6 @@ function setupD() {
 function render(time) {
     ctx.fillStyle=THEME_DATA[state.theme]; ctx.fillRect(0,0,canvas.width,canvas.height);
     
-    // GHOST FRUIT
     if(isDragging && !activePwr) { 
         const bW = 20; lastX = Math.max(bW + SIZES[currentIdx], Math.min(canvas.width - bW - SIZES[currentIdx], lastX));
         ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(SKINS[state.skin][currentIdx], lastX, 175);
@@ -119,7 +130,7 @@ function render(time) {
     bodies.forEach(b => {
         const isTarget = activePwr==='bomb' && Math.hypot(b.position.x-pwrX, b.position.y-pwrY) < 100;
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-        if(isTarget) { ctx.shadowBlur = 20; ctx.shadowColor = "white"; }
+        if(isTarget) { ctx.shadowBlur = 15; ctx.shadowColor = "white"; }
         ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill(); 
         if(state.outline !== 'none') {
             ctx.strokeStyle = state.outline==='rainbow' ? `hsl(${time/10 % 360}, 70%, 50%)` : (state.outline==='white'?'#fff':'#000');
@@ -128,33 +139,25 @@ function render(time) {
         ctx.font = (b.circleRadius*1.3)+"px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; 
         ctx.fillStyle = "#fff"; ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
 
-        // QUICKER DEATH LOGIC
         if(b.position.y < 190 && !isDragging) { 
             if(!b.plugin.dT) b.plugin.dT=Date.now(); 
             if(Date.now()-b.plugin.dT > 1500) { 
-                if(Date.now() - lastGameOverTime > 3000) {
-                    playS(150, 'sawtooth', 0.5); lastGameOverTime = Date.now();
-                    alert("Game Over!"); state.score=0; state.maxT=0; save(); location.reload();
-                }
+                playGameOver(); setTimeout(() => { alert("Game Over!"); state.score=0; state.maxT=0; save(); location.reload(); }, 100);
             } 
         } else b.plugin.dT = null;
     });
 
     // DANGER LINE
-    ctx.save(); ctx.strokeStyle = "rgba(255,0,0,0.8)"; ctx.lineWidth = 4; ctx.setLineDash([10, 10]);
+    ctx.save(); ctx.strokeStyle = "rgba(255,0,0,0.8)"; ctx.lineWidth = 4; ctx.setLineDash([15, 15]);
     ctx.beginPath(); ctx.moveTo(0, 190); ctx.lineTo(canvas.width, 190); ctx.stroke(); ctx.restore();
 
-    // CROSSHAIR & BOMB RADIUS
     if(activePwr) { 
         ctx.save(); 
         if(activePwr==='bomb') {
-            ctx.fillStyle = "rgba(255, 0, 0, 0.2)"; ctx.beginPath(); ctx.arc(pwrX, pwrY, 100, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = "red"; ctx.setLineDash([5, 5]); ctx.stroke();
+            ctx.fillStyle = "rgba(255, 0, 0, 0.15)"; ctx.beginPath(); ctx.arc(pwrX, pwrY, 100, 0, Math.PI*2); ctx.fill();
         }
-        ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 4; ctx.setLineDash([]);
-        ctx.beginPath(); ctx.arc(pwrX, pwrY, 40, 0, Math.PI*2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(pwrX-60, pwrY); ctx.lineTo(pwrX+60, pwrY); ctx.moveTo(pwrX, pwrY-60); ctx.lineTo(pwrX, pwrY+60); ctx.stroke();
-        ctx.restore();
+        ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(pwrX, pwrY, 40, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pwrX-60, pwrY); ctx.lineTo(pwrX+60, pwrY); ctx.moveTo(pwrX, pwrY-60); ctx.lineTo(pwrX, pwrY+70); ctx.stroke(); ctx.restore();
     }
     requestAnimationFrame(render);
 }
@@ -171,7 +174,7 @@ window.addEventListener('pointerup', () => {
     else if(isDragging && canDrop) {
         const dropX = Math.max(20 + SIZES[currentIdx], Math.min(canvas.width - 20 - SIZES[currentIdx], lastX));
         Matter.Composite.add(engine.world, Matter.Bodies.circle(dropX, 150, SIZES[currentIdx], { plugin:{t:currentIdx} }));
-        currentIdx=nextIdx; nextIdx=Math.floor(Math.random()*4); canDrop=false; setTimeout(()=>canDrop=true, 400); 
+        currentIdx=nextIdx; nextIdx=Math.floor(Math.random()*4); canDrop=false; setTimeout(()=>canDrop=true, 450); 
     }
     isDragging = false; updateUI();
 });
@@ -180,15 +183,17 @@ canvas.addEventListener('pointerdown', (e) => { if(e.clientY > 145 && e.clientY 
 
 function usePwr(x, y) {
     const bds=Matter.Composite.allBodies(engine.world).filter(b=>b.plugin?.t!==undefined);
-    const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+20);
-    if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<100) Matter.Composite.remove(engine.world,b);}); state.pts-=500; playS(200, 'square', 0.3); }
-    else if(activePwr==='wipe'&&h){ bds.forEach(b=>{if(b.plugin.t===h.plugin.t) Matter.Composite.remove(engine.world,b);}); state.pts-=1000; }
-    else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{plugin:{t:nt}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; }
+    const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+25);
+    if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<100) Matter.Composite.remove(engine.world,b);}); state.pts-=500; playS(150, 'square', 0.4); }
+    else if(activePwr==='wipe'&&h){ bds.forEach(b=>{if(b.plugin.t===h.plugin.t) Matter.Composite.remove(engine.world,b);}); state.pts-=1000; playS(600, 'sine', 0.2); }
+    else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{plugin:{t:nt}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; playS(800, 'sine', 0.3); }
 }
 
 function updateUI() {
     document.getElementById('s-val').innerText=state.score; document.getElementById('h-val').innerText=state.best=Math.max(state.best, state.score);
     document.getElementById('w-val').innerText=state.pts; document.getElementById('next-disp').innerText="NEXT: "+SKINS[state.skin][nextIdx];
+    document.getElementById('game-container').style.background=THEME_DATA[state.theme]; 
+    document.getElementById('game-container').style.borderColor=state.border;
     document.getElementById('progress-bar').style.width=(state.maxT/11*100)+"%";
     document.getElementById('progress-icons').innerHTML=SKINS[state.skin].map(e=>`<span>${e}</span>`).join('');
     save();
@@ -196,11 +201,15 @@ function updateUI() {
 
 function openShop() {
     document.getElementById('shopModal').style.display='block'; document.getElementById('shop-wallet').innerText=state.pts;
-    let h = '<div class="grid">';
-    Object.keys(SKINS).forEach(id => h += `<div class="item-card ${state.skin===id?'selected':''}" onclick="buy('${id}','skin',500)">${SKINS[id][0]}<br>${id}</div>`);
-    ['None', 'Black', 'White', 'Rainbow'].forEach(id => h += `<div class="item-card ${state.outline===id.toLowerCase()?'selected':''}" onclick="buy('${id.toLowerCase()}','outline',1000)">Outline: ${id}</div>`);
-    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.theme===id?'selected':''}" onclick="buy('${id}','theme',300)">Theme: ${id}</div>`);
-    document.getElementById('shop-scroll').innerHTML = h + '</div>';
+    let h = '<div class="store-cat"><h3>Skins</h3><div class="grid">';
+    Object.keys(SKINS).forEach(id => h += `<div class="item-card ${state.skin===id?'selected':''}" onclick="buy('${id}','skin',500)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'Owned':'$500'}</span>${SKINS[id][0]}<br>${id}</div>`);
+    h += '</div></div><div class="store-cat"><h3>Outlines</h3><div class="grid">';
+    ['None', 'Black', 'White', 'Rainbow'].forEach(id => h += `<div class="item-card ${state.outline===id.toLowerCase()?'selected':''}" onclick="buy('${id.toLowerCase()}','outline',1000)"><span class="badge" style="background:${state.owned.includes('o_'+id.toLowerCase())?'#2ecc71':'#f1c40f'}">${state.owned.includes('o_'+id.toLowerCase())?'Owned':'$1k'}</span>${id}</div>`);
+    h += '</div></div><div class="store-cat"><h3>Themes</h3><div class="grid">';
+    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.theme===id?'selected':''}" onclick="buy('${id}','theme',300)"><span class="badge" style="background:${state.owned.includes(id)?'#2ecc71':'#f1c40f'}">${state.owned.includes(id)?'Owned':'$300'}</span><div style="height:10px;background:${THEME_DATA[id]}"></div>${id}</div>`);
+    h += '</div></div><div class="store-cat"><h3>Borders</h3><div class="grid">';
+    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.border===THEME_DATA[id]?'selected':''}" onclick="buy('${THEME_DATA[id]}','border',200)"><span class="badge" style="background:${state.owned.includes('b_'+THEME_DATA[id])?'#2ecc71':'#f1c40f'}">${state.owned.includes('b_'+THEME_DATA[id])?'Owned':'$200'}</span><div style="height:10px;background:${THEME_DATA[id]}"></div>${id}</div>`);
+    document.getElementById('shop-scroll').innerHTML = h + '</div></div>';
 }
 
 function buy(id, t, c) { 
@@ -208,9 +217,9 @@ function buy(id, t, c) {
     if(!state.owned.includes(k)){ if(state.pts>=c){state.pts-=c; state.owned.push(k);} else return; }
     state[t]=id; updateUI(); openShop(); 
 }
-function save() { localStorage.setItem('fm_ult_v73', JSON.stringify(state)); }
+function save() { localStorage.setItem('fm_ult_v74', JSON.stringify(state)); }
 function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
-function openHelp() { alert("Instructions: Merge items to grow them and earn money! Use powerups to clear the board."); }
+function openHelp() { alert("Merge identical items to grow them and earn money for powerups!"); }
 function toggleMute() { state.muted=!state.muted; document.getElementById('mute-btn').innerText=state.muted?"🔇":"🔊"; save(); }
 function toggleFS() { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
 init();
