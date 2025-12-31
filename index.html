@@ -3,33 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v79</title>
+    <title>Fruit Merge v80</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Roboto, sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Roboto, sans-serif; touch-action: none; -webkit-user-select: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #E6E6FA; border: 12px solid #333; box-sizing: border-box; overflow: hidden; }
-        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 145px; background: rgba(255,255,255,0.95); border-bottom: 4px solid #333; z-index: 10; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
-        #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 95px; background: #fff; border-top: 4px solid #333; z-index: 10; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
+        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 145px; background: rgba(255,255,255,0.95); border-bottom: 4px solid #333; z-index: 100; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+        #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 95px; background: #fff; border-top: 4px solid #333; z-index: 100; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
         #progress-wrap { width: 100%; height: 18px; background: #eee; border-radius: 9px; border: 3px solid #333; position: relative; overflow: hidden; margin: 4px 0; }
         #progress-bar { height: 100%; background: #2ecc71; width: 0%; transition: width 0.3s; }
         .stats { display: flex; justify-content: space-between; font-weight: 600; font-size: 15px; color: #333; }
         .stats b { font-weight: 900; color: #000; }
         .btn { width: 56px; height: 56px; border-radius: 15px; border: 3px solid #333; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #bbb; position: relative; }
         .btn span { position: absolute; bottom: -14px; font-size: 10px; background: white; border: 1.5px solid #333; padding: 1px 5px; border-radius: 6px; font-weight: 900; pointer-events: none; }
-        #start-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; cursor: pointer; }
+        #start-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; cursor: pointer; text-align: center; }
         .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 6px solid #333; border-radius: 28px; padding: 20px; overflow-y: auto; }
         .store-cat h3 { margin: 15px 0 5px 0; font-size: 18px; border-bottom: 2px solid #333; display: inline-block; }
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
         .item-card { border: 3px solid #eee; padding: 10px; border-radius: 15px; text-align: center; position: relative; font-weight: bold; cursor: pointer; }
         .item-card.selected { border-color: #2ecc71; background: #f0fff4; }
         .badge { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 10px; position: absolute; top: -10px; right: -5px; border: 2px solid #333; color: #fff; background: #f1c40f; }
+        #help-content p { font-size: 14px; line-height: 1.5; color: #444; margin-bottom: 12px; }
     </style>
 </head>
 <body>
 
 <div id="start-overlay" onclick="startAudio()">
-    <h1>Fruit Merge</h1>
-    <p>Tap to start with sound</p>
+    <h1 style="font-size: 40px;">Fruit Merge</h1>
+    <p>Tap anywhere to unlock game</p>
 </div>
 
 <div id="game-container">
@@ -40,32 +41,36 @@
         <div class="stats"><span>Wallet: $<b id="w-val">0</b></span><span id="mute-btn" onclick="toggleMute()" style="cursor:pointer;">🔊</span></div>
     </div>
 
-    <div style="position:absolute; top:155px; right:15px; z-index:5; display:flex; flex-direction:column; gap:12px;">
+    <div style="position:absolute; top:155px; right:15px; z-index:50; display:flex; flex-direction:column; gap:12px;">
         <div class="btn" style="width:44px; height:44px; border-radius:50%; background:#f1c40f;" onclick="openHelp()">?</div>
         <div class="btn" style="width:44px; height:44px; border-radius:50%; background:#3498db;" onclick="toggleFS()">⛶</div>
     </div>
 
     <div id="bottom-ui">
-        <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣<span>$500</span></div>
-        <div class="btn" style="background:#9b59b6" onpointerdown="prepPwr('wipe', event)">🧹<span>$1k</span></div>
-        <div class="btn" style="background:#f1c40f" onpointerdown="prepPwr('evo', event)">✨<span>$1.5k</span></div>
+        <div class="btn" style="background:#e67e22" ontouchstart="prepPwr('bomb', event)">💣<span>$500</span></div>
+        <div class="btn" style="background:#9b59b6" ontouchstart="prepPwr('wipe', event)">🧹<span>$1k</span></div>
+        <div class="btn" style="background:#f1c40f" ontouchstart="prepPwr('evo', event)">✨<span>$1.5k</span></div>
         <div class="btn" style="background:#3498db; width: 90px; color:white;" onclick="openShop()">Store</div>
     </div>
     <canvas id="gameCanvas"></canvas>
 </div>
 
 <div id="shopModal" class="modal">
-    <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Store</h2><button class="btn" style="width:40px;height:40px" onclick="closeModal()">×</button></div>
+    <div style="display:flex; justify-content:space-between; align-items:center;"><h2>The Store</h2><button class="btn" style="width:40px;height:40px" onclick="closeModal()">×</button></div>
     <p style="text-align:center; font-weight:bold; color:#2ecc71;">Wallet: $<span id="shop-wallet">0</span></p>
     <div id="shop-scroll"></div>
 </div>
 
 <div id="helpModal" class="modal">
-    <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Help</h2><button class="btn" style="width:40px;height:40px" onclick="closeModal()">×</button></div>
-    <p><b>Drop items</b> to merge them!</p>
-    <p><b>💣 Bomb:</b> Tap and drag to explode a group.</p>
-    <p><b>🧹 Broom:</b> Tap and drag to remove all matching items.</p>
-    <p><b>✨ Wand:</b> Tap and drag to evolve a specific group.</p>
+    <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Game Instructions</h2><button class="btn" style="width:40px;height:40px" onclick="closeModal()">×</button></div>
+    <div id="help-content">
+        <p><b>Core Gameplay:</b> Tap and hold to position your emoji, then let go to drop it. When two matching emojis touch, they merge into a larger, more valuable one!</p>
+        <p><b>Wallet & Progress:</b> Your money (Wallet) persists forever. Use it in the store to buy new themes and skins. Your Best Score is also saved.</p>
+        <p><b>💣 The Bomb:</b> Drag this over a cluttered area. When you release, it clears all emojis in a medium radius. Essential for preventing a Game Over.</p>
+        <p><b>🧹 The Broom:</b> This is your target-clearer. Release it on a specific emoji to delete EVERY emoji of that same type from the entire board.</p>
+        <p><b>✨ Magic Wand:</b> The most powerful tool. Drag it to an emoji to instantly evolve it and all its identical matches to the next stage.</p>
+        <p><b>Death Mechanic:</b> Watch the red dashed line! If any emoji stays above that line for more than 1.5 seconds, the game ends. Use your power-ups to clear space before the timer runs out!</p>
+    </div>
 </div>
 
 <script>
@@ -82,6 +87,7 @@ function startAudio() {
     document.getElementById('start-overlay').style.display = 'none';
     if(aCtx.state === 'suspended') aCtx.resume();
     playS(440, 'sine', 0.1, 0.2);
+    init();
 }
 
 function playS(f, type, dur, vol) {
@@ -92,8 +98,8 @@ function playS(f, type, dur, vol) {
 }
 
 function init() {
-    const s = localStorage.getItem('fm_v79');
-    if(s) Object.assign(state, JSON.parse(s));
+    const s = localStorage.getItem('fm_v80');
+    if(s) { let saved = JSON.parse(s); Object.assign(state, saved); }
     state.score = 0; state.isGameOver = false;
     engine = Matter.Engine.create();
     setupD();
@@ -140,8 +146,8 @@ function render(time) {
         ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(SKINS[state.skin][currentIdx], lastX, 175);
     }
 
-    const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
-    bodies.forEach(b => {
+    Matter.Composite.allBodies(engine.world).forEach(b => {
+        if(b.plugin?.t === undefined) return;
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
         ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill(); 
         if(state.outline !== 'none') {
@@ -156,7 +162,7 @@ function render(time) {
             if(Date.now() - b.plugin.dT > 1600) {
                 state.isGameOver = true;
                 playS(100, 'sawtooth', 1.0, 0.5);
-                setTimeout(() => { alert("Game Over!"); state.score=0; save(); location.reload(); }, 100);
+                setTimeout(() => { alert("Game Over! Score: " + state.score); state.score=0; save(); location.reload(); }, 100);
             }
         } else b.plugin.dT = null;
     });
@@ -168,24 +174,27 @@ function render(time) {
     requestAnimationFrame(render);
 }
 
+// HYBRID INPUT ENGINE
 function prepPwr(t, e) {
     const cost = {bomb:500, wipe:1000, evo:1500}[t]; if(state.pts < cost) return;
     activePwr = t; isDragging = true;
-    const touch = e.touches ? e.touches[0] : e;
-    pwrX = touch.clientX; pwrY = touch.clientY;
+    const pos = e.touches ? e.touches[0] : e;
+    pwrX = pos.clientX; pwrY = pos.clientY;
 }
 
-canvas.addEventListener('pointerdown', (e) => {
+canvas.addEventListener('touchstart', (e) => {
     if(state.isGameOver) return;
-    if(e.clientY > 145 && e.clientY < canvas.height-95) { isDragging = true; lastX = e.clientX; }
+    const touch = e.touches[0];
+    if(touch.clientY > 145 && touch.clientY < canvas.height-95) { isDragging = true; lastX = touch.clientX; }
 });
 
-window.addEventListener('pointermove', (e) => { 
-    pwrX = e.clientX; pwrY = e.clientY; 
-    if(isDragging && !activePwr) lastX = e.clientX; 
+window.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    pwrX = touch.clientX; pwrY = touch.clientY;
+    if(isDragging && !activePwr) lastX = touch.clientX;
 });
 
-window.addEventListener('pointerup', () => {
+window.addEventListener('touchend', () => {
     if(state.isGameOver) return;
     if(activePwr) { usePwr(pwrX, pwrY); activePwr = null; }
     else if(isDragging && canDrop) {
@@ -197,7 +206,7 @@ window.addEventListener('pointerup', () => {
 
 function usePwr(x, y) {
     const bds=Matter.Composite.allBodies(engine.world).filter(b=>b.plugin?.t!==undefined);
-    const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+20);
+    const h=bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y)<b.circleRadius+40); // Expanded hitbox
     if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<100) Matter.Composite.remove(engine.world,b);}); state.pts-=500; playS(80, 'square', 0.4, 0.4); }
     else if(activePwr==='wipe'&&h){ bds.forEach(b=>{if(b.plugin.t===h.plugin.t) Matter.Composite.remove(engine.world,b);}); state.pts-=1000; playS(400, 'sine', 0.3, 0.3); }
     else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{restitution:0.5, plugin:{t:nt}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; playS(600, 'sine', 0.3, 0.3); }
@@ -212,15 +221,15 @@ function updateUI() {
 
 function openShop() {
     document.getElementById('shopModal').style.display='block'; document.getElementById('shop-wallet').innerText=state.pts;
-    let h = '<h3>Skins</h3><div class="grid">';
+    let h = '<div class="store-cat"><h3>Skins</h3><div class="grid">';
     Object.keys(SKINS).forEach(id => h += `<div class="item-card ${state.skin===id?'selected':''}" onclick="buy('${id}','skin',500)"><span class="badge">${state.owned.includes(id)?'Owned':'$500'}</span>${SKINS[id][0]}<br>${id}</div>`);
-    h += '</div><h3>Outlines</h3><div class="grid">';
+    h += '</div></div><div class="store-cat"><h3>Outlines</h3><div class="grid">';
     ['None', 'Black', 'White', 'Rainbow'].forEach(id => h += `<div class="item-card ${state.outline===id.toLowerCase()?'selected':''}" onclick="buy('${id.toLowerCase()}','outline',1000)"><span class="badge">${state.owned.includes('o_'+id.toLowerCase())?'Owned':'$1k'}</span>${id}</div>`);
-    h += '</div><h3>Themes</h3><div class="grid">';
+    h += '</div></div><div class="store-cat"><h3>Themes</h3><div class="grid">';
     Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.theme===id?'selected':''}" onclick="buy('${id}','theme',300)"><span class="badge">${state.owned.includes(id)?'Owned':'$300'}</span><div style="height:10px;background:${THEME_DATA[id]}"></div>${id}</div>`);
-    h += '</div><h3>Borders</h3><div class="grid">';
+    h += '</div></div><div class="store-cat"><h3>Borders</h3><div class="grid">';
     Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card ${state.border===THEME_DATA[id]?'selected':''}" onclick="buy('${THEME_DATA[id]}','border',200)"><span class="badge">${state.owned.includes('b_'+THEME_DATA[id])?'Owned':'$200'}</span><div style="height:10px;background:${THEME_DATA[id]}"></div>${id}</div>`);
-    document.getElementById('shop-scroll').innerHTML = h + '</div>';
+    document.getElementById('shop-scroll').innerHTML = h + '</div></div>';
 }
 
 function buy(id, t, c) {
@@ -228,7 +237,7 @@ function buy(id, t, c) {
     if(!state.owned.includes(k)){ if(state.pts>=c){state.pts-=c; state.owned.push(k);} else return; }
     state[t]=id; updateUI(); openShop(); 
 }
-function save() { localStorage.setItem('fm_v79', JSON.stringify(state)); }
+function save() { localStorage.setItem('fm_v80', JSON.stringify(state)); }
 function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
 function openHelp() { document.getElementById('helpModal').style.display='block'; }
 function toggleMute() { state.muted=!state.muted; document.getElementById('mute-btn').innerText=state.muted?"🔇":"🔊"; save(); }
@@ -238,7 +247,6 @@ function toggleFS() {
         document.getElementById('game-container').style.border = "none"; window.scrollTo(0,1); 
     }); }
 }
-init();
 </script>
 </body>
 </html>
