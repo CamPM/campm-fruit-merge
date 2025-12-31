@@ -3,65 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Fruit Merge v81</title>
+    <title>Fruit Merge v82</title>
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; -webkit-user-select: none; }
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #E6E6FA; border: 12px solid #333; box-sizing: border-box; overflow: hidden; }
-        #top-ui { position: absolute; top: 0; left: 0; width: 100%; height: 145px; background: rgba(255,255,255,0.95); border-bottom: 4px solid #333; z-index: 1000; padding: 10px; box-sizing: border-box; }
-        #bottom-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 95px; background: #fff; border-top: 4px solid #333; z-index: 1000; display: flex; align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); }
-        #progress-wrap { width: 100%; height: 18px; background: #eee; border-radius: 9px; border: 3px solid #333; overflow: hidden; margin: 4px 0; }
-        #progress-bar { height: 100%; background: #2ecc71; width: 0%; transition: width 0.3s; }
-        .stats { display: flex; justify-content: space-between; font-weight: 900; color: #333; }
-        .btn { width: 56px; height: 56px; border-radius: 15px; border: 3px solid #333; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; background: #eee; box-shadow: 0 4px 0 #bbb; position: relative; transition: transform 0.1s; }
-        .btn:active { transform: translateY(4px); box-shadow: none; }
-        .btn span { position: absolute; bottom: -14px; font-size: 10px; background: white; border: 1.5px solid #333; padding: 1px 5px; border-radius: 6px; font-weight: 900; }
-        #start-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; cursor: pointer; }
-        .modal { display: none; position: fixed; inset: 5%; background: white; z-index: 2000; border: 6px solid #333; border-radius: 28px; padding: 20px; overflow-y: auto; }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
-        .item-card { border: 3px solid #eee; padding: 10px; border-radius: 15px; text-align: center; position: relative; font-weight: bold; }
-        .badge { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 10px; position: absolute; top: -10px; right: -5px; border: 2px solid #333; color: #fff; background: #f1c40f; }
-        .error-shake { animation: shake 0.3s; color: red !important; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        #game-container { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            background: #E6E6FA; 
+            border: 8px solid #333; 
+            overflow: hidden; 
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5; /* Behind UI */
+            width: 100%;
+            height: 100%;
+        }
+
+        #top-ui { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 130px; 
+            background: rgba(255,255,255,0.9); border-bottom: 3px solid #333; 
+            z-index: 20; padding: 10px; pointer-events: none; /* Let touches pass through to canvas */
+        }
+        
+        #top-ui * { pointer-events: auto; } /* Re-enable for buttons only */
+
+        #bottom-ui { 
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 90px; 
+            background: #fff; border-top: 3px solid #333; 
+            z-index: 20; display: flex; align-items: center; justify-content: space-around; 
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .btn { 
+            width: 50px; height: 50px; border-radius: 12px; border: 3px solid #333; 
+            display: flex; align-items: center; justify-content: center; font-size: 24px; 
+            background: #eee; cursor: pointer; position: relative;
+        }
+
+        #start-overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+            z-index: 100; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; color: white; 
+        }
+
+        .modal { 
+            display: none; position: fixed; inset: 5%; background: white; 
+            z-index: 200; border: 5px solid #333; border-radius: 20px; padding: 20px; overflow-y: auto; 
+        }
     </style>
 </head>
 <body>
 
 <div id="start-overlay" onclick="startAudio()">
     <h1>Fruit Merge</h1>
-    <p>TAP TO START</p>
+    <p>TAP TO PLAY</p>
 </div>
 
 <div id="game-container">
     <div id="top-ui">
-        <div class="stats"><span>Score: <b id="s-val">0</b></span><span>Best: <b id="h-val">0</b></span></div>
-        <div id="next-disp" style="text-align:center; font-size:40px; margin: 5px;"></div>
-        <div id="progress-wrap"><div id="progress-bar"></div></div>
-        <div class="stats"><span>Wallet: $<b id="w-val">0</b></span><span id="mute-btn" onclick="toggleMute()">🔊</span></div>
+        <div style="display:flex; justify-content:space-between; font-weight:bold;">
+            <span>Score: <span id="s-val">0</span></span>
+            <span>Best: <span id="h-val">0</span></span>
+        </div>
+        <div id="next-disp" style="text-align:center; font-size:35px; margin: 5px;"></div>
+        <div style="width:100%; height:12px; background:#ddd; border:2px solid #333; border-radius:10px; overflow:hidden;">
+            <div id="p-bar" style="width:0%; height:100%; background:#2ecc71;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:14px;">
+            <span>Wallet: $<span id="w-val">0</span></span>
+            <span onclick="toggleMute()" style="cursor:pointer;">🔊</span>
+        </div>
     </div>
 
-    <div id="bottom-ui">
-        <div class="btn" id="p-bomb" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣<span>$500</span></div>
-        <div class="btn" id="p-wipe" style="background:#9b59b6" onpointerdown="prepPwr('wipe', event)">🧹<span>$1k</span></div>
-        <div class="btn" id="p-evo" style="background:#f1c40f" onpointerdown="prepPwr('evo', event)">✨<span>$1.5k</span></div>
-        <div class="btn" style="background:#3498db; width: 80px; color:white;" onclick="openShop()">Store</div>
-    </div>
     <canvas id="gameCanvas"></canvas>
+
+    <div id="bottom-ui">
+        <div class="btn" style="background:#e67e22" onpointerdown="prepPwr('bomb', event)">💣</div>
+        <div class="btn" style="background:#9b59b6" onpointerdown="prepPwr('wipe', event)">🧹</div>
+        <div class="btn" style="background:#f1c40f" onpointerdown="prepPwr('evo', event)">✨</div>
+        <div class="btn" style="background:#3498db; width: 80px; color:white; font-size:16px; font-weight:bold;" onclick="openShop()">STORE</div>
+    </div>
 </div>
 
 <div id="shopModal" class="modal">
-    <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Store</h2><button onclick="closeModal()">Close</button></div>
-    <p id="shop-wallet-msg" style="text-align:center; font-weight:bold;">Wallet: $<span id="shop-wallet">0</span></p>
-    <div id="shop-scroll"></div>
+    <h2>Store</h2>
+    <p>Wallet: $<span id="shop-wallet">0</span></p>
+    <div id="shop-items"></div>
+    <button onclick="closeModal()" style="margin-top:20px; width:100%; padding:10px;">Close</button>
 </div>
 
 <script>
-const SKINS = { Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"], Animals:["🐭","🐰","🦊","🐻","🐼","🦁","🐯","🐷","🐸","🐙","🐳","🦄"], Space:["☄️","🛰️","🪐","🌙","☀️","🔭","🚀","👽","🛸","🌌","🌠","👨‍🚀"] };
-const THEME_DATA = { Lilac:"#E6E6FA", Sunset:"#ff7675", Forest:"#55efc4", Midnight:"#2d3436", Ocean:"#0984e3" };
-const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185], COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
+const SKINS = { Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🎃"] };
+const THEMES = { Lilac: "#E6E6FA", Sunset: "#ff7675", Forest: "#55efc4" };
+const SIZES = [22, 30, 38, 48, 60, 74, 88, 104, 122, 140, 160, 185];
+const COLORS = ["#ff7979", "#ffbe76", "#f6e58d", "#badc58", "#7ed6df", "#686de0", "#4834d4", "#f0932b", "#eb4d4b", "#6ab04c", "#130f40", "#222f3e"];
 
-let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', border:'#333', outline:'none', owned:['Fruit', 'Lilac', '#333'], muted:false, maxT:0 };
-let engine, aCtx, currentIdx=0, nextIdx=1, lastX=200, isDragging=false, activePwr=null, pwrX=0, pwrY=0, canDrop=true;
+let state = { score:0, best:0, pts:0, skin:'Fruit', theme:'Lilac', owned:['Fruit', 'Lilac'], muted:false, maxT:0 };
+let engine, aCtx, currentIdx=0, nextIdx=1, isDragging=false, activePwr=null, touchX=200, touchY=0;
 const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 
 function startAudio() {
@@ -70,169 +116,166 @@ function startAudio() {
     init();
 }
 
-function playS(f, type, dur, vol) {
-    if(!aCtx || state.muted) return;
-    const o=aCtx.createOscillator(), g=aCtx.createGain(); o.type=type; o.connect(g); g.connect(aCtx.destination);
-    o.frequency.setValueAtTime(f, aCtx.currentTime); g.gain.setValueAtTime(vol, aCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, aCtx.currentTime + dur); o.start(); o.stop(aCtx.currentTime + dur);
-}
-
 function init() {
-    const s = localStorage.getItem('fm_v81');
+    const s = localStorage.getItem('fm_v82');
     if(s) Object.assign(state, JSON.parse(s));
     engine = Matter.Engine.create();
-    setupD();
+    
+    // Create Walls
+    updateCanvasSize();
     
     Matter.Events.on(engine, 'collisionStart', (e) => {
         e.pairs.forEach(p => {
             const a=p.bodyA, b=p.bodyB;
             if(a.plugin?.t === b.plugin?.t && a.plugin?.t < 11 && !a.isMerging && !b.isMerging) {
                 a.isMerging = b.isMerging = true;
-                const nt=a.plugin.t+1; playS(250+(nt*50), 'sine', 0.2, 0.3);
+                const nt = a.plugin.t + 1;
                 Matter.Composite.remove(engine.world, [a, b]);
-                Matter.Composite.add(engine.world, Matter.Bodies.circle((a.position.x+b.position.x)/2, (a.position.y+b.position.y)/2, SIZES[nt], { restitution: 0.6, plugin: {t:nt} }));
-                state.score += (nt*10); state.pts += (nt*5); state.maxT = Math.max(state.maxT, nt); updateUI();
+                Matter.Composite.add(engine.world, Matter.Bodies.circle((a.position.x+b.position.x)/2, (a.position.y+b.position.y)/2, SIZES[nt], { restitution: 0.5, plugin: {t:nt} }));
+                state.score += (nt*10); state.pts += (nt*5); state.maxT = Math.max(state.maxT, nt);
+                updateUI();
             }
         });
     });
 
     Matter.Runner.run(Matter.Runner.create(), engine);
     requestAnimationFrame(render);
-    updateUI();
 }
 
-function setupD() {
-    canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-    const floorY = document.getElementById('bottom-ui').getBoundingClientRect().top;
+function updateCanvasSize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const floorY = canvas.height - 90;
     Matter.Composite.clear(engine.world);
     Matter.Composite.add(engine.world, [
-        Matter.Bodies.rectangle(canvas.width/2, floorY+50, canvas.width, 100, {isStatic:true}),
-        Matter.Bodies.rectangle(6, canvas.height/2, 12, canvas.height, {isStatic:true}),
-        Matter.Bodies.rectangle(canvas.width-6, canvas.height/2, 12, canvas.height, {isStatic:true})
+        Matter.Bodies.rectangle(canvas.width/2, floorY + 50, canvas.width, 100, {isStatic:true}), // Floor
+        Matter.Bodies.rectangle(0, canvas.height/2, 10, canvas.height, {isStatic:true}), // Left
+        Matter.Bodies.rectangle(canvas.width, canvas.height/2, 10, canvas.height, {isStatic:true}) // Right
     ]);
 }
 
-function render(time) {
-    ctx.fillStyle=THEME_DATA[state.theme]; ctx.fillRect(0,0,canvas.width,canvas.height);
-    
-    // Death Line
-    ctx.strokeStyle="rgba(255,0,0,0.4)"; ctx.setLineDash([5,5]); ctx.strokeRect(0,190,canvas.width,1);
+function render() {
+    ctx.fillStyle = THEMES[state.theme];
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
+    // Death Line
+    ctx.strokeStyle = "red"; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(0,180); ctx.lineTo(canvas.width,180); ctx.stroke(); ctx.setLineDash([]);
+
+    // Logic for dropping preview
     if(isDragging && !activePwr) {
-        ctx.font="40px Arial"; ctx.textAlign="center"; 
-        ctx.fillText(SKINS[state.skin][currentIdx], lastX, 175);
+        ctx.font = "40px Arial"; ctx.textAlign = "center";
+        ctx.fillText(SKINS[state.skin][currentIdx], touchX, 160);
+    }
+
+    // Powerup Crosshair
+    if(activePwr) {
+        ctx.strokeStyle = "cyan"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(touchX, touchY, 50, 0, Math.PI*2); ctx.stroke();
     }
 
     Matter.Composite.allBodies(engine.world).forEach(b => {
         if(b.plugin?.t === undefined) return;
-        ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-        ctx.fillStyle = COLORS[b.plugin.t]; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
-        ctx.font = (b.circleRadius*1.2)+"px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; 
-        ctx.fillStyle = "#fff"; ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0); ctx.restore();
+        ctx.save();
+        ctx.translate(b.position.x, b.position.y);
+        ctx.rotate(b.angle);
+        ctx.fillStyle = COLORS[b.plugin.t];
+        ctx.beginPath(); ctx.arc(0, 0, b.circleRadius, 0, Math.PI*2); ctx.fill();
+        ctx.font = (b.circleRadius*1.2) + "px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "white";
+        ctx.fillText(SKINS[state.skin][b.plugin.t], 0, 0);
+        ctx.restore();
 
-        if(b.position.y < 190 && !isDragging) {
-            if(!b.dT) b.dT = Date.now();
-            if(Date.now() - b.dT > 1800) { alert("Game Over!"); state.score=0; save(); location.reload(); }
-        } else b.dT = null;
+        // Death Check
+        if(b.position.y < 180 && !isDragging) {
+            if(!b.t0) b.t0 = Date.now();
+            if(Date.now() - b.t0 > 2000) { alert("Game Over!"); location.reload(); }
+        } else { b.t0 = null; }
     });
 
-    if(activePwr) {
-        ctx.strokeStyle="#00ffff"; ctx.lineWidth=3; ctx.setLineDash([]);
-        ctx.beginPath(); ctx.arc(pwrX, pwrY, 40, 0, Math.PI*2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(pwrX-50, pwrY); ctx.lineTo(pwrX+50, pwrY); ctx.moveTo(pwrX, pwrY-50); ctx.lineTo(pwrX, pwrY+50); ctx.stroke();
-    }
     requestAnimationFrame(render);
 }
 
-// UNIFIED INPUTS
-function getXY(e) {
-    const r = canvas.getBoundingClientRect();
+// THE INPUT FIX
+function handleTouch(e) {
     const t = e.touches ? e.touches[0] : e;
-    return { x: t.clientX - r.left, y: t.clientY - r.top };
-}
-
-function prepPwr(t, e) {
-    e.preventDefault();
-    const cost = {bomb:500, wipe:1000, evo:1500}[t];
-    if(state.pts < cost) {
-        document.getElementById('p-'+t).classList.add('error-shake');
-        setTimeout(()=>document.getElementById('p-'+t).classList.remove('error-shake'), 300);
-        return;
-    }
-    activePwr = t; isDragging = true;
-    const p = getXY(e); pwrX = p.x; pwrY = p.y;
+    touchX = t.clientX;
+    touchY = t.clientY;
 }
 
 canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    const p = getXY(e);
-    if(p.y > 145 && p.y < canvas.height-95) { isDragging = true; lastX = p.x; }
-}, {passive: false});
+    isDragging = true;
+    handleTouch(e);
+}, {passive:false});
 
-window.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    const p = getXY(e); pwrX = p.x; pwrY = p.y;
-    if(isDragging && !activePwr) lastX = p.x;
-}, {passive: false});
+canvas.addEventListener('touchmove', (e) => {
+    handleTouch(e);
+}, {passive:false});
 
-window.addEventListener('touchend', (e) => {
+canvas.addEventListener('touchend', () => {
     if(!isDragging) return;
-    if(activePwr) { usePwr(pwrX, pwrY); activePwr = null; }
-    else if(canDrop) {
-        Matter.Composite.add(engine.world, Matter.Bodies.circle(lastX, 150, SIZES[currentIdx], { restitution:0.6, plugin:{t:currentIdx} }));
-        currentIdx=nextIdx; nextIdx=Math.floor(Math.random()*4); canDrop=false; setTimeout(()=>canDrop=true, 400); 
+    if(activePwr) {
+        runPwr(touchX, touchY);
+        activePwr = null;
+    } else {
+        Matter.Composite.add(engine.world, Matter.Bodies.circle(touchX, 140, SIZES[currentIdx], { restitution:0.5, plugin:{t:currentIdx} }));
+        currentIdx = nextIdx; nextIdx = Math.floor(Math.random()*4);
     }
-    isDragging = false; updateUI();
-});
+    isDragging = false;
+    updateUI();
+}, {passive:false});
 
-// Desktop Mouse Support
-canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = getXY(e).x; });
-window.addEventListener('mousemove', (e) => { if(isDragging) { const p = getXY(e); pwrX = p.x; pwrY = p.y; if(!activePwr) lastX = p.x; }});
-window.addEventListener('mouseup', () => { if(isDragging) window.dispatchEvent(new Event('touchend')); });
+// Mouse fallbacks
+canvas.addEventListener('mousedown', (e) => { isDragging = true; touchX = e.clientX; touchY = e.clientY; });
+canvas.addEventListener('mousemove', (e) => { if(isDragging) { touchX = e.clientX; touchY = e.clientY; } });
+canvas.addEventListener('mouseup', () => canvas.dispatchEvent(new Event('touchend')));
 
-function usePwr(x, y) {
-    const bds = Matter.Composite.allBodies(engine.world).filter(b=>b.plugin?.t!==undefined);
-    const h = bds.find(b=>Math.hypot(b.position.x-x, b.position.y-y) < b.circleRadius+30);
-    if(activePwr==='bomb'){ bds.forEach(b=>{if(Math.hypot(b.position.x-x, b.position.y-y)<100) Matter.Composite.remove(engine.world,b);}); state.pts-=500; }
-    else if(activePwr==='wipe'&&h){ bds.forEach(b=>{if(b.plugin.t===h.plugin.t) Matter.Composite.remove(engine.world,b);}); state.pts-=1000; }
-    else if(activePwr==='evo'&&h&&h.plugin.t<11){ const t=h.plugin.t; bds.forEach(b=>{if(b.plugin.t===t){ const nt=t+1; Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x,b.position.y,SIZES[nt],{restitution:0.6, plugin:{t:nt}})); Matter.Composite.remove(engine.world,b); }}); state.pts-=1500; }
-    playS(150, 'square', 0.3, 0.2);
+function prepPwr(p, e) {
+    e.stopPropagation();
+    const costs = {bomb:500, wipe:1000, evo:1500};
+    if(state.pts >= costs[p]) { activePwr = p; isDragging = true; }
+    else { alert("Not enough money!"); }
+}
+
+function runPwr(x, y) {
+    const bodies = Matter.Composite.allBodies(engine.world).filter(b => b.plugin?.t !== undefined);
+    const target = bodies.find(b => Math.hypot(b.position.x-x, b.position.y-y) < b.circleRadius + 40);
+    
+    if(activePwr === 'bomb') {
+        bodies.forEach(b => { if(Math.hypot(b.position.x-x, b.position.y-y) < 100) Matter.Composite.remove(engine.world, b); });
+        state.pts -= 500;
+    } else if(activePwr === 'wipe' && target) {
+        bodies.forEach(b => { if(b.plugin.t === target.plugin.t) Matter.Composite.remove(engine.world, b); });
+        state.pts -= 1000;
+    } else if(activePwr === 'evo' && target && target.plugin.t < 11) {
+        const type = target.plugin.t;
+        bodies.forEach(b => { 
+            if(b.plugin.t === type) {
+                const nt = type + 1;
+                Matter.Composite.add(engine.world, Matter.Bodies.circle(b.position.x, b.position.y, SIZES[nt], {plugin:{t:nt}}));
+                Matter.Composite.remove(engine.world, b);
+            }
+        });
+        state.pts -= 1500;
+    }
 }
 
 function updateUI() {
-    document.getElementById('s-val').innerText=state.score;
-    document.getElementById('h-val').innerText=state.best=Math.max(state.best, state.score);
-    document.getElementById('w-val').innerText=state.pts;
-    document.getElementById('next-disp').innerText="Next: "+SKINS[state.skin][nextIdx];
-    document.getElementById('game-container').style.background=THEME_DATA[state.theme];
-    document.getElementById('progress-bar').style.width=(state.maxT/11*100)+"%";
-    save();
+    document.getElementById('s-val').innerText = state.score;
+    document.getElementById('h-val').innerText = state.best = Math.max(state.best, state.score);
+    document.getElementById('w-val').innerText = state.pts;
+    document.getElementById('next-disp').innerText = "Next: " + SKINS[state.skin][nextIdx];
+    document.getElementById('p-bar').style.width = (state.maxT/11*100) + "%";
+    localStorage.setItem('fm_v82', JSON.stringify(state));
 }
 
-function openShop() {
-    document.getElementById('shopModal').style.display='block';
-    document.getElementById('shop-wallet').innerText=state.pts;
-    let h = '<h3>Skins</h3><div class="grid">';
-    Object.keys(SKINS).forEach(id => h += `<div class="item-card" onclick="buy('${id}','skin',500)">${SKINS[id][0]} ${id}<br><span class="badge">${state.owned.includes(id)?'Owned':'$500'}</span></div>`);
-    h += '</div><h3>Themes</h3><div class="grid">';
-    Object.keys(THEME_DATA).forEach(id => h += `<div class="item-card" onclick="buy('${id}','theme',300)"><div style="height:10px;background:${THEME_DATA[id]}"></div>${id}<br><span class="badge">${state.owned.includes(id)?'Owned':'$300'}</span></div>`);
-    document.getElementById('shop-scroll').innerHTML = h + '</div>';
+function openShop() { 
+    document.getElementById('shopModal').style.display='block'; 
+    document.getElementById('shop-wallet').innerText = state.pts;
 }
-
-function buy(id, t, c) {
-    if(!state.owned.includes(id)){ 
-        if(state.pts>=c){ state.pts-=c; state.owned.push(id); } 
-        else { 
-            document.getElementById('shop-wallet-msg').classList.add('error-shake');
-            setTimeout(()=>document.getElementById('shop-wallet-msg').classList.remove('error-shake'), 300);
-            return; 
-        }
-    }
-    state[t]=id; updateUI(); openShop();
-}
-function save() { localStorage.setItem('fm_v81', JSON.stringify(state)); }
-function closeModal() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
-function toggleMute() { state.muted=!state.muted; document.getElementById('mute-btn').innerText=state.muted?"🔇":"🔊"; }
+function closeModal() { document.getElementById('shopModal').style.display='none'; }
+function toggleMute() { state.muted = !state.muted; }
+window.addEventListener('resize', updateCanvasSize);
 </script>
 </body>
 </html>
