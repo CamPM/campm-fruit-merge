@@ -5,16 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Fruit Merge - v1.30</title>
+    <title>Fruit Merge - v1.31</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.98); }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
         body { 
-            margin: 0; overflow: hidden; background: var(--bg); font-family: var(--font); 
+            overflow: hidden; background: var(--bg); font-family: var(--font); 
             height: 100vh; width: 100vw; position: fixed; touch-action: none; -webkit-user-select: none;
         }
+
+        canvas { display: block; width: 100% !important; height: 100% !important; }
 
         /* UI PANELS */
         .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
@@ -30,27 +32,26 @@
         #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
         .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
-        /* MODALS - FIXED SCROLLING */
+        /* MODALS */
         .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; touch-action: auto; }
         .modal.open { display: flex; }
         .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; touch-action: auto; }
+        .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; line-height: 1.6; }
         
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 30px; }
         .card { background: #f9f9f9; padding: 10px; border-radius: 15px; text-align: center; border: 2px solid #eee; cursor: pointer; }
         .card.equipped { border-color: #2ecc71; background: #f0fff4; }
         
-        @keyframes rotate-emoji { 0% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.1) rotate(10deg); } 100% { transform: scale(1) rotate(0deg); } }
-        .preview-swatch { width: 50px; height: 50px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; background: white; overflow: hidden; position: relative; }
-        .skin-preview { animation: rotate-emoji 2s infinite ease-in-out; }
+        .preview-swatch { width: 50px; height: 50px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; background: white; overflow: hidden; }
         
-        /* TRUE RAINBOW PREVIEW */
-        .rainbow-grad { 
-            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff) !important; 
-            background-size: 400% 400% !important; 
-            animation: rainbow-shift 3s linear infinite !important; 
+        /* DYNAMIC RAINBOW CYCLING */
+        @keyframes rainbow-cycle {
+            0% { border-color: hsl(0, 100%, 50%); box-shadow: 0 0 10px hsl(0, 100%, 50%); }
+            33% { border-color: hsl(120, 100%, 50%); box-shadow: 0 0 10px hsl(120, 100%, 50%); }
+            66% { border-color: hsl(240, 100%, 50%); box-shadow: 0 0 10px hsl(240, 100%, 50%); }
+            100% { border-color: hsl(360, 100%, 50%); box-shadow: 0 0 10px hsl(360, 100%, 50%); }
         }
-        @keyframes rainbow-shift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .rainbow-outline-active { animation: rainbow-cycle 3s linear infinite; }
 
         #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
         #toast { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
@@ -61,10 +62,10 @@
 <div id="toast">NEED MORE POINTS!</div>
 
 <div id="game-over">
-    <h1 style="font-size: 3rem; margin: 0;">GAME OVER</h1>
-    <p style="font-size: 1.5rem;">Score: <span id="final-score">0</span></p>
-    <p style="color: #f1c40f;">Best: <span id="final-best">0</span></p>
-    <button id="retry-btn" style="margin-top:25px; padding:15px 50px; background:#2ecc71; color:white; border:none; border-radius:15px; font-size:1.2rem; font-weight:bold; cursor:pointer; pointer-events: auto;">PLAY AGAIN</button>
+    <h1 style="font-size: 3.5rem; margin: 0;">GAME OVER</h1>
+    <p style="font-size: 1.5rem; margin: 10px 0;">Final Score: <span id="final-score">0</span></p>
+    <p style="color: #f1c40f;">Your Record: <span id="final-best">0</span></p>
+    <button id="retry-btn" style="margin-top:30px; padding:18px 60px; background:#2ecc71; color:white; border:none; border-radius:15px; font-size:1.4rem; font-weight:bold; cursor:pointer;">TRY AGAIN</button>
 </div>
 
 <div class="ui-panel top-bar">
@@ -74,7 +75,7 @@
         <div class="score-box"><b>WALLET</b><div id="wallet-ui" style="font-size:24px; color:#2ecc71">0</div></div>
     </div>
     <div id="prog-bar" style="display:flex; justify-content:space-around; margin-top:10px; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 5px;"></div>
-    <div style="text-align:center; font-size: 11px; margin-top: 5px; font-weight: bold; color: #7f8c8d;">HIGH SCORE: <span id="high-score-ui">0</span></div>
+    <div style="text-align:center; font-size: 11px; margin-top: 5px; font-weight: bold; color: #7f8c8d;">BEST: <span id="high-score-ui">0</span></div>
 </div>
 
 <div class="ui-panel bot-bar">
@@ -99,15 +100,26 @@
 </div>
 
 <div id="help-modal" class="modal">
-    <div class="modal-header"><h2 style="margin:0">Help</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer; padding: 10px;">✕</b></div>
+    <div class="modal-header"><h2 style="margin:0">How to Play</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer; padding: 10px;">✕</b></div>
     <div class="modal-content">
-        <h3>How to Play</h3>
-        <p>Drop items to merge matches. Reach Tier 12 to win!</p>
-        <h3>Power-Ups</h3>
-        <p>Click a power-up, then click a target on the board to use it. Points are only deducted on successful use.</p>
-        <hr>
-        <h3>iPad / iPhone Fix</h3>
-        <p>If you experience lag or gesture issues, tap the Share icon and <b>"Add to Home Screen"</b>. This runs the game in Standalone Mode without browser interference.</p>
+        <h3>Objective</h3>
+        <p>Drop items to merge matching pairs. Each merge evolves the item into a larger, more valuable tier. Reach <b>Tier 12</b> to master the pack!</p>
+        
+        <h3>The Death Line</h3>
+        <p>If an item stays above the <b>red dotted line</b> for 2 seconds, the game is over. Keep the board moving by merging items quickly.</p>
+        
+        <h3>Using Power-Ups</h3>
+        <p>Power-ups cost points from your wallet and are activated in two steps:</p>
+        <ul style="padding-left: 20px; margin: 10px 0;">
+            <li><b>1. Select:</b> Tap a power-up in the bottom bar. It will glow when active.</li>
+            <li><b>2. Apply:</b> Tap a fruit on the board to use the ability.</li>
+        </ul>
+        <p><b>💣 Bomb ($500):</b> Destroys all items in a small blast radius around where you tap.</p>
+        <p><b>🧹 Wipe ($1000):</b> Deletes <i>every</i> item on the board of the same tier as the one you tap.</p>
+        <p><b>🪄 Evolve ($1500):</b> Instantly upgrades <i>all</i> items of the tapped tier to the next level.</p>
+
+        <h3>iOS Installation</h3>
+        <p>To fix scaling and gestures on iPad/iPhone: Tap <b>Share</b> -> <b>Add to Home Screen</b>. Launch from your home screen for a full-app experience.</p>
     </div>
 </div>
 
@@ -133,17 +145,16 @@ const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
 
 let st = { score: 0, best: 0, wallet: 0, muted: false, eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' }, owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found: [0] };
 let engine, canvas, ctx, W, H, DL, FY, audioCtx, floor, wallL, wallR;
-let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, activePower = null, shopTimer = 0, isDead = false;
+let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, activePower = null, isDead = false;
 
 function init() {
     load();
     canvas = document.getElementById('c'); ctx = canvas.getContext('2d');
-    resize();
     window.addEventListener('resize', resize);
-    document.getElementById('retry-btn').onclick = restartGame;
+    resize();
     
+    document.getElementById('retry-btn').onclick = restartGame;
     engine = E.create({ gravity: { y: 1.2 } });
-    updatePhysicsBounds();
     
     Ev.on(engine, 'collisionStart', e => {
         e.pairs.forEach(p => {
@@ -216,19 +227,15 @@ function loop() {
     ctx.clearRect(0, 0, W, H);
     document.body.style.background = THEMES[st.eq.th];
     
-    // Draw Border
     ctx.fillStyle = BORDERS[st.eq.bd];
     ctx.fillRect(0, 0, 15, H); ctx.fillRect(W-15, 0, 15, H);
     
-    // Draw Death Line
     ctx.setLineDash([8,8]); ctx.strokeStyle="rgba(255,0,0,0.6)"; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(15, DL); ctx.lineTo(W-15, DL); ctx.stroke(); ctx.setLineDash([]);
 
     const now = Date.now();
     C.allBodies(engine.world).forEach(b => {
         if(b.isStatic || !b.plugin) return;
-        
-        // Death Logic
         if(b.position.y - b.circleRadius < DL && b.speed < 0.5) {
             if(!b.tm) b.tm = now;
             if(now - b.tm > 2000 && !isDead) triggerGameOver();
@@ -238,7 +245,6 @@ function loop() {
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
         ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
         
-        // Outlines
         if(st.eq.ot === 'rainbow') ctx.strokeStyle = `hsl(${now/5%360},100%,50%)`;
         else if(st.eq.ot === 'white') ctx.strokeStyle = "#fff";
         else if(st.eq.ot === 'black') ctx.strokeStyle = "#000";
@@ -250,22 +256,13 @@ function loop() {
         ctx.restore();
     });
 
-    // Preview
     if(canDrop && !activePower && !isDead) {
         ctx.strokeStyle="rgba(0,0,0,0.08)"; ctx.beginPath(); ctx.moveTo(lastX, DL); ctx.lineTo(lastX, FY); ctx.stroke();
         ctx.font="40px serif"; ctx.globalAlpha=0.4; ctx.textAlign="center";
         ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, DL-20); ctx.globalAlpha=1;
     }
     
-    if(now - shopTimer > 1000) { shopTimer = now; updateStorePreviews(); }
     requestAnimationFrame(loop);
-}
-
-function updateStorePreviews() {
-    document.querySelectorAll('.skin-preview').forEach(card => {
-        const idx = Math.floor(Date.now() / 1000) % 12;
-        card.innerText = SKINS[card.dataset.skin][idx];
-    });
 }
 
 function renderStore() {
@@ -288,13 +285,13 @@ function renderStore() {
             card.className = `card ${isEq ? 'equipped' : ''}`;
             
             let prev = '';
-            if(cat.key === 'sk') prev = `<div class="preview-swatch skin-preview" data-skin="${item}">${SKINS[item][0]}</div>`;
+            if(cat.key === 'sk') prev = `<div class="preview-swatch">${SKINS[item][0]}</div>`;
             else if(cat.key === 'th') prev = `<div class="preview-swatch" style="background:${cat.data[item]}"></div>`;
             else if(cat.key === 'bd') prev = `<div class="preview-swatch" style="border:4px solid ${cat.data[item]}"></div>`;
             else {
-                let cl = (item === 'Rainbow') ? 'rainbow-grad' : '';
+                let cl = (item === 'Rainbow') ? 'rainbow-outline-active' : '';
                 let bg = (item === 'White') ? '#fff' : (item === 'Black' ? '#000' : 'transparent');
-                prev = `<div class="preview-swatch ${cl}" style="background:${bg}; border: 2px solid #333"></div>`;
+                prev = `<div class="preview-swatch ${cl}" style="background:${bg}; border-width: 3px;"></div>`;
             }
             
             card.innerHTML = `${prev}<b>${item}</b><div style="font-size:10px; color:${isOwned?'#2ecc71':'#e67e22'}">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.cost}</div>`;
@@ -374,8 +371,8 @@ function updUI() {
     for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.includes(i)?1:0.15}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`;
 }
 
-function save() { localStorage.setItem('fm_v130', JSON.stringify(st)); }
-function load() { const d = localStorage.getItem('fm_v130'); if(d) Object.assign(st, JSON.parse(d)); }
+function save() { localStorage.setItem('fm_v131', JSON.stringify(st)); }
+function load() { const d = localStorage.getItem('fm_v131'); if(d) Object.assign(st, JSON.parse(d)); }
 
 function toggleModal(id) { 
     const m = document.getElementById(id); 
@@ -386,38 +383,50 @@ function toggleModal(id) {
 
 function toggleMute() { st.muted = !st.muted; document.getElementById('mute-btn').innerText = st.muted ? "🔇" : "🔊"; save(); }
 
-// IMPROVED TOUCH HANDLING FOR IPAD/ANDROID
-const handleDown = (x, y, isTargetUI) => {
-    if(isTargetUI || isDead) return;
-    lastX = Math.max(45, Math.min(W-45, x));
-};
-
-const handleUp = (x, y, isTargetUI) => {
-    if(isTargetUI || isDead) return;
-    if(activePower) handlePower(x, y);
-    else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
+// TOUCH/MOUSE ROUTING
+const getPos = e => {
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX, y: touch.clientY };
 };
 
 window.addEventListener('touchstart', e => {
     const isUI = e.target.closest('.modal') || e.target.closest('.ui-panel');
-    if(!isUI) e.preventDefault();
-    handleDown(e.touches[0].clientX, e.touches[0].clientY, isUI);
+    if(!isUI) {
+        e.preventDefault();
+        const pos = getPos(e);
+        lastX = Math.max(45, Math.min(W-45, pos.x));
+    }
 }, { passive: false });
 
 window.addEventListener('touchmove', e => {
-    if(!e.target.closest('.modal')) e.preventDefault();
-    lastX = Math.max(45, Math.min(W-45, e.touches[0].clientX));
+    if(!e.target.closest('.modal')) {
+        e.preventDefault();
+        lastX = Math.max(45, Math.min(W-45, getPos(e).x));
+    }
 }, { passive: false });
 
 window.addEventListener('touchend', e => {
     const isUI = e.target.closest('.modal') || e.target.closest('.ui-panel');
-    handleUp(e.changedTouches[0].clientX, e.changedTouches[0].clientY, isUI);
+    if(!isUI && !isDead) {
+        const pos = getPos(e.changedTouches[0]);
+        if(activePower) handlePower(pos.x, pos.y);
+        else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
+    }
 }, { passive: false });
 
 // Mouse Support
-window.addEventListener('mousedown', e => handleDown(e.clientX, e.clientY, e.target.closest('.modal') || e.target.closest('.ui-panel')));
+window.addEventListener('mousedown', e => {
+    if(!e.target.closest('.modal') && !e.target.closest('.ui-panel')) {
+        lastX = Math.max(45, Math.min(W-45, e.clientX));
+    }
+});
 window.addEventListener('mousemove', e => { if(!e.target.closest('.modal')) lastX = Math.max(45, Math.min(W-45, e.clientX)); });
-window.addEventListener('mouseup', e => handleUp(e.clientX, e.clientY, e.target.closest('.modal') || e.target.closest('.ui-panel')));
+window.addEventListener('mouseup', e => {
+    if(!e.target.closest('.modal') && !e.target.closest('.ui-panel') && !isDead) {
+        if(activePower) handlePower(e.clientX, e.clientY);
+        else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
+    }
+});
 
 window.onload = init;
 </script>
