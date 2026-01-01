@@ -5,17 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Fruit Merge - v1.31</title>
+    <title>Fruit Merge - v1.32</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.98); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
-        body { 
-            overflow: hidden; background: var(--bg); font-family: var(--font); 
-            height: 100vh; width: 100vw; position: fixed; touch-action: none; -webkit-user-select: none;
-        }
-
+        body { overflow: hidden; background: var(--bg); font-family: var(--font); height: 100vh; width: 100vw; position: fixed; touch-action: none; -webkit-user-select: none; }
         canvas { display: block; width: 100% !important; height: 100% !important; }
 
         /* UI PANELS */
@@ -26,32 +21,28 @@
         .score-box { text-align: center; min-width: 60px; }
         #next-preview { width: 50px; height: 50px; border: 3px solid #333; border-radius: 50%; display: grid; place-items: center; font-size: 28px; background: #fff; box-shadow: 0 4px 0 #333; }
         
-        .pwr-btn { width: 46px; height: 46px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; }
-        .btn-small { width: 30px; height: 30px; font-size: 14px; position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; border: 2px solid #333; }
+        /* POWER UP BUTTONS */
+        .pwr-btn { width: 46px; height: 46px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 20px; cursor: grab; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; }
+        .pwr-btn.locked { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+        .pwr-btn.dragging { transform: scale(1.2); opacity: 0.8; cursor: grabbing; z-index: 10001; }
         
         #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
-        .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        
+        .btn-small { width: 30px; height: 30px; font-size: 14px; position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; border: 2px solid #333; cursor: pointer; }
 
         /* MODALS */
         .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; touch-action: auto; }
         .modal.open { display: flex; }
         .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; line-height: 1.6; }
+        .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
         
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 30px; }
         .card { background: #f9f9f9; padding: 10px; border-radius: 15px; text-align: center; border: 2px solid #eee; cursor: pointer; }
         .card.equipped { border-color: #2ecc71; background: #f0fff4; }
         
         .preview-swatch { width: 50px; height: 50px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; background: white; overflow: hidden; }
-        
-        /* DYNAMIC RAINBOW CYCLING */
-        @keyframes rainbow-cycle {
-            0% { border-color: hsl(0, 100%, 50%); box-shadow: 0 0 10px hsl(0, 100%, 50%); }
-            33% { border-color: hsl(120, 100%, 50%); box-shadow: 0 0 10px hsl(120, 100%, 50%); }
-            66% { border-color: hsl(240, 100%, 50%); box-shadow: 0 0 10px hsl(240, 100%, 50%); }
-            100% { border-color: hsl(360, 100%, 50%); box-shadow: 0 0 10px hsl(360, 100%, 50%); }
-        }
-        .rainbow-outline-active { animation: rainbow-cycle 3s linear infinite; }
+        @keyframes rainbow-cycle { 0% { border-color: hsl(0, 100%, 50%); } 33% { border-color: hsl(120, 100%, 50%); } 66% { border-color: hsl(240, 100%, 50%); } 100% { border-color: hsl(360, 100%, 50%); } }
+        .rainbow-outline-active { animation: rainbow-cycle 3s linear infinite; border-width: 4px !important; }
 
         #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
         #toast { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
@@ -63,9 +54,8 @@
 
 <div id="game-over">
     <h1 style="font-size: 3.5rem; margin: 0;">GAME OVER</h1>
-    <p style="font-size: 1.5rem; margin: 10px 0;">Final Score: <span id="final-score">0</span></p>
-    <p style="color: #f1c40f;">Your Record: <span id="final-best">0</span></p>
-    <button id="retry-btn" style="margin-top:30px; padding:18px 60px; background:#2ecc71; color:white; border:none; border-radius:15px; font-size:1.4rem; font-weight:bold; cursor:pointer;">TRY AGAIN</button>
+    <p style="font-size: 1.5rem; margin: 10px 0;">Score: <span id="final-score">0</span></p>
+    <button id="retry-btn" style="margin-top:30px; padding:18px 60px; background:#2ecc71; color:white; border:none; border-radius:15px; font-size:1.4rem; font-weight:bold;">TRY AGAIN</button>
 </div>
 
 <div class="ui-panel top-bar">
@@ -79,12 +69,12 @@
 </div>
 
 <div class="ui-panel bot-bar">
-    <div id="p-bomb" class="pwr-btn" onclick="prepPower('bomb')">💣</div>
-    <div id="p-wipe" class="pwr-btn" onclick="prepPower('wipe')">🧹</div>
-    <div id="p-evo" class="pwr-btn" onclick="prepPower('evo')">🪄</div>
+    <div id="p-bomb" class="pwr-btn" data-type="bomb">💣</div>
+    <div id="p-wipe" class="pwr-btn" data-type="wipe">🧹</div>
+    <div id="p-evo" class="pwr-btn" data-type="evo">🪄</div>
     <div style="width:2px; height:40px; background:#ccc;"></div>
     <div class="pwr-btn" style="background:#95a5a6; width:40px" onclick="toggleModal('help-modal')">?</div>
-    <div class="pwr-btn" style="background:#2c3e50;" onclick="toggleFull()">⛶</div>
+    <div id="fs-btn" class="pwr-btn" style="background:#2c3e50;" onclick="toggleFull()">⛶</div>
     <div style="position: relative;">
         <button id="mute-btn" class="pwr-btn btn-small" onclick="toggleMute()">🔊</button>
         <div class="pwr-btn" style="background:#3498db; width:65px" onclick="toggleModal('shop-modal')">SHOP</div>
@@ -100,26 +90,16 @@
 </div>
 
 <div id="help-modal" class="modal">
-    <div class="modal-header"><h2 style="margin:0">How to Play</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer; padding: 10px;">✕</b></div>
+    <div class="modal-header"><h2 style="margin:0">Guide</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer; padding: 10px;">✕</b></div>
     <div class="modal-content">
-        <h3>Objective</h3>
-        <p>Drop items to merge matching pairs. Each merge evolves the item into a larger, more valuable tier. Reach <b>Tier 12</b> to master the pack!</p>
-        
-        <h3>The Death Line</h3>
-        <p>If an item stays above the <b>red dotted line</b> for 2 seconds, the game is over. Keep the board moving by merging items quickly.</p>
-        
-        <h3>Using Power-Ups</h3>
-        <p>Power-ups cost points from your wallet and are activated in two steps:</p>
-        <ul style="padding-left: 20px; margin: 10px 0;">
-            <li><b>1. Select:</b> Tap a power-up in the bottom bar. It will glow when active.</li>
-            <li><b>2. Apply:</b> Tap a fruit on the board to use the ability.</li>
-        </ul>
-        <p><b>💣 Bomb ($500):</b> Destroys all items in a small blast radius around where you tap.</p>
-        <p><b>🧹 Wipe ($1000):</b> Deletes <i>every</i> item on the board of the same tier as the one you tap.</p>
-        <p><b>🪄 Evolve ($1500):</b> Instantly upgrades <i>all</i> items of the tapped tier to the next level.</p>
-
-        <h3>iOS Installation</h3>
-        <p>To fix scaling and gestures on iPad/iPhone: Tap <b>Share</b> -> <b>Add to Home Screen</b>. Launch from your home screen for a full-app experience.</p>
+        <h3>Dragging Power-Ups</h3>
+        <p>To use a power-up, press and <b>hold</b> the button in the bottom bar, then <b>drag</b> it over the fruit you want to affect.</p>
+        <p><b>💣 Bomb ($500):</b> Drags a 100px circle. Release to blast everything inside.</p>
+        <p><b>🧹 Wipe ($1000):</b> Drags a crosshair. Release over a fruit to delete all items of that tier.</p>
+        <p><b>🪄 Evolve ($1500):</b> Drags a crosshair. Release over a fruit to upgrade all items of that tier.</p>
+        <hr>
+        <h3>iOS Fullscreen</h3>
+        <p>Safari on iPhone doesn't support the Fullscreen API. To play without bars: Tap <b>Share</b> > <b>Add to Home Screen</b>.</p>
     </div>
 </div>
 
@@ -127,32 +107,26 @@
 
 <script>
 const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events;
-
-const SKINS = { 
-    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"],
-    Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"],
-    Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"],
-    Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"],
-    Shapes: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"],
-    Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"],
-    Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"],
-    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"]
-};
+const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"], Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"], Shapes: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"], Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"], Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"] };
 const THEMES = { Mellow: "#FDF6E3", Matcha: "#E8F5E9", Midnight: "#1a1b26", Lavender: "#F3E5F5", Sky: "#E1F5FE", Rose: "#FFF1F0", Sunset: "#FFF5E6", Forest: "#1B5E20", DeepSea: "#01579B", Charcoal: "#212121", Sand: "#F4A460", Mint: "#F0FFF0", Plum: "#4B0082", Peach: "#FFDAB9", Slate: "#708090", Ghost: "#E8ECEF" };
 const BORDERS = { Slate: "#657B83", Gold: "#DAA520", Neon: "#B026FF", Red: "#DC143C", Black: "#000000", Silver: "#C0C0C0", Bronze: "#CD7F32", Electric: "#00FFFF", Lime: "#32CD32", Pink: "#FF69B4", Wine: "#800000", Navy: "#000080", Olive: "#808000", Teal: "#008080", Orange: "#FF8C00", White: "#FFFFFF" };
 const OUTLINES = { Default: "def", Rainbow: "rainbow", White: "white", Black: "black" };
 const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
+const PWR_COSTS = { bomb: 500, wipe: 1000, evo: 1500 };
 
 let st = { score: 0, best: 0, wallet: 0, muted: false, eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' }, owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found: [0] };
 let engine, canvas, ctx, W, H, DL, FY, audioCtx, floor, wallL, wallR;
-let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, activePower = null, isDead = false;
+let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, isDead = false;
+let activeDrag = null, dragPos = { x: 0, y: 0 };
 
 function init() {
     load();
     canvas = document.getElementById('c'); ctx = canvas.getContext('2d');
-    window.addEventListener('resize', resize);
-    resize();
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) document.getElementById('fs-btn').style.display = 'none';
     
+    resize();
+    window.addEventListener('resize', resize);
     document.getElementById('retry-btn').onclick = restartGame;
     engine = E.create({ gravity: { y: 1.2 } });
     
@@ -171,7 +145,27 @@ function init() {
             }
         });
     });
+    
+    setupPowerEvents();
     loop();
+}
+
+function setupPowerEvents() {
+    const btns = document.querySelectorAll('.pwr-btn[data-type]');
+    btns.forEach(btn => {
+        const start = (e) => {
+            if(isDead) return;
+            const type = btn.dataset.type;
+            if(st.wallet >= PWR_COSTS[type]) {
+                activeDrag = type;
+                btn.classList.add('dragging');
+                const p = e.touches ? e.touches[0] : e;
+                dragPos = { x: p.clientX, y: p.clientY };
+            } else showToast("NOT ENOUGH CASH!");
+        };
+        btn.addEventListener('touchstart', start, {passive: false});
+        btn.addEventListener('mousedown', start);
+    });
 }
 
 function resize() {
@@ -200,26 +194,6 @@ function spawnFruit(x, y, t, isDrop) {
         canDrop = false; setTimeout(() => canDrop = true, 500);
         updUI();
     }
-}
-
-function playSound(type) {
-    if(st.muted) return;
-    try {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-        if(type === 'pop') {
-            o.frequency.setValueAtTime(600, audioCtx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
-            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        } else {
-            const skinIdx = Object.keys(SKINS).indexOf(st.eq.sk);
-            o.frequency.setValueAtTime(100 + (skinIdx * 15), audioCtx.currentTime);
-            o.frequency.linearRampToValueAtTime(10, audioCtx.currentTime+0.2);
-            g.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        }
-        o.connect(g); g.connect(audioCtx.destination);
-        o.start(); o.stop(audioCtx.currentTime + 0.2);
-    } catch(e){}
 }
 
 function loop() {
@@ -256,24 +230,66 @@ function loop() {
         ctx.restore();
     });
 
-    if(canDrop && !activePower && !isDead) {
+    if(canDrop && !activeDrag && !isDead) {
         ctx.strokeStyle="rgba(0,0,0,0.08)"; ctx.beginPath(); ctx.moveTo(lastX, DL); ctx.lineTo(lastX, FY); ctx.stroke();
         ctx.font="40px serif"; ctx.globalAlpha=0.4; ctx.textAlign="center";
         ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, DL-20); ctx.globalAlpha=1;
     }
+
+    if(activeDrag) drawDragOverlay();
     
     requestAnimationFrame(loop);
+}
+
+function drawDragOverlay() {
+    ctx.save();
+    if(activeDrag === 'bomb') {
+        ctx.beginPath(); ctx.arc(dragPos.x, dragPos.y, 80, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(230, 126, 34, 0.2)"; ctx.fill();
+        ctx.setLineDash([5,5]); ctx.strokeStyle = "#e67e22"; ctx.stroke();
+    } else {
+        ctx.strokeStyle = activeDrag === 'wipe' ? "#9b59b6" : "#f1c40f";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(dragPos.x-20, dragPos.y); ctx.lineTo(dragPos.x+20, dragPos.y);
+        ctx.moveTo(dragPos.x, dragPos.y-20); ctx.lineTo(dragPos.x, dragPos.y+20);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(dragPos.x, dragPos.y, 10, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function handlePowerRelease(x, y) {
+    const type = activeDrag; activeDrag = null;
+    document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('dragging'));
+    
+    const bodies = C.allBodies(engine.world).filter(b => b.plugin);
+    let used = false;
+
+    if(type === 'bomb') {
+        bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 80) C.remove(engine.world, b); });
+        used = true;
+    } else {
+        const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
+        if(target) {
+            const t = target.plugin.t;
+            if(type === 'wipe') bodies.forEach(b => { if(b.plugin.t === t) C.remove(engine.world, b); });
+            if(type === 'evo' && t < 11) bodies.forEach(b => { 
+                if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); }
+            });
+            used = true;
+        }
+    }
+
+    if(used) {
+        st.wallet -= PWR_COSTS[type];
+        playSound('pop'); updUI(); save();
+    }
 }
 
 function renderStore() {
     const container = document.getElementById('store-container'); container.innerHTML = '';
     document.getElementById('shop-wallet').innerText = '$' + st.wallet;
-    const cats = [
-        {title: 'Skins', key: 'sk', data: SKINS, cost: 1500},
-        {title: 'Outlines', key: 'ot', data: OUTLINES, cost: 1000},
-        {title: 'Backgrounds', key: 'th', data: THEMES, cost: 500},
-        {title: 'Borders', key: 'bd', data: BORDERS, cost: 500}
-    ];
+    const cats = [{title: 'Skins', key: 'sk', data: SKINS, cost: 1500}, {title: 'Outlines', key: 'ot', data: OUTLINES, cost: 1000}, {title: 'Backgrounds', key: 'th', data: THEMES, cost: 500}, {title: 'Borders', key: 'bd', data: BORDERS, cost: 500}];
     cats.forEach(cat => {
         container.innerHTML += `<h3 style="margin:20px 0 10px; border-left:4px solid var(--accent); padding-left:10px;">${cat.title}</h3><div class="grid" id="grid-${cat.key}"></div>`;
         const grid = document.getElementById(`grid-${cat.key}`);
@@ -283,7 +299,6 @@ function renderStore() {
             const isEq = st.eq[cat.key] === val;
             const card = document.createElement('div');
             card.className = `card ${isEq ? 'equipped' : ''}`;
-            
             let prev = '';
             if(cat.key === 'sk') prev = `<div class="preview-swatch">${SKINS[item][0]}</div>`;
             else if(cat.key === 'th') prev = `<div class="preview-swatch" style="background:${cat.data[item]}"></div>`;
@@ -291,9 +306,8 @@ function renderStore() {
             else {
                 let cl = (item === 'Rainbow') ? 'rainbow-outline-active' : '';
                 let bg = (item === 'White') ? '#fff' : (item === 'Black' ? '#000' : 'transparent');
-                prev = `<div class="preview-swatch ${cl}" style="background:${bg}; border-width: 3px;"></div>`;
+                prev = `<div class="preview-swatch ${cl}" style="background:${bg}; border: 2px solid #333"></div>`;
             }
-            
             card.innerHTML = `${prev}<b>${item}</b><div style="font-size:10px; color:${isOwned?'#2ecc71':'#e67e22'}">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.cost}</div>`;
             card.onclick = (e) => {
                 e.stopPropagation();
@@ -307,39 +321,40 @@ function renderStore() {
     });
 }
 
-function prepPower(type) {
-    if(isDead) return;
-    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
-    if(st.wallet >= costs[type]) {
-        activePower = (activePower === type) ? null : type;
-        document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
-        if(activePower) document.getElementById('p-'+type).classList.add('active');
-    } else showToast("NEED MORE POINTS!");
-}
+// SHARED TOUCH/MOUSE LOGIC
+window.addEventListener('touchmove', e => {
+    if(activeDrag) { e.preventDefault(); dragPos = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+    else if(!e.target.closest('.modal')) { e.preventDefault(); lastX = Math.max(45, Math.min(W-45, e.touches[0].clientX)); }
+}, { passive: false });
 
-function handlePower(x, y) {
-    const bodies = C.allBodies(engine.world).filter(b => b.plugin);
-    let used = false;
-    if(activePower === 'bomb') {
-        bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 80) C.remove(engine.world, b); });
-        used = true;
-    } else {
-        const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
-        if(target) {
-            const t = target.plugin.t;
-            if(activePower === 'wipe') bodies.forEach(b => { if(b.plugin.t === t) C.remove(engine.world, b); });
-            if(activePower === 'evo' && t < 11) bodies.forEach(b => { 
-                if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); }
-            });
-            used = true;
-        }
+window.addEventListener('touchend', e => {
+    if(activeDrag) handlePowerRelease(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    else if(!e.target.closest('.modal') && !e.target.closest('.ui-panel') && !isDead && canDrop) {
+        spawnFruit(lastX, DL, curIdx, true);
     }
-    if(used) {
-        st.wallet -= (activePower==='bomb'?500:activePower==='wipe'?1000:1500);
-        activePower = null;
-        document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
-        playSound('pop'); updUI(); save();
+}, { passive: false });
+
+window.addEventListener('mousemove', e => {
+    if(activeDrag) dragPos = { x: e.clientX, y: e.clientY };
+    else lastX = Math.max(45, Math.min(W-45, e.clientX));
+});
+
+window.addEventListener('mouseup', e => {
+    if(activeDrag) handlePowerRelease(e.clientX, e.clientY);
+    else if(!e.target.closest('.modal') && !e.target.closest('.ui-panel') && !isDead && canDrop) {
+        spawnFruit(lastX, DL, curIdx, true);
     }
+});
+
+function playSound(type) {
+    if(st.muted) return;
+    try {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        if(type === 'pop') { o.frequency.setValueAtTime(600, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1); g.gain.setValueAtTime(0.1, audioCtx.currentTime); }
+        else { const skinIdx = Object.keys(SKINS).indexOf(st.eq.sk); o.frequency.setValueAtTime(100 + (skinIdx * 15), audioCtx.currentTime); o.frequency.linearRampToValueAtTime(10, audioCtx.currentTime+0.2); g.gain.setValueAtTime(0.04, audioCtx.currentTime); }
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.2);
+    } catch(e){}
 }
 
 function toggleFull() {
@@ -349,19 +364,8 @@ function toggleFull() {
     else (document.exitFullscreen || document.webkitExitFullscreen).call(document);
 }
 
-function triggerGameOver() { 
-    isDead = true; 
-    document.getElementById('final-score').innerText = st.score; 
-    document.getElementById('final-best').innerText = st.best; 
-    document.getElementById('game-over').style.display = 'flex'; 
-}
-
-function restartGame() { 
-    isDead = false; st.score = 0; st.found = [0]; 
-    document.getElementById('game-over').style.display = 'none'; 
-    C.clear(engine.world, false); updatePhysicsBounds(); updUI(); 
-}
-
+function triggerGameOver() { isDead = true; document.getElementById('final-score').innerText = st.score; document.getElementById('game-over').style.display = 'flex'; }
+function restartGame() { isDead = false; st.score = 0; st.found = [0]; document.getElementById('game-over').style.display = 'none'; C.clear(engine.world, false); updatePhysicsBounds(); updUI(); }
 function updUI() {
     document.getElementById('cur-score').innerText = st.score;
     document.getElementById('wallet-ui').innerText = st.wallet;
@@ -369,64 +373,15 @@ function updUI() {
     document.getElementById('next-preview').innerText = SKINS[st.eq.sk][nextIdx];
     const pb = document.getElementById('prog-bar'); pb.innerHTML = '';
     for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.includes(i)?1:0.15}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`;
+    document.querySelectorAll('.pwr-btn[data-type]').forEach(btn => {
+        btn.classList.toggle('locked', st.wallet < PWR_COSTS[btn.dataset.type]);
+    });
 }
-
-function save() { localStorage.setItem('fm_v131', JSON.stringify(st)); }
-function load() { const d = localStorage.getItem('fm_v131'); if(d) Object.assign(st, JSON.parse(d)); }
-
-function toggleModal(id) { 
-    const m = document.getElementById(id); 
-    const isOpen = m.classList.contains('open'); 
-    document.querySelectorAll('.modal').forEach(mod => mod.classList.remove('open')); 
-    if(!isOpen) { m.classList.add('open'); if(id === 'shop-modal') renderStore(); } 
-}
-
+function save() { localStorage.setItem('fm_v132', JSON.stringify(st)); }
+function load() { const d = localStorage.getItem('fm_v132'); if(d) Object.assign(st, JSON.parse(d)); }
+function toggleModal(id) { const m = document.getElementById(id); const isOpen = m.classList.contains('open'); document.querySelectorAll('.modal').forEach(mod => mod.classList.remove('open')); if(!isOpen) { m.classList.add('open'); if(id === 'shop-modal') renderStore(); } }
 function toggleMute() { st.muted = !st.muted; document.getElementById('mute-btn').innerText = st.muted ? "🔇" : "🔊"; save(); }
-
-// TOUCH/MOUSE ROUTING
-const getPos = e => {
-    const touch = e.touches ? e.touches[0] : e;
-    return { x: touch.clientX, y: touch.clientY };
-};
-
-window.addEventListener('touchstart', e => {
-    const isUI = e.target.closest('.modal') || e.target.closest('.ui-panel');
-    if(!isUI) {
-        e.preventDefault();
-        const pos = getPos(e);
-        lastX = Math.max(45, Math.min(W-45, pos.x));
-    }
-}, { passive: false });
-
-window.addEventListener('touchmove', e => {
-    if(!e.target.closest('.modal')) {
-        e.preventDefault();
-        lastX = Math.max(45, Math.min(W-45, getPos(e).x));
-    }
-}, { passive: false });
-
-window.addEventListener('touchend', e => {
-    const isUI = e.target.closest('.modal') || e.target.closest('.ui-panel');
-    if(!isUI && !isDead) {
-        const pos = getPos(e.changedTouches[0]);
-        if(activePower) handlePower(pos.x, pos.y);
-        else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
-    }
-}, { passive: false });
-
-// Mouse Support
-window.addEventListener('mousedown', e => {
-    if(!e.target.closest('.modal') && !e.target.closest('.ui-panel')) {
-        lastX = Math.max(45, Math.min(W-45, e.clientX));
-    }
-});
-window.addEventListener('mousemove', e => { if(!e.target.closest('.modal')) lastX = Math.max(45, Math.min(W-45, e.clientX)); });
-window.addEventListener('mouseup', e => {
-    if(!e.target.closest('.modal') && !e.target.closest('.ui-panel') && !isDead) {
-        if(activePower) handlePower(e.clientX, e.clientY);
-        else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
-    }
-});
+function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
 
 window.onload = init;
 </script>
