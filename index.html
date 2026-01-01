@@ -8,13 +8,12 @@
     <title>Fruit Merge - v1.30</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
-        :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.95); }
+        :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.98); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        html, body { 
-            position: fixed; width: 100%; height: 100%; overflow: hidden; 
-            margin: 0; padding: 0; background: var(--bg); font-family: var(--font);
-            touch-action: none; /* Disables system gestures globally */
+        body { 
+            margin: 0; overflow: hidden; background: var(--bg); font-family: var(--font); 
+            height: 100vh; width: 100vw; position: fixed; touch-action: none; -webkit-user-select: none;
         }
 
         /* UI PANELS */
@@ -29,23 +28,15 @@
         .btn-small { width: 30px; height: 30px; font-size: 14px; position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #95a5a6; border-radius: 50%; border: 2px solid #333; }
         
         #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
-        .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-8px); filter: brightness(1.2); }
+        .pwr-btn.active { outline: 4px solid #2ecc71; transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
         /* MODALS - FIXED SCROLLING */
-        .modal { 
-            display: none; position: absolute; inset: 20px; background: white; z-index: 5000; 
-            border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; 
-            overflow: hidden; pointer-events: auto; touch-action: auto; /* Re-enable touch for scrolling */
-        }
+        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; touch-action: auto; }
         .modal.open { display: flex; }
         .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .modal-content { 
-            flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; 
-            line-height: 1.5; touch-action: pan-y; /* Specific scroll permission */
-        }
+        .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; touch-action: auto; }
         
-        /* STORE ELEMENTS */
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 30px; }
         .card { background: #f9f9f9; padding: 10px; border-radius: 15px; text-align: center; border: 2px solid #eee; cursor: pointer; }
         .card.equipped { border-color: #2ecc71; background: #f0fff4; }
         
@@ -53,14 +44,15 @@
         .preview-swatch { width: 50px; height: 50px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; background: white; overflow: hidden; position: relative; }
         .skin-preview { animation: rotate-emoji 2s infinite ease-in-out; }
         
+        /* TRUE RAINBOW PREVIEW */
         .rainbow-grad { 
             background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff) !important; 
             background-size: 400% 400% !important; 
             animation: rainbow-shift 3s linear infinite !important; 
         }
-        @keyframes rainbow-shift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        @keyframes rainbow-shift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
-        #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
+        #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
         #toast { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
     </style>
 </head>
@@ -70,8 +62,9 @@
 
 <div id="game-over">
     <h1 style="font-size: 3rem; margin: 0;">GAME OVER</h1>
-    <p>Score: <span id="final-score">0</span> | Best: <span id="final-best">0</span></p>
-    <button onclick="restartGame()" style="margin-top:20px; padding:15px 50px; background:#2ecc71; color:white; border:none; border-radius:15px; font-size:1.2rem; font-weight:bold;">RETRY</button>
+    <p style="font-size: 1.5rem;">Score: <span id="final-score">0</span></p>
+    <p style="color: #f1c40f;">Best: <span id="final-best">0</span></p>
+    <button id="retry-btn" style="margin-top:25px; padding:15px 50px; background:#2ecc71; color:white; border:none; border-radius:15px; font-size:1.2rem; font-weight:bold; cursor:pointer; pointer-events: auto;">PLAY AGAIN</button>
 </div>
 
 <div class="ui-panel top-bar">
@@ -81,13 +74,13 @@
         <div class="score-box"><b>WALLET</b><div id="wallet-ui" style="font-size:24px; color:#2ecc71">0</div></div>
     </div>
     <div id="prog-bar" style="display:flex; justify-content:space-around; margin-top:10px; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 5px;"></div>
-    <div style="text-align:center; font-size: 11px; margin-top: 5px; font-weight: bold; color: #7f8c8d;">BEST: <span id="high-score-ui">0</span></div>
+    <div style="text-align:center; font-size: 11px; margin-top: 5px; font-weight: bold; color: #7f8c8d;">HIGH SCORE: <span id="high-score-ui">0</span></div>
 </div>
 
 <div class="ui-panel bot-bar">
-    <div id="p-bomb" class="pwr-btn">💣</div>
-    <div id="p-wipe" class="pwr-btn">🧹</div>
-    <div id="p-evo" class="pwr-btn">🪄</div>
+    <div id="p-bomb" class="pwr-btn" onclick="prepPower('bomb')">💣</div>
+    <div id="p-wipe" class="pwr-btn" onclick="prepPower('wipe')">🧹</div>
+    <div id="p-evo" class="pwr-btn" onclick="prepPower('evo')">🪄</div>
     <div style="width:2px; height:40px; background:#ccc;"></div>
     <div class="pwr-btn" style="background:#95a5a6; width:40px" onclick="toggleModal('help-modal')">?</div>
     <div class="pwr-btn" style="background:#2c3e50;" onclick="toggleFull()">⛶</div>
@@ -100,25 +93,21 @@
 <div id="shop-modal" class="modal">
     <div class="modal-header">
         <div><h2 style="margin:0">Market</h2><div id="shop-wallet" style="color:#2ecc71; font-weight:bold;">$0</div></div>
-        <b onclick="toggleModal('shop-modal')" style="font-size:24px; cursor:pointer; padding:5px;">✕</b>
+        <b onclick="toggleModal('shop-modal')" style="font-size:24px; cursor:pointer; padding: 10px;">✕</b>
     </div>
     <div class="modal-content" id="store-container"></div>
 </div>
 
 <div id="help-modal" class="modal">
-    <div class="modal-header"><h2 style="margin:0">Instructions</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer; padding:5px;">✕</b></div>
+    <div class="modal-header"><h2 style="margin:0">Help</h2><b onclick="toggleModal('help-modal')" style="font-size:24px; cursor:pointer; padding: 10px;">✕</b></div>
     <div class="modal-content">
-        <h3>iPhone/iPad App Setup</h3>
-        <p>To fix iPad glitching and play in full screen:</p>
-        <ol>
-            <li>Tap the <b>Share</b> icon in Safari.</li>
-            <li>Select <b>"Add to Home Screen"</b>.</li>
-            <li>Open the game from your home screen. It will now run as a dedicated app!</li>
-        </ol>
+        <h3>How to Play</h3>
+        <p>Drop items to merge matches. Reach Tier 12 to win!</p>
+        <h3>Power-Ups</h3>
+        <p>Click a power-up, then click a target on the board to use it. Points are only deducted on successful use.</p>
         <hr>
-        <h3>Power-Up Drag & Drop</h3>
-        <p>Tap and <b>Hold</b> a power-up icon, then <b>Drag</b> it onto the item you want to destroy or evolve!</p>
-        <p><b>💣 Bomb ($500):</b> Blast area. <br><b>🧹 Wipe ($1000):</b> Clear all items of one tier. <br><b>🪄 Evolve ($1500):</b> Level-up all items of one tier.</p>
+        <h3>iPad / iPhone Fix</h3>
+        <p>If you experience lag or gesture issues, tap the Share icon and <b>"Add to Home Screen"</b>. This runs the game in Standalone Mode without browser interference.</p>
     </div>
 </div>
 
@@ -144,14 +133,15 @@ const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
 
 let st = { score: 0, best: 0, wallet: 0, muted: false, eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' }, owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found: [0] };
 let engine, canvas, ctx, W, H, DL, FY, audioCtx, floor, wallL, wallR;
-let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, activePower = null, shopTimer = 0;
-let dragPower = null, dragX = 0, dragY = 0;
+let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, activePower = null, shopTimer = 0, isDead = false;
 
 function init() {
     load();
     canvas = document.getElementById('c'); ctx = canvas.getContext('2d');
     resize();
-    window.addEventListener('resize', () => { setTimeout(resize, 100); });
+    window.addEventListener('resize', resize);
+    document.getElementById('retry-btn').onclick = restartGame;
+    
     engine = E.create({ gravity: { y: 1.2 } });
     updatePhysicsBounds();
     
@@ -170,7 +160,6 @@ function init() {
             }
         });
     });
-    setupPowerEvents();
     loop();
 }
 
@@ -191,42 +180,8 @@ function updatePhysicsBounds() {
     C.add(engine.world, [floor, wallL, wallR]);
 }
 
-function setupPowerEvents() {
-    ['bomb', 'wipe', 'evo'].forEach(id => {
-        const el = document.getElementById('p-' + id);
-        const start = (e) => {
-            const cost = id === 'bomb' ? 500 : id === 'wipe' ? 1000 : 1500;
-            if(st.wallet >= cost) {
-                dragPower = id;
-                el.classList.add('active');
-            } else showToast("NEED MORE POINTS!");
-        };
-        el.addEventListener('touchstart', start);
-        el.addEventListener('mousedown', start);
-    });
-}
-
-function handleDropPower(x, y) {
-    const bodies = C.allBodies(engine.world).filter(b => b.plugin);
-    if(dragPower === 'bomb') {
-        bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 80) C.remove(engine.world, b); });
-    } else {
-        const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
-        if(target) {
-            const t = target.plugin.t;
-            if(dragPower === 'wipe') bodies.forEach(b => { if(b.plugin.t === t) C.remove(engine.world, b); });
-            if(dragPower === 'evo' && t < 11) bodies.forEach(b => { 
-                if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); }
-            });
-        } else { dragPower = null; document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active')); return; }
-    }
-    st.wallet -= (dragPower==='bomb'?500:dragPower==='wipe'?1000:1500);
-    dragPower = null;
-    document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
-    playSound('pop'); updUI(); save();
-}
-
 function spawnFruit(x, y, t, isDrop) {
+    if(isDead) return;
     const b = B.circle(x, y, SIZES[t], { restitution: 0.3, friction: 0.1, slop: 0.05, plugin: { t: t } });
     C.add(engine.world, b);
     if(isDrop) {
@@ -238,43 +193,52 @@ function spawnFruit(x, y, t, isDrop) {
 
 function playSound(type) {
     if(st.muted) return;
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    if(type === 'pop') {
-        o.frequency.setValueAtTime(600, audioCtx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
-        g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    } else {
-        const baseFreq = 100 + (Object.keys(SKINS).indexOf(st.eq.sk) * 15);
-        o.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
-        o.frequency.linearRampToValueAtTime(10, audioCtx.currentTime+0.2);
-        g.gain.setValueAtTime(0.04, audioCtx.currentTime);
-    }
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + (type==='pop'?0.1:0.2));
+    try {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        if(type === 'pop') {
+            o.frequency.setValueAtTime(600, audioCtx.currentTime);
+            o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        } else {
+            const skinIdx = Object.keys(SKINS).indexOf(st.eq.sk);
+            o.frequency.setValueAtTime(100 + (skinIdx * 15), audioCtx.currentTime);
+            o.frequency.linearRampToValueAtTime(10, audioCtx.currentTime+0.2);
+            g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        }
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + 0.2);
+    } catch(e){}
 }
 
 function loop() {
     E.update(engine, 16);
     ctx.clearRect(0, 0, W, H);
     document.body.style.background = THEMES[st.eq.th];
+    
+    // Draw Border
     ctx.fillStyle = BORDERS[st.eq.bd];
     ctx.fillRect(0, 0, 15, H); ctx.fillRect(W-15, 0, 15, H);
     
-    ctx.setLineDash([8,8]); ctx.strokeStyle="rgba(255,0,0,0.6)"; ctx.beginPath(); ctx.moveTo(15, DL); ctx.lineTo(W-15, DL); ctx.stroke(); ctx.setLineDash([]);
+    // Draw Death Line
+    ctx.setLineDash([8,8]); ctx.strokeStyle="rgba(255,0,0,0.6)"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(15, DL); ctx.lineTo(W-15, DL); ctx.stroke(); ctx.setLineDash([]);
 
     const now = Date.now();
     C.allBodies(engine.world).forEach(b => {
         if(b.isStatic || !b.plugin) return;
+        
+        // Death Logic
         if(b.position.y - b.circleRadius < DL && b.speed < 0.5) {
             if(!b.tm) b.tm = now;
-            if(now - b.tm > 2000) triggerGameOver();
+            if(now - b.tm > 2000 && !isDead) triggerGameOver();
         } else b.tm = null;
         
         const r = b.circleRadius, t = b.plugin.t;
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
         ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
         
+        // Outlines
         if(st.eq.ot === 'rainbow') ctx.strokeStyle = `hsl(${now/5%360},100%,50%)`;
         else if(st.eq.ot === 'white') ctx.strokeStyle = "#fff";
         else if(st.eq.ot === 'black') ctx.strokeStyle = "#000";
@@ -286,15 +250,11 @@ function loop() {
         ctx.restore();
     });
 
-    if(canDrop && !dragPower) {
+    // Preview
+    if(canDrop && !activePower && !isDead) {
         ctx.strokeStyle="rgba(0,0,0,0.08)"; ctx.beginPath(); ctx.moveTo(lastX, DL); ctx.lineTo(lastX, FY); ctx.stroke();
         ctx.font="40px serif"; ctx.globalAlpha=0.4; ctx.textAlign="center";
         ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, DL-20); ctx.globalAlpha=1;
-    }
-
-    if(dragPower) {
-        ctx.font="40px serif"; ctx.textAlign="center";
-        ctx.fillText(dragPower==='bomb'?'💣':dragPower==='wipe'?'🧹':'🪄', dragX, dragY);
     }
     
     if(now - shopTimer > 1000) { shopTimer = now; updateStorePreviews(); }
@@ -326,17 +286,20 @@ function renderStore() {
             const isEq = st.eq[cat.key] === val;
             const card = document.createElement('div');
             card.className = `card ${isEq ? 'equipped' : ''}`;
+            
             let prev = '';
             if(cat.key === 'sk') prev = `<div class="preview-swatch skin-preview" data-skin="${item}">${SKINS[item][0]}</div>`;
             else if(cat.key === 'th') prev = `<div class="preview-swatch" style="background:${cat.data[item]}"></div>`;
             else if(cat.key === 'bd') prev = `<div class="preview-swatch" style="border:4px solid ${cat.data[item]}"></div>`;
             else {
-                let cl = item === 'Rainbow' ? 'rainbow-grad' : '';
-                let bg = item === 'White' ? '#fff' : (item === 'Black' ? '#000' : 'transparent');
-                prev = `<div class="preview-swatch ${cl}" style="background:${bg}; border: 2px solid ${item==='White'?'#ddd':'#333'}"></div>`;
+                let cl = (item === 'Rainbow') ? 'rainbow-grad' : '';
+                let bg = (item === 'White') ? '#fff' : (item === 'Black' ? '#000' : 'transparent');
+                prev = `<div class="preview-swatch ${cl}" style="background:${bg}; border: 2px solid #333"></div>`;
             }
+            
             card.innerHTML = `${prev}<b>${item}</b><div style="font-size:10px; color:${isOwned?'#2ecc71':'#e67e22'}">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.cost}</div>`;
-            card.onclick = () => {
+            card.onclick = (e) => {
+                e.stopPropagation();
                 if(isOwned) st.eq[cat.key] = val;
                 else if(st.wallet >= cat.cost) { st.wallet -= cat.cost; st.owned.push(id); st.eq[cat.key] = val; }
                 else showToast("NOT ENOUGH CASH!");
@@ -347,16 +310,61 @@ function renderStore() {
     });
 }
 
-function toggleFull() {
-    const el = document.documentElement;
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) { (el.requestFullscreen || el.webkitRequestFullscreen).call(el); }
-    else { (document.exitFullscreen || document.webkitExitFullscreen).call(document); }
-    setTimeout(resize, 300);
+function prepPower(type) {
+    if(isDead) return;
+    const costs = { bomb: 500, wipe: 1000, evo: 1500 };
+    if(st.wallet >= costs[type]) {
+        activePower = (activePower === type) ? null : type;
+        document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
+        if(activePower) document.getElementById('p-'+type).classList.add('active');
+    } else showToast("NEED MORE POINTS!");
 }
 
-function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
-function triggerGameOver() { document.getElementById('final-score').innerText = st.score; document.getElementById('final-best').innerText = st.best; document.getElementById('game-over').style.display = 'flex'; }
-function restartGame() { st.score = 0; st.found = [0]; document.getElementById('game-over').style.display = 'none'; C.clear(engine.world, false); updatePhysicsBounds(); updUI(); }
+function handlePower(x, y) {
+    const bodies = C.allBodies(engine.world).filter(b => b.plugin);
+    let used = false;
+    if(activePower === 'bomb') {
+        bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 80) C.remove(engine.world, b); });
+        used = true;
+    } else {
+        const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
+        if(target) {
+            const t = target.plugin.t;
+            if(activePower === 'wipe') bodies.forEach(b => { if(b.plugin.t === t) C.remove(engine.world, b); });
+            if(activePower === 'evo' && t < 11) bodies.forEach(b => { 
+                if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); }
+            });
+            used = true;
+        }
+    }
+    if(used) {
+        st.wallet -= (activePower==='bomb'?500:activePower==='wipe'?1000:1500);
+        activePower = null;
+        document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active'));
+        playSound('pop'); updUI(); save();
+    }
+}
+
+function toggleFull() {
+    const el = document.documentElement;
+    const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!isFull) (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    else (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+}
+
+function triggerGameOver() { 
+    isDead = true; 
+    document.getElementById('final-score').innerText = st.score; 
+    document.getElementById('final-best').innerText = st.best; 
+    document.getElementById('game-over').style.display = 'flex'; 
+}
+
+function restartGame() { 
+    isDead = false; st.score = 0; st.found = [0]; 
+    document.getElementById('game-over').style.display = 'none'; 
+    C.clear(engine.world, false); updatePhysicsBounds(); updUI(); 
+}
+
 function updUI() {
     document.getElementById('cur-score').innerText = st.score;
     document.getElementById('wallet-ui').innerText = st.wallet;
@@ -365,45 +373,51 @@ function updUI() {
     const pb = document.getElementById('prog-bar'); pb.innerHTML = '';
     for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.includes(i)?1:0.15}; font-size:14px">${SKINS[st.eq.sk][i]}</div>`;
 }
+
 function save() { localStorage.setItem('fm_v130', JSON.stringify(st)); }
 function load() { const d = localStorage.getItem('fm_v130'); if(d) Object.assign(st, JSON.parse(d)); }
-function toggleModal(id) { const m = document.getElementById(id); const isOpen = m.classList.contains('open'); document.querySelectorAll('.modal').forEach(mod => mod.classList.remove('open')); if(!isOpen) { m.classList.add('open'); if(id === 'shop-modal') renderStore(); } }
+
+function toggleModal(id) { 
+    const m = document.getElementById(id); 
+    const isOpen = m.classList.contains('open'); 
+    document.querySelectorAll('.modal').forEach(mod => mod.classList.remove('open')); 
+    if(!isOpen) { m.classList.add('open'); if(id === 'shop-modal') renderStore(); } 
+}
+
 function toggleMute() { st.muted = !st.muted; document.getElementById('mute-btn').innerText = st.muted ? "🔇" : "🔊"; save(); }
 
-// IMPROVED TOUCH HANDLING
-window.addEventListener('touchstart', e => { 
-    if (e.target.closest('.modal') || e.target.closest('.ui-panel')) return;
-    e.preventDefault();
+// IMPROVED TOUCH HANDLING FOR IPAD/ANDROID
+const handleDown = (x, y, isTargetUI) => {
+    if(isTargetUI || isDead) return;
+    lastX = Math.max(45, Math.min(W-45, x));
+};
+
+const handleUp = (x, y, isTargetUI) => {
+    if(isTargetUI || isDead) return;
+    if(activePower) handlePower(x, y);
+    else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
+};
+
+window.addEventListener('touchstart', e => {
+    const isUI = e.target.closest('.modal') || e.target.closest('.ui-panel');
+    if(!isUI) e.preventDefault();
+    handleDown(e.touches[0].clientX, e.touches[0].clientY, isUI);
 }, { passive: false });
 
 window.addEventListener('touchmove', e => {
-    if (e.target.closest('.modal')) return;
-    e.preventDefault();
-    const x = e.touches[0].clientX;
-    const y = e.touches[0].clientY;
-    if(dragPower) { dragX = x; dragY = y; }
-    else { lastX = Math.max(45, Math.min(W-45, x)); }
+    if(!e.target.closest('.modal')) e.preventDefault();
+    lastX = Math.max(45, Math.min(W-45, e.touches[0].clientX));
 }, { passive: false });
 
 window.addEventListener('touchend', e => {
-    if (e.target.closest('.modal') || e.target.closest('.ui-panel')) {
-        if(dragPower) { dragPower = null; document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active')); }
-        return;
-    }
-    if(dragPower) handleDropPower(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-    else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
+    const isUI = e.target.closest('.modal') || e.target.closest('.ui-panel');
+    handleUp(e.changedTouches[0].clientX, e.changedTouches[0].clientY, isUI);
 }, { passive: false });
 
-// Mouse fallback
-window.addEventListener('mousemove', e => { if(dragPower) { dragX = e.clientX; dragY = e.clientY; } else { lastX = Math.max(45, Math.min(W-45, e.clientX)); } });
-window.addEventListener('mouseup', e => {
-    if (e.target.closest('.modal') || e.target.closest('.ui-panel')) {
-        if(dragPower) { dragPower = null; document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('active')); }
-        return; 
-    }
-    if(dragPower) handleDropPower(e.clientX, e.clientY);
-    else if(canDrop) spawnFruit(lastX, DL, curIdx, true);
-});
+// Mouse Support
+window.addEventListener('mousedown', e => handleDown(e.clientX, e.clientY, e.target.closest('.modal') || e.target.closest('.ui-panel')));
+window.addEventListener('mousemove', e => { if(!e.target.closest('.modal')) lastX = Math.max(45, Math.min(W-45, e.clientX)); });
+window.addEventListener('mouseup', e => handleUp(e.clientX, e.clientY, e.target.closest('.modal') || e.target.closest('.ui-panel')));
 
 window.onload = init;
 </script>
