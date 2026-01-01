@@ -4,89 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Fruit Merge v1.37</title>
+    <title>Fruit Merge v1.38</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
-        :root { --accent: #3498db; --panel: rgba(255,255,255,0.98); --shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        :root { --accent: #2ecc71; --panel: rgba(255,255,255,0.98); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; }
-        body { overflow: hidden; font-family: -apple-system, system-ui, sans-serif; height: 100vh; width: 100vw; position: fixed; touch-action: none; }
+        body { overflow: hidden; font-family: 'Arial Black', Gadget, sans-serif; height: 100vh; width: 100vw; position: fixed; touch-action: none; background: #eee; }
         canvas { display: block; width: 100%; height: 100%; }
-        
         .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
-        .top-bar { top: 0; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 15px 20px; padding-top: env(safe-area-inset-top); box-shadow: var(--shadow); }
+        .top-bar { top: 0; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 15px 20px; padding-top: env(safe-area-inset-top); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .bot-bar { bottom: 0; height: 100px; background: var(--panel); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; padding-bottom: env(safe-area-inset-bottom); }
-        
-        .pwr-btn { width: 46px; height: 46px; border-radius: 12px; border: 2px solid #333; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; transition: 0.2s; background: #fff; }
+        .pwr-btn { width: 50px; height: 50px; border-radius: 14px; border: 2px solid #333; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; background: #fff; position: relative; }
+        .pwr-btn::after { content: attr(data-price); position: absolute; bottom: -12px; font-size: 10px; background: #333; color: #fff; padding: 1px 4px; border-radius: 4px; }
         .pwr-btn.locked { filter: grayscale(1); opacity: 0.5; }
-        .pwr-btn.dragging { transform: scale(1.2); z-index: 10001; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
-
-        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid #333; flex-direction: column; overflow: hidden; pointer-events: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid #333; flex-direction: column; overflow: hidden; pointer-events: auto; }
         .modal.open { display: flex; animation: pop 0.3s cubic-bezier(0.17, 0.89, 0.32, 1.27); }
-        .modal-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; background: #fafafa; }
-        .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
-        
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .modal-content { flex: 1; overflow-y: auto; padding: 15px; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes rbw { 0%{border-color:red} 33%{border-color:lime} 66%{border-color:blue} 100%{border-color:red} }
-
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .card { background: #fff; padding: 12px; border-radius: 18px; text-align: center; border: 2px solid #eee; animation: float 3s ease-in-out infinite; cursor: pointer; position: relative; }
+        .card { background: #fff; padding: 12px; border-radius: 18px; text-align: center; border: 2px solid #eee; cursor: pointer; }
         .card.equipped { border-color: #2ecc71; background: #f0fff4; }
-        .preview-swatch { width: 45px; height: 45px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #fff; }
-        .rainbow-outline-active { animation: rbw 2s linear infinite; border-width: 3px !important; }
-        
-        #combo-txt { position: absolute; top: 180px; width: 100%; text-align: center; font-weight: 900; font-size: 32px; color: #e74c3c; pointer-events: none; opacity: 0; z-index: 1500; text-shadow: 2px 2px 0 #fff; }
-        #mute-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #333; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; position: absolute; right: 10px; top: -40px; }
+        .preview-swatch { width: 45px; height: 45px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #fff; animation: bounce 2s ease-in-out infinite; }
+        #combo-txt { position: absolute; top: 180px; width: 100%; text-align: center; font-family: 'Impact', sans-serif; font-size: 42px; color: #e74c3c; pointer-events: none; opacity: 0; z-index: 1500; text-shadow: 3px 3px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff; }
+        #mute-btn { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #333; background: #fff; display: flex; align-items: center; justify-content: center; position: absolute; right: 10px; top: -45px; }
     </style>
 </head>
 <body>
-<div id="combo-txt">COMBO!</div>
-<div id="game-over" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:9000; color:white; flex-direction:column; align-items:center; justify-content:center;">
-    <h1 style="font-size:3rem">GAME OVER</h1>
-    <button onclick="restart()" style="margin-top:20px; padding:15px 50px; background:#2ecc71; color:white; border:none; border-radius:15px; font-weight:bold; font-size:1.2rem">RETRY</button>
+<div id="combo-txt">JUICY!</div>
+<div id="game-over" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.95); z-index:9000; color:white; flex-direction:column; align-items:center; justify-content:center;">
+    <h1 style="font-size:3rem; margin-bottom:10px;">GAME OVER</h1>
+    <div style="display:flex; gap:30px; margin-bottom:20px;">
+        <div style="text-align:center">SCORE<br><span id="final-score" style="font-size:2rem; color:var(--accent)">0</span></div>
+        <div style="text-align:center">BEST<br><span id="best-score" style="font-size:2rem; color:#f1c40f">0</span></div>
+    </div>
+    <button onclick="restart()" style="padding:15px 50px; background:var(--accent); color:white; border:none; border-radius:15px; font-weight:bold; font-size:1.2rem">PLAY AGAIN</button>
 </div>
 
 <div class="ui-panel top-bar">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="text-align:center"><b>SCORE</b><div id="cur-score" style="font-size:20px">0</div></div>
-        <div id="next-preview" style="width:50px; height:50px; border:3px solid #333; border-radius:50%; display:grid; place-items:center; font-size:28px; background:#fff;"></div>
-        <div style="text-align:center"><b>WALLET</b><div id="wallet-ui" style="font-size:20px; color:#2ecc71">0</div></div>
+        <div>SCORE<div id="cur-score">0</div></div>
+        <div id="next-preview" style="width:55px; height:55px; border:3px solid #333; border-radius:50%; display:grid; place-items:center; font-size:32px; background:#fff; box-shadow: 0 4px 0 #333;"></div>
+        <div>WALLET<div id="wallet-ui" style="color:#2ecc71">$0</div></div>
     </div>
-    <div id="prog-bar" style="display:flex; justify-content:space-around; margin-top:12px; background:rgba(0,0,0,0.05); padding:6px; border-radius:10px;"></div>
+    <div id="prog-bar" style="display:flex; justify-content:space-around; margin-top:10px; background:rgba(0,0,0,0.05); padding:5px; border-radius:8px;"></div>
 </div>
 
 <div class="ui-panel bot-bar">
-    <div id="p-bomb" class="pwr-btn" style="background:#e67e22" data-type="bomb">💣</div>
-    <div id="p-wipe" class="pwr-btn" style="background:#9b59b6" data-type="wipe">🧹</div>
-    <div id="p-evo" class="pwr-btn" style="background:#f1c40f" data-type="evo">🪄</div>
-    <div style="width:2px; height:40px; background:#ddd;"></div>
-    <div class="pwr-btn" style="background:#95a5a6; width:40px" onclick="toggleM('help-modal')">?</div>
+    <div id="p-bomb" class="pwr-btn" data-type="bomb" data-price="$50" style="background:#e67e22">💣</div>
+    <div id="p-wipe" class="pwr-btn" data-type="wipe" data-price="$75" style="background:#9b59b6">🧹</div>
+    <div id="p-evo" class="pwr-btn" data-type="evo" data-price="$150" style="background:#f1c40f">🪄</div>
+    <div class="pwr-btn" style="background:#95a5a6; width:45px" onclick="toggleM('help-modal')">?</div>
     <div id="fs-btn" class="pwr-btn" style="background:#2c3e50; display:none" onclick="toggleFull()">⛶</div>
     <div style="position:relative">
         <div id="mute-btn" onclick="toggleMute()">🔊</div>
-        <div class="pwr-btn" style="background:#3498db; width:70px; font-weight:bold" onclick="toggleM('shop-modal')">SHOP</div>
+        <div class="pwr-btn" style="background:#3498db; width:80px; font-weight:bold" onclick="toggleM('shop-modal')">SHOP</div>
     </div>
 </div>
 
 <div id="shop-modal" class="modal">
-    <div class="modal-header"><b>THE MARKET ($<span id="shop-cash">0</span>)</b><b onclick="toggleM('shop-modal')" style="cursor:pointer; padding:5px">✕</b></div>
+    <div style="padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee;">
+        <b>SHOP ($<span id="shop-cash">0</span>)</b><b onclick="toggleM('shop-modal')" style="cursor:pointer">✕</b>
+    </div>
     <div class="modal-content" id="store-content"></div>
 </div>
 
 <div id="help-modal" class="modal">
-    <div class="modal-header"><b>HOW TO PLAY</b><b onclick="toggleM('help-modal')" style="cursor:pointer; padding:5px">✕</b></div>
-    <div class="modal-content" style="line-height:1.6">
-        <h3 style="color:var(--accent)">🔥 Combos</h3>
-        <p>Merge within 1.5 seconds to increase your multiplier up to <b>5x Points</b>!</p>
-        <h3 style="color:#e67e22; margin-top:15px">⚡ Power-ups</h3>
-        <p><b>Drag</b> these from the bottom bar onto the board:</p>
-        <ul>
-            <li>💣 <b>Bomb:</b> Clears all fruit in a blast radius.</li>
-            <li>🧹 <b>Wipe:</b> Removes every fruit of the same tier.</li>
-            <li>🪄 <b>Evolve:</b> Upgrades all fruit of a tier to the next level.</li>
-        </ul>
-        <h3 style="color:#3498db; margin-top:15px">🛍️ Customization</h3>
-        <p>Earn points to unlock 44 unique items. Tap items in the shop to purchase and equip instantly.</p>
+    <div style="padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee;">
+        <b>HELP & INFO</b><b onclick="toggleM('help-modal')" style="cursor:pointer">✕</b>
+    </div>
+    <div class="modal-content">
+        <p>Drag to aim, release to drop. Merge matching emojis to score!</p>
+        <p style="margin-top:10px"><b>Multipliers:</b> Merge within 1.5s for up to 5x rewards.</p>
+        <p style="margin-top:10px"><b>Power-ups:</b> Drag from bar to use. Bomb clears area, Wipe clears tier, Evolve upgrades tier.</p>
+        <p style="margin-top:20px; opacity:0.3; font-size:10px;">Build v1.38 Platinum - Emerald Edition</p>
     </div>
 </div>
 
@@ -94,32 +84,32 @@
 
 <script>
 const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite;
-const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"], Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"], Shapes: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"], Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"], Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"] };
-const WORDS = { Fruit:"JUICY", Animals:"WILD", Music:"GROOVY", Weather:"ELECTRIC", Shapes:"PERFECT", Nature:"EARTHY", Dessert:"SWEET", Space:"COSMIC" };
+const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"], Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"], Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"], Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], Shapes: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"] };
 const THEMES = { Mellow:"#FDF6E3", Matcha:"#E8F5E9", Midnight:"#1a1b26", Lavender:"#F3E5F5", Sky:"#E1F5FE", Rose:"#FFF1F0", Sunset:"#FFF5E6", Forest:"#1B5E20", DeepSea:"#01579B", Charcoal:"#212121", Sand:"#F4A460", Mint:"#F0FFF0", Plum:"#4B0082", Peach:"#FFDAB9", Slate:"#708090", Ghost:"#E8ECEF" };
 const BORDERS = { Slate:"#657B83", Gold:"#DAA520", Neon:"#B026FF", Red:"#DC143C", Black:"#000000", Silver:"#C0C0C0", Bronze:"#CD7F32", Electric:"#00FFFF", Lime:"#32CD32", Pink:"#FF69B4", Wine:"#800000", Navy:"#000080", Olive:"#808000", Teal:"#008080", Orange:"#FF8C00", White:"#FFFFFF" };
 const OUTLINES = { Default:"def", Rainbow:"rainbow", White:"white", Black:"black" };
 const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
 
-let st = { score:0, best:0, wallet:0, muted:false, eq:{sk:'Fruit', th:'Mellow', bd:'Slate', ot:'def'}, owned:['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found:[0] };
+let st = { score:0, best:0, wallet:100, muted:false, eq:{sk:'Fruit', th:'Mellow', bd:'Slate', ot:'def'}, owned:['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found:[0] };
 let engine, canvas, ctx, W, H, floor, wallL, wallR, nextIdx=1, curIdx=0, canDrop=true, lastX=150, isDead=false, activeDrag=null, dragPos={x:0,y:0}, combo=1, lastMerge=0, skinCycle=0;
 
 function init() {
     load(); canvas=document.getElementById('c'); ctx=canvas.getContext('2d');
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if(!isIOS) document.getElementById('fs-btn').style.display='flex';
+    if(!/iPad|iPhone|iPod/.test(navigator.userAgent)) document.getElementById('fs-btn').style.display='flex';
     engine=E.create({gravity:{y:1.2}}); resize();
-    window.addEventListener('resize', resize);
     M.Events.on(engine, 'collisionStart', e => {
         e.pairs.forEach(p => {
             const a=p.bodyA, b=p.bodyB;
             if(a.plugin?.t!==undefined && b.plugin?.t!==undefined && a.plugin.t===b.plugin.t && a.plugin.t<11) {
                 const t=a.plugin.t, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
-                C.remove(engine.world, [a,b]); spawnF(pos.x, pos.y, t+1, false);
+                C.remove(engine.world, [a,b]); 
+                const newF = spawnF(pos.x, pos.y, t+1, false);
+                newF.render.sprite = { xScale: 1.5, yScale: 1.5 }; // Squish effect
                 const now=Date.now(); combo=(now-lastMerge<1500)?Math.min(5, combo+1):1; lastMerge=now;
-                if(combo>1) showCombo(); st.score+=(t+1)*10*combo; st.wallet+=(t+1);
+                if(combo>1) showCombo(); 
+                st.score+=(t+1)*10*combo; st.wallet+=((t+1)*15)*combo;
                 if(st.score>st.best) st.best=st.score; if(!st.found.includes(t+1)) st.found.push(t+1);
-                updUI(); save(); playS('pop');
+                updUI(); save(); playS(600);
             }
         });
     });
@@ -138,9 +128,9 @@ function resize() {
 }
 
 function spawnF(x,y,t,isD) {
-    if(isDead) return;
-    const b=B.circle(x,y,SIZES[t],{restitution:0.3, plugin:{t:t}}); C.add(engine.world, b);
+    const b=B.circle(x,y,SIZES[t],{restitution:0.5, friction:0.02, plugin:{t:t}}); C.add(engine.world, b);
     if(isD) { curIdx=nextIdx; nextIdx=Math.floor(Math.random()*5); canDrop=false; setTimeout(()=>canDrop=true, 500); updUI(); }
+    return b;
 }
 
 function setupIn() {
@@ -148,15 +138,17 @@ function setupIn() {
     const getY=e=>(e.touches?e.touches[0].clientY:e.clientY);
     const move=e=>{ if(activeDrag) dragPos={x:getX(e), y:getY(e)}; else lastX=Math.max(40,Math.min(W-40,getX(e))); if(!e.target.closest('.modal')) e.preventDefault(); };
     const end=e=>{ if(activeDrag) releaseP(dragPos.x, dragPos.y); else if(canDrop && !isDead && !e.target.closest('.ui-panel')) spawnF(lastX, 165, curIdx, true); };
-    window.addEventListener('touchstart', e=>{ if(e.target.dataset.type){ activeDrag=e.target.dataset.type; e.target.classList.add('dragging'); dragPos={x:getX(e),y:getY(e)}; } }, {passive:false});
-    window.addEventListener('mousedown', e=>{ if(e.target.dataset.type){ activeDrag=e.target.dataset.type; e.target.classList.add('dragging'); dragPos={x:getX(e),y:getY(e)}; } });
+    window.addEventListener('touchstart', e=>{ if(e.target.dataset.type){ activeDrag=e.target.dataset.type; dragPos={x:getX(e),y:getY(e)}; } }, {passive:false});
+    window.addEventListener('mousedown', e=>{ if(e.target.dataset.type){ activeDrag=e.target.dataset.type; dragPos={x:getX(e),y:getY(e)}; } });
     window.addEventListener('touchmove', move, {passive:false}); window.addEventListener('mousemove', move);
     window.addEventListener('touchend', end); window.addEventListener('mouseup', end);
 }
 
 function releaseP(x,y) {
-    const type=activeDrag; activeDrag=null; document.querySelectorAll('.pwr-btn').forEach(b=>b.classList.remove('dragging'));
+    const type=activeDrag; activeDrag=null;
     const bodies=C.allBodies(engine.world).filter(b=>b.plugin); let used=false;
+    const price = type==='bomb'?50:type==='wipe'?75:150;
+    if(st.wallet < price) return;
     if(type==='bomb'){ bodies.forEach(b=>{ if(M.Vector.magnitude(M.Vector.sub(b.position,{x,y}))<80) C.remove(engine.world,b); }); used=true; }
     else { const target=bodies.find(b=>M.Bounds.contains(b.bounds,{x,y})); if(target){
         const t=target.plugin.t;
@@ -164,7 +156,7 @@ function releaseP(x,y) {
         if(type==='evo' && t<11) bodies.forEach(b=>{ if(b.plugin.t===t){ const p=b.position; C.remove(engine.world, b); spawnF(p.x, p.y, t+1, false); } });
         used=true;
     }}
-    if(used){ st.wallet-=(type==='bomb'?500:type==='wipe'?1000:1500); updUI(); save(); playS('pop'); }
+    if(used){ st.wallet-=price; updUI(); save(); playS(300); }
 }
 
 function loop() {
@@ -176,66 +168,52 @@ function loop() {
         if(!b.plugin) return;
         if(b.position.y-b.circleRadius<165 && b.speed<0.2){ if(!b.tm) b.tm=now; if(now-b.tm>2000) isDead=true; } else b.tm=null;
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+        if(b.render.sprite && b.render.sprite.xScale > 1) b.render.sprite.xScale -= 0.05; // Squish logic
+        const s = b.render.sprite?.xScale || 1;
+        ctx.scale(s, s);
         ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
         ctx.lineWidth=4; ctx.strokeStyle=(st.eq.ot==='rainbow')?`hsl(${now/10%360},100%,50%)`:st.eq.ot==='white'?'#fff':st.eq.ot==='black'?'#000':'#0002';
         ctx.stroke(); ctx.font=`${b.circleRadius*1.2}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(SKINS[st.eq.sk][b.plugin.t], 0, 0); ctx.restore();
     });
-    if(canDrop && !activeDrag && !isDead){ ctx.globalAlpha=0.4; ctx.font="40px serif"; ctx.textAlign="center"; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, 145); ctx.globalAlpha=1; }
+    if(canDrop && !activeDrag && !isDead){ ctx.globalAlpha=0.4; ctx.font="45px serif"; ctx.textAlign="center"; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, 145); ctx.globalAlpha=1; }
     if(activeDrag) { ctx.beginPath(); ctx.strokeStyle="#333"; ctx.setLineDash([5,5]); ctx.arc(dragPos.x, dragPos.y, activeDrag==='bomb'?80:25, 0, Math.PI*2); ctx.stroke(); }
-    if(isDead){ document.getElementById('game-over').style.display='flex'; }
+    if(isDead){ document.getElementById('game-over').style.display='flex'; document.getElementById('final-score').textContent=st.score; document.getElementById('best-score').textContent=st.best; }
     requestAnimationFrame(loop);
 }
 
 function renderS() {
     const cont=document.getElementById('store-content'); cont.innerHTML='';
-    document.getElementById('shop-cash').innerText=st.wallet;
-    const cats=[{n:'Skins',k:'sk',d:SKINS,c:1500},{n:'Themes',k:'th',d:THEMES,c:500},{n:'Borders',k:'bd',d:BORDERS,c:500},{n:'Outlines',k:'ot',d:OUTLINES,c:1000}];
+    document.getElementById('shop-cash').textContent=st.wallet;
+    const cats=[{n:'Outlines',k:'ot',d:OUTLINES,c:2000},{n:'Skins',k:'sk',d:SKINS,c:1500},{n:'Themes',k:'th',d:THEMES,c:750},{n:'Borders',k:'bd',d:BORDERS,c:500}];
     cats.forEach(cat=>{
-        cont.innerHTML+=`<h4 style="margin:15px 0 8px; border-left:4px solid var(--accent); padding-left:8px">${cat.n}</h4><div class="grid" id="g-${cat.k}"></div>`;
-        Object.keys(cat.d).forEach((k, idx)=>{
-            const id=cat.k+'_'+k, isO=st.owned.includes(id), val=(cat.k==='ot'?OUTLINES[k]:k), isE=st.eq[cat.k]===val;
+        cont.innerHTML+=`<h4 style="margin:15px 0 5px">${cat.n}</h4><div class="grid" id="g-${cat.k}"></div>`;
+        Object.keys(cat.d).forEach(k=>{
+            const id=cat.k+'_'+k, isO=st.owned.includes(id), val=(cat.k==='ot'?cat.d[k]:k), isE=st.eq[cat.k]===val;
             const card=document.createElement('div'); card.className=`card ${isE?'equipped':''}`;
-            card.style.animationDelay = (idx * 0.1) + 's';
-            let preview = '';
-            if(cat.k==='sk') preview = cat.d[k][skinCycle];
-            else if(cat.k==='ot' && k==='Rainbow') preview = '🌈';
+            let preview = cat.k==='sk'?cat.d[k][skinCycle]:(cat.k==='ot' && k==='Rainbow'?'🌈':'');
             let style = `background:${cat.k==='th'?cat.d[k]:'white'}; border-color:${cat.k==='bd'?cat.d[k]:'#333'}`;
-            let outlineCl = (cat.k==='ot' && k==='Rainbow') ? 'rainbow-outline-active' : '';
-            card.innerHTML=`<div class="preview-swatch ${outlineCl}" style="${style}">${preview}</div><b>${k}</b><br><small style="color:${isO?'#2ecc71':'#e67e22'}">${isE?'Equipped':isO?'Owned':'$'+cat.c}</small>`;
+            card.innerHTML=`<div class="preview-swatch" style="${style}">${preview}</div><b>${k}</b><br><small>${isE?'Equipped':isO?'Owned':'$'+cat.c}</small>`;
             card.onclick=()=>{ if(isO){st.eq[cat.k]=val;} else if(st.wallet>=cat.c){st.wallet-=cat.c; st.owned.push(id); st.eq[cat.k]=val;} updUI(); renderS(); save(); };
             document.getElementById('g-'+cat.k).appendChild(card);
         });
     });
 }
-
-function showCombo() { const e=document.getElementById('combo-txt'); e.innerText=WORDS[st.eq.sk]+" X"+combo; e.style.opacity=1; setTimeout(()=>e.style.opacity=0, 800); }
-function updUI() {
-    document.getElementById('cur-score').innerText=st.score; document.getElementById('wallet-ui').innerText=st.wallet;
-    document.getElementById('next-preview').innerText=SKINS[st.eq.sk][nextIdx];
+function showCombo(){ const e=document.getElementById('combo-txt'); const w=["JUICY","COSMIC","ZING","POW","BOOM"]; e.textContent=w[Math.floor(Math.random()*w.length)]+" X"+combo; e.style.opacity=1; setTimeout(()=>e.style.opacity=0, 800); }
+function updUI(){
+    document.getElementById('cur-score').textContent=st.score; document.getElementById('wallet-ui').textContent='$'+st.wallet;
+    document.getElementById('next-preview').textContent=SKINS[st.eq.sk][nextIdx];
     const pb=document.getElementById('prog-bar'); pb.innerHTML='';
     for(let i=0; i<12; i++) pb.innerHTML+=`<span style="opacity:${st.found.includes(i)?1:0.1}">${SKINS[st.eq.sk][i]}</span>`;
-    document.querySelectorAll('.pwr-btn[data-type]').forEach(b=>b.classList.toggle('locked', st.wallet<(b.dataset.type==='bomb'?500:b.dataset.type==='wipe'?1000:1500)));
-    document.getElementById('mute-btn').innerText = st.muted ? "🔇" : "🔊";
+    document.querySelectorAll('.pwr-btn').forEach(b=>{ if(b.dataset.type) b.classList.toggle('locked', st.wallet < (b.dataset.type==='bomb'?50:b.dataset.type==='wipe'?75:150)); });
 }
-
-let aCtx;
-function playS(t) {
-    if(st.muted) return;
-    if(!aCtx) aCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o=aCtx.createOscillator(), g=aCtx.createGain();
-    o.frequency.setValueAtTime(t==='pop'?600:200, aCtx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(10, aCtx.currentTime+0.1);
-    g.gain.setValueAtTime(0.1, aCtx.currentTime); o.connect(g); g.connect(aCtx.destination);
-    o.start(); o.stop(aCtx.currentTime+0.1);
-}
-
-function toggleMute() { st.muted=!st.muted; updUI(); save(); }
-function toggleFull() { const d=document.documentElement; if(!document.fullscreenElement) d.requestFullscreen(); else document.exitFullscreen(); }
+function playS(f){ if(st.muted) return; const a=new(window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(); const g=a.createGain(); o.frequency.setValueAtTime(f,a.currentTime); o.frequency.exponentialRampToValueAtTime(10,a.currentTime+0.1); g.gain.setValueAtTime(0.1,a.currentTime); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.1); }
+function toggleMute(){ st.muted=!st.muted; updUI(); save(); }
+function toggleFull(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
 function toggleM(id){ const m=document.getElementById(id); m.classList.toggle('open'); if(id==='shop-modal') renderS(); }
 function restart(){ st.score=0; st.found=[0]; isDead=false; document.getElementById('game-over').style.display='none'; C.clear(engine.world,false); resize(); updUI(); }
-function save(){ localStorage.setItem('fm_v137', JSON.stringify(st)); }
-function load(){ const d=localStorage.getItem('fm_v137'); if(d) Object.assign(st, JSON.parse(d)); }
+function save(){ localStorage.setItem('fm_v138', JSON.stringify(st)); }
+function load(){ const d=localStorage.getItem('fm_v138'); if(d) Object.assign(st, JSON.parse(d)); }
 window.onload=init;
 </script>
 </body>
