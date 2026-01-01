@@ -7,66 +7,73 @@
     <title>Fruit Merge v1.40</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
-        :root { --accent: #2c3e50; --panel: rgba(255,255,255,0.98); }
+        :root { --accent: #2ecc71; --bg: #f0f0f0; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; }
-        body { overflow: hidden; font-family: 'Arial Black', sans-serif; height: 100vh; width: 100vw; position: fixed; touch-action: none; background: #000; }
+        body { overflow: hidden; font-family: 'Arial Black', sans-serif; height: 100vh; width: 100vw; position: fixed; touch-action: none; background: var(--bg); }
         canvas { display: block; width: 100%; height: 100%; }
-        .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
-        .top-bar { top: 0; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 15px; padding-top: env(safe-area-inset-top); text-align: center; }
-        .bot-bar { bottom: 0; height: 100px; background: var(--panel); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; padding-bottom: env(safe-area-inset-bottom); }
-        .pwr-btn { width: 48px; height: 48px; border-radius: 12px; border: 2px solid #333; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; background: #fff; position: relative; }
-        .pwr-btn.locked { filter: grayscale(1); opacity: 0.5; }
-        .modal { display: none; position: absolute; inset: 15px; background: white; z-index: 5000; border-radius: 20px; border: 4px solid #333; flex-direction: column; overflow: hidden; pointer-events: auto; }
+        
+        .ui { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
+        .top-ui { top: 0; background: rgba(255,255,255,0.9); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; padding-top: env(safe-area-inset-top); text-align: center; }
+        .bot-ui { bottom: 0; height: 90px; background: rgba(255,255,255,0.9); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; padding-bottom: env(safe-area-inset-bottom); }
+        
+        #next-box { width: 60px; height: 60px; border: 3px solid #333; border-radius: 50%; background: #fff; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 0 #333; }
+        .pwr-btn { width: 45px; height: 45px; border-radius: 12px; border: 2px solid #333; background: #fff; display: flex; align-items: center; justify-content: center; pointer-events: auto; font-size: 20px; position: relative; }
+        .pwr-btn::after { content: attr(data-p); position: absolute; top: -15px; font-size: 10px; color: #444; }
+        
+        .modal { display: none; position: absolute; inset: 15px; background: white; z-index: 5000; border: 4px solid #333; border-radius: 20px; flex-direction: column; pointer-events: auto; }
         .modal.open { display: flex; }
-        .modal-content { flex: 1; overflow-y: auto; padding: 15px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: #f8f9fa; padding: 10px; border-radius: 12px; text-align: center; border: 2px solid #ddd; animation: bounce 2.5s infinite ease-in-out; }
-        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-        .card.equipped { border-color: #27ae60; background: #e8f8f0; }
-        .preview-swatch { width: 40px; height: 40px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 20px; background: #fff; }
-        .float-txt { position: absolute; pointer-events: none; font-size: 24px; color: #e74c3c; text-shadow: 2px 2px #fff; font-weight: 900; animation: floatUp 1s forwards; z-index: 2000; }
-        @keyframes floatUp { from{transform:translateY(0); opacity:1} to{transform:translateY(-50px); opacity:0} }
+        .modal-body { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+        .cat-h { grid-column: 1 / -1; margin-top: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        
+        .card { border: 2px solid #eee; border-radius: 12px; padding: 10px; text-align: center; background: #fafafa; }
+        .card.eq { border-color: var(--accent); background: #eafff0; }
+        .swatch { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; animation: bounce 2s infinite ease-in-out; background: #fff; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        
+        .float-txt { position: absolute; pointer-events: none; font-family: 'Impact', sans-serif; font-size: 24px; color: #e74c3c; text-shadow: 2px 2px 0 #fff; animation: rise 0.8s forwards; z-index: 2000; }
+        @keyframes rise { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
     </style>
 </head>
 <body>
-<div id="game-over" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:9000; color:white; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-    <h1>GAME OVER</h1>
-    <p>SCORE: <span id="final-score">0</span></p>
-    <p>BEST: <span id="final-best">0</span></p>
-    <button onclick="restart()" style="margin-top:20px; padding:12px 40px; background:#27ae60; color:white; border:none; border-radius:10px;">RETRY</button>
+
+<div id="game-over" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:9000; color:white; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto;">
+    <h1 style="font-size:3rem">GAME OVER</h1>
+    <p>Score: <span id="go-score">0</span> | Best: <span id="go-best">0</span></p>
+    <button onclick="restart()" style="margin-top:20px; padding:15px 40px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold">PLAY AGAIN</button>
 </div>
 
-<div class="ui-panel top-bar">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-size:12px">SCORE<br><span id="cur-score">0</span></div>
-        <div id="next-preview" style="width:45px; height:45px; border:2px solid #333; border-radius:50%; display:grid; place-items:center; font-size:24px; background:#fff;"></div>
-        <div style="font-size:12px">BEST<br><span id="best-score">0</span></div>
+<div class="ui top-ui">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+        <div style="font-size:12px">SCORE<div id="score">0</div></div>
+        <div id="next-box"></div>
+        <div style="font-size:12px">BEST<div id="best">0</div></div>
     </div>
-    <div id="prog-bar" style="display:flex; justify-content:space-around; margin:8px 0; background:rgba(0,0,0,0.05); padding:4px; border-radius:5px;"></div>
-    <div style="font-size:14px; color:#27ae60">WALLET: <span id="wallet-ui">$0</span></div>
+    <div id="prog-bar" style="display:flex; justify-content:space-around; background:rgba(0,0,0,0.05); padding:4px; border-radius:10px;"></div>
+    <div id="wallet" style="color:var(--accent); font-size:18px; margin-top:4px">$0</div>
 </div>
 
-<div class="ui-panel bot-bar">
-    <div id="p-bomb" class="pwr-btn" data-type="bomb" style="background:#e67e22">💣</div>
-    <div id="p-wipe" class="pwr-btn" data-type="wipe" style="background:#9b59b6">🧹</div>
-    <div id="p-evo" class="pwr-btn" data-type="evo" style="background:#f1c40f">🪄</div>
-    <div class="pwr-btn" onclick="toggleM('help-modal')">?</div>
-    <div class="pwr-btn" style="width:70px" onclick="toggleM('shop-modal')">SHOP</div>
+<div class="ui bot-ui">
+    <div class="pwr-btn" data-type="bomb" data-p="$50">💣</div>
+    <div class="pwr-btn" data-type="wipe" data-p="$75">🧹</div>
+    <div class="pwr-btn" data-type="evo" data-p="$150">🪄</div>
+    <div class="pwr-btn" style="width:40px" onclick="toggleM('help-modal')">?</div>
+    <div id="fs-btn" class="pwr-btn" style="display:none" onclick="toggleFS()">⛶</div>
+    <div class="pwr-btn" style="width:70px; background:var(--accent); color:white" onclick="toggleM('shop-modal')">SHOP</div>
 </div>
 
 <div id="shop-modal" class="modal">
-    <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><b>SHOP</b><b onclick="toggleM('shop-modal')">✕</b></div>
-    <div class="modal-content" id="store-content"></div>
+    <div style="padding:15px; display:flex; justify-content:space-between; border-bottom:2px solid #eee"><b>THE MARKET</b><b onclick="toggleM('shop-modal')">✕</b></div>
+    <div class="modal-body" id="shop-content"></div>
 </div>
 
 <div id="help-modal" class="modal">
-    <div style="padding:15px; border-bottom:1px solid #eee;"><b>HELP</b></div>
-    <div class="modal-content" style="font-family:sans-serif; line-height:1.4;">
-        <p><b>Vibe-Logic:</b> Different skins have unique bounciness! Soft skins like Dessert bounce more than Hard ones like Space.</p><br>
-        <p><b>Power-ups:</b> Drag 💣 (Bomb), 🧹 (Wipe), or 🪄 (Evolve) onto the fruit. Highlighting shows affected range.</p><br>
-        <p><b>Multiplier:</b> Merge quickly for higher rewards! Multipliers are skin-specific.</p>
-        <p style="margin-top:20px; opacity:0.3; font-size:10px">v1.40 Obsidian Edition</p>
-        <button onclick="toggleM('help-modal')" style="margin-top:15px; width:100%; padding:10px;">CLOSE</button>
+    <div style="padding:15px; border-bottom:2px solid #eee"><b>HELP & INFO</b></div>
+    <div class="modal-body" style="grid-template-columns: 1fr; font-size: 14px; line-height: 1.4;">
+        <p><b>Combos:</b> Merge quickly for 5x multipliers.</p>
+        <p><b>Vibe-Logic:</b> Different skins change physics! Space is heavy, Desserts are bouncy.</p>
+        <p><b>Power-ups:</b> Drag 💣/🧹/🪄 onto the field.</p>
+        <p style="opacity:0.3; margin-top:20px">v1.40 Obsidian Edition</p>
+        <button onclick="toggleM('help-modal')" style="background:#333; color:white; padding:10px; border-radius:8px;">CLOSE</button>
     </div>
 </div>
 
@@ -74,71 +81,57 @@
 
 <script>
 const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite;
-const SKINS = { 
-    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"],
-    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"],
-    Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"],
-    Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"],
-    Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"],
-    Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"],
-    Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"],
-    Shapes: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"]
-};
-const VIBES = { Space:0.9, Nature:0.8, Shapes:0.8, Fruit:0.5, Music:0.5, Weather:0.5, Animals:0.3, Dessert:0.2 };
-const PHRASES = { 
-    Space: ["GALACTIC!","SUPERNOVA!","ORBIT!","VOID!","COSMIC!"],
-    Fruit: ["JUICY!","SWEET!","ZESTY!","RIPE!","FRESH!"],
-    Nature: ["EARTHY!","WILD!","FLORA!","ROOTED!","BLOOM!"],
-    Animals: ["WILD!","ROAR!","SAVAGE!","BEAST!","CUTE!"],
-    Music: ["GROOVY!","TEMPO!","RHYTHM!","BEAT!","CHORD!"],
-    Weather: ["STORM!","BOLT!","GALE!","FREEZE!","SUNNY!"],
-    Dessert: ["SWEET!","SUGAR!","TASTY!","GLAZED!","TREAT!"],
-    Shapes: ["SHARP!","VECTOR!","SOLID!","ANGLE!","PRISM!"]
-};
-const THEMES = { Obsidian:"#121212", Arctic:"#f1f2f6", Matcha:"#e8f5e9", Sunset:"#fff5e6", Deep:"#01579b" };
-const BORDERS = { Slate:"#333", Gold:"#daa520", Neon:"#b026ff", Red:"#c0392b", White:"#fff" };
-const OUTLINES = { Default:"rgba(0,0,0,0.1)", Rainbow:"rbw", White:"#fff", Black:"#000" };
+const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"], Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"], Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"], Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], Shapes: ["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"] };
+const PHRASES = { Space: ["SUPERNOVA!","GALACTIC!","VACUUM!","VOID!","ORBIT!"], Fruit: ["JUICY!","FRESH!","SWEET!","ZESTY!","RIPE!"], Animals: ["WILD!","BEAST!","ROAR!","PURE!","APEX!"], Music: ["GROOVY!","BEAT!","TEMPO!","HARMONY!","LOUD!"], Weather: ["STORM!","BOLT!","GALE!","FROST!","SUNNY!"], Nature: ["ROOTS!","FLORA!","EARTHY!","WILD!","BLOOM!"], Dessert: ["SUGAR!","TASTY!","GLAZED!","YUMMY!","TREAT!"], Shapes: ["ANGULAR!","SHARP!","FLAT!","SOLID!","GEO!"] };
+const THEMES = { Mellow:"#FDF6E3", Midnight:"#1a1b26", Matcha:"#E8F5E9", Lavender:"#F3E5F5", Rose:"#FFF1F0", Sunset:"#FFF5E6", Charcoal:"#212121", Sky:"#E1F5FE" };
+const BORDERS = { Slate:"#657B83", Gold:"#DAA520", Neon:"#B026FF", Red:"#DC143C", Black:"#000000", Silver:"#C0C0C0" };
+const OUTLINES = { Default:"def", Rainbow:"rbw", White:"#fff", Black:"#000" };
 const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
 
-let st = { score:0, best:0, wallet:100, eq:{sk:'Fruit', th:'Obsidian', bd:'Slate', ot:'Default'}, owned:['sk_Fruit','th_Obsidian','bd_Slate','ot_Default'], found:[0] };
-let engine, canvas, ctx, W, H, floor, wallL, wallR, nextIdx=1, curIdx=0, canDrop=true, lastX=150, isDead=false, isPaused=false, activeDrag=null, dragPos={x:0,y:0}, combo=1, lastMerge=0;
+let st = { score:0, best:0, wallet:100, eq:{sk:'Fruit', th:'Mellow', bd:'Slate', ot:'def'}, owned:['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found:[0] };
+let engine, canvas, ctx, W, H, floor, wallL, wallR, nextIdx=1, curIdx=0, canDrop=true, lastX=150, isDead=false, activeDrag=null, dragPos={x:0,y:0}, isPaused=false, skinCycle=0;
 
 function init() {
     load(); canvas=document.getElementById('c'); ctx=canvas.getContext('2d');
+    if(!/iPad|iPhone|iPod/.test(navigator.userAgent)) document.getElementById('fs-btn').style.display='flex';
     engine=E.create({gravity:{y:1.2}}); resize();
     M.Events.on(engine, 'collisionStart', e => {
         e.pairs.forEach(p => {
             const a=p.bodyA, b=p.bodyB;
-            if(a.plugin?.t!==undefined && b.plugin?.t!==undefined && a.plugin.t===b.plugin.t && a.plugin.t<11) {
+            if(a.plugin?.t!==undefined && a.plugin.t===b.plugin.t && a.plugin.t<11) {
                 const t=a.plugin.t, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
-                C.remove(engine.world, [a,b]); 
-                const newF = spawnF(pos.x, pos.y, t+1, false);
-                newF.squish = 1.5;
-                const now=Date.now(); combo=(now-lastMerge<1500)?Math.min(5, combo+1):1; lastMerge=now;
-                if(combo>1) spawnFloat(pos.x, pos.y);
-                st.score+=(t+1)*10*combo; st.wallet+=(t+1)*10;
+                C.remove(engine.world, [a,b]); spawnF(pos.x, pos.y, t+1, false);
+                st.score+=(t+1)*10; st.wallet+=(t+1)*15; spawnTxt(pos.x, pos.y);
                 if(st.score>st.best) st.best=st.score; if(!st.found.includes(t+1)) st.found.push(t+1);
                 updUI(); save();
             }
         });
     });
     setupIn(); loop();
+    setInterval(()=>{ skinCycle=(skinCycle+1)%12; if(st.paused) renderS(); }, 800);
 }
 
 function resize() {
     W=window.innerWidth; H=window.innerHeight; canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
     ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
     if(floor) C.remove(engine.world, [floor, wallL, wallR]);
-    floor=B.rectangle(W/2, H-100+250, W, 500, {isStatic:true});
+    floor=B.rectangle(W/2, H-90+250, W, 500, {isStatic:true});
     wallL=B.rectangle(7.5, H/2, 15, H*2, {isStatic:true});
     wallR=B.rectangle(W-7.5, H/2, 15, H*2, {isStatic:true});
     C.add(engine.world, [floor, wallL, wallR]);
 }
 
+function getPhys() {
+    const s=st.eq.sk;
+    if(["Space","Nature","Shapes"].includes(s)) return {r:0.2, f:0.1};
+    if(["Animals","Dessert"].includes(s)) return {r:0.8, f:0.01};
+    return {r:0.5, f:0.02};
+}
+
 function spawnF(x,y,t,isD) {
-    const hardness = VIBES[st.eq.sk] || 0.5;
-    const b=B.circle(x,y,SIZES[t],{restitution: 1-hardness, friction: hardness*0.1, plugin:{t:t}});
-    b.squish = 1; C.add(engine.world, b);
+    const p=getPhys();
+    const b=B.circle(x,y,SIZES[t],{restitution:p.r, friction:p.f, plugin:{t:t}});
+    b.squish = 1.4; C.add(engine.world, b);
     if(isD) { curIdx=nextIdx; nextIdx=Math.floor(Math.random()*5); canDrop=false; setTimeout(()=>canDrop=true, 500); updUI(); }
     return b;
 }
@@ -146,28 +139,25 @@ function spawnF(x,y,t,isD) {
 function setupIn() {
     const getX=e=>(e.touches?e.touches[0].clientX:e.clientX);
     const getY=e=>(e.touches?e.touches[0].clientY:e.clientY);
-    const move=e=>{ if(isPaused) return; if(activeDrag) dragPos={x:getX(e), y:getY(e)}; else lastX=Math.max(40,Math.min(W-40,getX(e))); e.preventDefault(); };
-    const end=e=>{ if(isPaused) return; if(activeDrag) releaseP(dragPos.x, dragPos.y); else if(canDrop && !isDead && !e.target.closest('.ui-panel')) spawnF(lastX, 165, curIdx, true); };
+    const move=e=>{ if(isPaused) return; if(activeDrag) dragPos={x:getX(e), y:getY(e)}; else lastX=Math.max(30,Math.min(W-30,getX(e))); e.preventDefault(); };
+    const end=e=>{ if(isPaused) return; if(activeDrag) releaseP(dragPos.x, dragPos.y); else if(canDrop && !isDead && !e.target.closest('.ui')) spawnF(lastX, 165, curIdx, true); };
     window.addEventListener('touchstart', e=>{ if(e.target.dataset.type){ activeDrag=e.target.dataset.type; dragPos={x:getX(e),y:getY(e)}; } }, {passive:false});
-    window.addEventListener('mousedown', e=>{ if(e.target.dataset.type) activeDrag=e.target.dataset.type; });
+    window.addEventListener('mousedown', e=>{ if(e.target.dataset.type){ activeDrag=e.target.dataset.type; dragPos={x:getX(e),y:getY(e)}; } });
     window.addEventListener('touchmove', move, {passive:false}); window.addEventListener('mousemove', move);
     window.addEventListener('touchend', end); window.addEventListener('mouseup', end);
 }
 
 function releaseP(x,y) {
-    const type=activeDrag; activeDrag=null;
+    const type=activeDrag; activeDrag=null; const price=type==='bomb'?50:type==='wipe'?75:150;
+    if(st.wallet<price) return;
     const bodies=C.allBodies(engine.world).filter(b=>b.plugin);
-    const costs = {bomb:50, wipe:75, evo:150};
-    if(st.wallet < costs[type]) return;
-    let used = false;
-    if(type==='bomb'){ bodies.forEach(b=>{ if(M.Vector.magnitude(M.Vector.sub(b.position,{x,y}))<80) C.remove(engine.world,b); }); used=true; }
+    if(type==='bomb'){ bodies.forEach(b=>{ if(M.Vector.magnitude(M.Vector.sub(b.position,{x,y}))<80) C.remove(engine.world,b); }); }
     else { const target=bodies.find(b=>M.Bounds.contains(b.bounds,{x,y})); if(target){
         const t=target.plugin.t;
         if(type==='wipe') bodies.forEach(b=>{ if(b.plugin.t===t) C.remove(engine.world, b); });
         if(type==='evo' && t<11) bodies.forEach(b=>{ if(b.plugin.t===t){ const p=b.position; C.remove(engine.world, b); spawnF(p.x, p.y, t+1, false); } });
-        used=true;
     }}
-    if(used) { st.wallet -= costs[type]; updUI(); save(); }
+    st.wallet-=price; updUI(); save();
 }
 
 function loop() {
@@ -180,53 +170,51 @@ function loop() {
         if(!b.plugin) return;
         if(b.position.y-b.circleRadius<165 && b.speed<0.2){ if(!b.tm) b.tm=now; if(now-b.tm>2000) isDead=true; } else b.tm=null;
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-        if(b.squish > 1) b.squish -= 0.05;
-        ctx.scale(b.squish, b.squish);
+        if(b.squish > 1) b.squish -= 0.05; ctx.scale(b.squish, b.squish);
         ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
-        ctx.lineWidth=4;
-        let isHighlighted = activeDrag && M.Vector.magnitude(M.Vector.sub(b.position, dragPos)) < (activeDrag==='bomb'?80:30);
-        ctx.strokeStyle = isHighlighted ? "#fff" : (st.eq.ot==='rbw'?`hsl(${now/10%360},100%,50%)`:st.eq.ot);
-        if(isHighlighted) ctx.shadowBlur=15, ctx.shadowColor="#fff";
+        ctx.lineWidth=4; ctx.strokeStyle=st.eq.ot==='rbw'?`hsl(${now/10%360},80%,50%)`:st.eq.ot==='def'?'#0002':st.eq.ot;
         ctx.stroke(); ctx.font=`${b.circleRadius*1.2}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(SKINS[st.eq.sk][b.plugin.t], 0, 0); ctx.restore();
+        if(activeDrag && M.Vector.magnitude(M.Vector.sub(b.position, dragPos))<80) { ctx.save(); ctx.beginPath(); ctx.arc(b.position.x, b.position.y, b.circleRadius+5, 0, Math.PI*2); ctx.strokeStyle="#fff"; ctx.lineWidth=3; ctx.stroke(); ctx.restore(); }
     });
-    if(canDrop && !activeDrag && !isDead && !isPaused){ ctx.globalAlpha=0.4; ctx.font="45px serif"; ctx.textAlign="center"; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, 145); ctx.globalAlpha=1; }
-    if(isDead){ document.getElementById('game-over').style.display='flex'; document.getElementById('final-score').innerText=st.score; document.getElementById('final-best').innerText=st.best; }
+    if(canDrop && !activeDrag && !isDead && !isPaused){ ctx.globalAlpha=0.3; ctx.font="40px serif"; ctx.textAlign="center"; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, 145); ctx.globalAlpha=1; }
+    if(isDead){ document.getElementById('game-over').style.display='flex'; document.getElementById('go-score').innerText=st.score; document.getElementById('go-best').innerText=st.best; }
     requestAnimationFrame(loop);
 }
 
-function spawnFloat(x,y) {
-    const d=document.createElement('div'); d.className='float-txt';
-    const list=PHRASES[st.eq.sk]; d.innerText=list[Math.floor(Math.random()*list.length)] + " X"+combo;
-    d.style.left=x+'px'; d.style.top=y+'px'; document.body.appendChild(d);
-    setTimeout(()=>d.remove(), 1000);
-}
-
 function renderS() {
-    const cont=document.getElementById('store-content'); cont.innerHTML='';
+    const cont=document.getElementById('shop-content'); cont.innerHTML='';
     const cats=[{n:'Outlines',k:'ot',d:OUTLINES,c:2000},{n:'Skins',k:'sk',d:SKINS,c:1500},{n:'Themes',k:'th',d:THEMES,c:750},{n:'Borders',k:'bd',d:BORDERS,c:500}];
     cats.forEach(cat=>{
-        cont.innerHTML+=`<h4 style="margin:10px 0">${cat.n}</h4><div class="grid" id="g-${cat.k}"></div>`;
+        cont.innerHTML+=`<h4 class="cat-h">${cat.n}</h4>`;
         Object.keys(cat.d).forEach(k=>{
-            const id=cat.k+'_'+k, isO=st.owned.includes(id), isE=st.eq[cat.k]===cat.d[k] || st.eq[cat.k]===k;
-            const card=document.createElement('div'); card.className=`card ${isE?'equipped':''}`;
-            card.innerHTML=`<div class="preview-swatch" style="background:${cat.k==='th'?cat.d[k]:'#fff'}">${cat.k==='sk'?cat.d[k][0]:''}</div><b>${k}</b><br><small>${isE?'Equipped':isO?'Owned':'$'+cat.c}</small>`;
-            card.onclick=()=>{ if(isO){st.eq[cat.k]=(cat.k==='sk'||cat.k==='th')?k:cat.d[k];} else if(st.wallet>=cat.c){st.wallet-=cat.c; st.owned.push(id); st.eq[cat.k]=(cat.k==='sk'||cat.k==='th')?k:cat.d[k];} updUI(); renderS(); save(); };
-            document.getElementById('g-'+cat.k).appendChild(card);
+            const id=cat.k+'_'+k, isO=st.owned.includes(id), val=(cat.k==='ot'?cat.d[k]:k), isE=st.eq[cat.k]===val;
+            const card=document.createElement('div'); card.className=`card ${isE?'eq':''}`;
+            let pre = cat.k==='sk'?cat.d[k][skinCycle]:(k==='Rainbow'?'🌈':'');
+            let style = `background:${cat.k==='th'?cat.d[k]:'white'}; border-color:${cat.k==='bd'?cat.d[k]:'#333'}`;
+            card.innerHTML=`<div class="swatch" style="${style}">${pre}</div><small>${k}</small><br><small>${isE?'EQ':isO?'OWN':cat.c}</small>`;
+            card.onclick=()=>{ if(isO){st.eq[cat.k]=val;} else if(st.wallet>=cat.c){st.wallet-=cat.c; st.owned.push(id); st.eq[cat.k]=val;} updUI(); renderS(); save(); };
+            cont.appendChild(card);
         });
     });
 }
 
-function updUI(){
-    document.getElementById('cur-score').innerText=st.score; document.getElementById('best-score').innerText=st.best;
-    document.getElementById('wallet-ui').innerText='$'+st.wallet;
-    document.getElementById('next-preview').innerText=SKINS[st.eq.sk][nextIdx];
+function spawnTxt(x,y) {
+    const div=document.createElement('div'); div.className='float-txt'; div.style.left=x+'px'; div.style.top=y+'px';
+    const p=PHRASES[st.eq.sk]; div.innerText=p[Math.floor(Math.random()*p.length)];
+    document.body.appendChild(div); setTimeout(()=>div.remove(), 800);
+}
+
+function updUI() {
+    document.getElementById('score').innerText=st.score; document.getElementById('best').innerText=st.best;
+    document.getElementById('wallet').innerText='$'+st.wallet; document.getElementById('next-box').innerText=SKINS[st.eq.sk][nextIdx];
     const pb=document.getElementById('prog-bar'); pb.innerHTML='';
     for(let i=0; i<12; i++) pb.innerHTML+=`<span style="opacity:${st.found.includes(i)?1:0.1}">${SKINS[st.eq.sk][i]}</span>`;
 }
 
 function toggleM(id){ const m=document.getElementById(id); m.classList.toggle('open'); isPaused=m.classList.contains('open'); if(id==='shop-modal') renderS(); }
-function restart(){ st.score=0; st.found=[0]; isDead=false; document.getElementById('game-over').style.display='none'; C.clear(engine.world,false); resize(); updUI(); }
+function toggleFS(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+function restart(){ st.score=0; st.found=[0]; isDead=false; isPaused=false; document.getElementById('game-over').style.display='none'; C.clear(engine.world,false); resize(); updUI(); }
 function save(){ localStorage.setItem('fm_v140', JSON.stringify(st)); }
 function load(){ const d=localStorage.getItem('fm_v140'); if(d) Object.assign(st, JSON.parse(d)); }
 window.onload=init;
