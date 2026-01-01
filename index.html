@@ -5,60 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Fruit Merge - v1.34</title>
+    <title>Emoji Merge v1.34 - Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #FDF6E3; --font: -apple-system, system-ui, sans-serif; --panel: rgba(255,255,255,0.98); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { 
-            overflow: hidden; background: var(--bg); font-family: var(--font); 
-            height: 100vh; width: 100vw; position: fixed; touch-action: none; 
-            -webkit-user-select: none; 
-        }
-        canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+        body { overflow: hidden; background: var(--bg); font-family: var(--font); height: 100vh; width: 100vw; position: fixed; touch-action: none; -webkit-user-select: none; }
+        canvas { display: block; width: 100%; height: 100%; }
 
         /* UI PANELS */
         .ui-panel { position: absolute; width: 100%; z-index: 1000; pointer-events: none; }
-        .top-bar { top: 0; height: 140px; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: 10px 20px; padding-top: env(safe-area-inset-top); }
+        .top-bar { top: 0; height: 140px; background: var(--panel); border-bottom: 3px solid #333; pointer-events: auto; padding: env(safe-area-inset-top) 20px 10px; }
         .bot-bar { bottom: 0; height: 100px; background: var(--panel); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; padding-bottom: env(safe-area-inset-bottom); }
         
-        .score-box { text-align: center; min-width: 60px; font-size: 14px; }
+        .score-box { text-align: center; min-width: 60px; font-weight: bold; }
         #next-preview { width: 55px; height: 55px; border: 3px solid #333; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: #fff; box-shadow: 0 4px 0 #333; }
         
-        /* POWER UPS */
-        .pwr-btn { width: 50px; height: 50px; border-radius: 14px; border: 2px solid #333; color: white; font-size: 24px; cursor: grab; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; box-shadow: 0 3px 0 #333; }
-        .pwr-btn.locked { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
-        .pwr-btn.dragging { opacity: 0.4; transform: scale(0.8); }
+        /* POWER UP BUTTONS */
+        .pwr-btn { width: 48px; height: 48px; border-radius: 12px; border: 2px solid #333; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; pointer-events: auto; }
+        .pwr-btn.locked { filter: grayscale(1); opacity: 0.4; pointer-events: none; }
+        .pwr-btn.dragging { transform: scale(1.2); opacity: 0.8; z-index: 10001; }
+        
         #p-bomb { background: #e67e22; } #p-wipe { background: #9b59b6; } #p-evo { background: #f1c40f; }
         
-        /* MODALS */
+        /* MODALS & SHOP */
         .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 5000; border-radius: 25px; border: 5px solid var(--accent); flex-direction: column; overflow: hidden; pointer-events: auto; }
         .modal.open { display: flex; }
+        .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .modal-content { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
         
-        .card { background: #f9f9f9; padding: 12px; border-radius: 15px; text-align: center; border: 2px solid #eee; cursor: pointer; position: relative; }
-        .card.equipped { border-color: #2ecc71; background: #f0fff4; border-width: 3px; }
-        .preview-swatch { width: 60px; height: 60px; border-radius: 50%; margin: 5px auto; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 28px; background: white; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .card { background: #f9f9f9; padding: 12px; border-radius: 15px; text-align: center; border: 3px solid #eee; transition: 0.2s; }
+        .card.equipped { border-color: #2ecc71; background: #f0fff4; }
         
-        #overlay-start { position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .rainbow-fx { animation: rb 3s linear infinite; }
-        @keyframes rb { 0% { border-color: red; } 33% { border-color: lime; } 66% { border-color: blue; } 100% { border-color: red; } }
+        .preview-swatch { width: 50px; height: 50px; border-radius: 50%; margin: 5px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; background: white; border: 2px solid #333; position: relative; }
+        @keyframes rainbow { 0% { border-color: red; } 33% { border-color: lime; } 66% { border-color: blue; } 100% { border-color: red; } }
+        .rainbow-outline-active { animation: rainbow 2s linear infinite; border-width: 4px; }
+
+        #toast { position: absolute; top: 160px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 10000; }
+        #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; color: white; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-<div id="overlay-start">
-    <h1 style="margin-bottom:20px">FRUIT MERGE v1.34</h1>
-    <button onclick="startGame()" style="padding:15px 40px; font-size:20px; border-radius:50px; border:none; background:#2ecc71; color:white; font-weight:bold;">START GAME</button>
+<div id="toast">NOT ENOUGH CASH</div>
+
+<div id="game-over">
+    <h1 style="font-size: 3rem;">GAME OVER</h1>
+    <p>Score: <span id="final-score">0</span></p>
+    <button onclick="restartGame()" style="margin-top:20px; padding:15px 40px; background:#2ecc71; border:none; border-radius:10px; color:white; font-weight:bold;">RETRY</button>
 </div>
-
-<div id="toast" style="display:none; position:fixed; top:160px; left:50%; transform:translateX(-50%); background:#e74c3c; color:white; padding:10px 20px; border-radius:20px; z-index:10001;">NOT ENOUGH CASH</div>
 
 <div class="ui-panel top-bar">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="score-box"><b>SCORE</b><div id="cur-score">0</div></div>
+        <div class="score-box">SCORE<div id="cur-score">0</div></div>
         <div id="next-preview"></div>
-        <div class="score-box"><b>WALLET</b><div id="wallet-ui" style="color:#2ecc71">$0</div></div>
+        <div class="score-box">WALLET<div id="wallet-ui" style="color:#2ecc71">$0</div></div>
     </div>
     <div id="prog-bar" style="display:flex; justify-content:space-around; margin-top:10px; background:rgba(0,0,0,0.05); border-radius:10px; padding:5px;"></div>
 </div>
@@ -67,98 +69,93 @@
     <div id="p-bomb" class="pwr-btn" data-type="bomb">💣</div>
     <div id="p-wipe" class="pwr-btn" data-type="wipe">🧹</div>
     <div id="p-evo" class="pwr-btn" data-type="evo">🪄</div>
-    <div style="width:2px; height:40px; background:#ccc;"></div>
-    <div class="pwr-btn" style="background:#34495e;" onclick="toggleModal('shop-modal')">🛒</div>
-    <div class="pwr-btn" style="background:#95a5a6;" onclick="toggleModal('help-modal')">?</div>
+    <div class="pwr-btn" style="background:#95a5a6; width:40px" onclick="toggleModal('help-modal')">?</div>
+    <div id="fs-btn" class="pwr-btn" style="background:#2c3e50;" onclick="toggleFull()">⛶</div>
+    <div class="pwr-btn" style="background:#3498db; width:65px" onclick="toggleModal('shop-modal')">SHOP</div>
 </div>
 
 <div id="shop-modal" class="modal">
-    <div style="padding:15px; background:#f8f9fa; display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="shop-wallet">$0</h2>
-        <b onclick="toggleModal('shop-modal')" style="font-size:24px; padding:5px;">✕</b>
+    <div class="modal-header">
+        <h2>Market ($<span id="shop-wallet">0</span>)</h2>
+        <b onclick="toggleModal('shop-modal')" style="font-size:30px; cursor:pointer;">×</b>
     </div>
     <div class="modal-content" id="store-container"></div>
 </div>
 
 <div id="help-modal" class="modal">
-    <div style="padding:15px; background:#f8f9fa; display:flex; justify-content:space-between; align-items:center;">
-        <h2>GUIDE</h2>
-        <b onclick="toggleModal('help-modal')" style="font-size:24px; padding:5px;">✕</b>
-    </div>
+    <div class="modal-header"><h2>Guide</h2><b onclick="toggleModal('help-modal')" style="font-size:30px; cursor:pointer;">×</b></div>
     <div class="modal-content">
-        <p>• Drop emojis to merge pairs.</p>
-        <p>• Don't stay above the red line for 2 seconds!</p>
-        <p><b>Power-ups:</b> Drag from button to target area/fruit.</p>
-        <div id="ios-standalone" style="margin-top:20px; padding:10px; background:#eee; display:none;">
-            <b>iPhone Tip:</b> Tap <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iIzM0OThkYiIgdmlld0JveD0iMCAwIDE2IDE2Ij4KICA8cGF0aCBkPSJNOCAwTDQgNHgzVjhIOXYtNEwxMiA0IDggMHpNMyA1djloMTBWNUgxMXYxaDJ2N0g0VjZINXYtMUgzem01IDR2M2gxdi0zSDh6Ii8+Cjwvc3ZnPg=="> and "Add to Home Screen" for fullscreen play.
-        </div>
+        <h3>Power-Ups (Drag to Board)</h3>
+        <p><b>💣 Bomb ($500):</b> Blast an area.</p>
+        <p><b>🧹 Wipe ($1000):</b> Remove all of one tier.</p>
+        <p><b>🪄 Evolve ($1500):</b> Upgrade all of one tier.</p>
+        <hr>
+        <p>iOS: Use "Add to Home Screen" for true fullscreen.</p>
     </div>
 </div>
 
 <canvas id="c"></canvas>
 
 <script>
-const M=Matter, E=M.Engine, R=M.Render, B=M.Bodies, C=M.Composite;
-const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"] };
-const THEMES = { Mellow: "#FDF6E3", Midnight: "#1a1b26", Sky: "#E1F5FE", Forest: "#1B5E20" };
-const BORDERS = { Slate: "#657B83", Neon: "#B026FF", Gold: "#DAA520" };
-const SIZES = [20, 26, 34, 42, 50, 60, 72, 85, 100, 115, 130, 150];
-const V_W = 1000, V_H = 1000; // Fixed Virtual Scale
+const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, Ev=M.Events;
+const SKINS = { Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"], Nature: ["🌱","🌿","☘️","🍀","🍃","🍂","🍁","🍄","🌵","🌴","🌲","🌳"], Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"] };
+const THEMES = { Mellow: "#FDF6E3", Midnight: "#1a1b26", Sky: "#E1F5FE", Forest: "#1B5E20", Ghost: "#E8ECEF" };
+const BORDERS = { Slate: "#657B83", Gold: "#DAA520", Neon: "#B026FF", Red: "#DC143C", Black: "#000000" };
+const OUTLINES = { Default: "def", Rainbow: "rainbow", White: "white", Black: "black" };
+const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
+const PWR_COSTS = { bomb: 500, wipe: 1000, evo: 1500 };
 
-let st = { score:0, wallet:0, eq:{sk:'Fruit', th:'Mellow', bd:'Slate', ot:'def'}, owned:['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_def'], found:[0] };
-let engine, canvas, ctx, audioCtx, isDead = false;
-let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 500, activeDrag = null, dragPos = {x:0, y:0};
-
-function startGame() {
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    document.getElementById('overlay-start').style.display = 'none';
-    init();
-}
+let st = { score: 0, best: 0, wallet: 0, eq: { sk: 'Fruit', th: 'Mellow', bd: 'Slate', ot: 'def' }, owned: ['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_Default'], found: [0] };
+let engine, canvas, ctx, W, H, DL, FY, audioCtx, floor, wallL, wallR;
+let nextIdx = 1, curIdx = 0, canDrop = true, lastX = 150, isDead = false, cycleIdx = 0;
+let activeDrag = null, dragPos = { x: 0, y: 0 };
 
 function init() {
-    const d = localStorage.getItem('fm_v133'); if(d) Object.assign(st, JSON.parse(d));
+    load();
     canvas = document.getElementById('c'); ctx = canvas.getContext('2d');
-    engine = E.create({ gravity: { y: 2.5 } });
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) document.getElementById('fs-btn').style.display = 'none';
     
-    if(/iPhone|iPad/.test(navigator.userAgent)) document.getElementById('ios-standalone').style.display = 'block';
-
-    window.addEventListener('resize', resize); resize();
+    resize();
+    window.addEventListener('resize', resize);
+    engine = E.create({ gravity: { y: 1.5 } });
     
-    M.Events.on(engine, 'collisionStart', e => {
+    Ev.on(engine, 'collisionStart', e => {
         e.pairs.forEach(p => {
             const a = p.bodyA, b = p.bodyB;
-            if(a.plugin?.t !== undefined && a.plugin.t === b.plugin.t && a.plugin.t < 11) {
+            if(a.plugin?.t !== undefined && b.plugin?.t !== undefined && a.plugin.t === b.plugin.t && a.plugin.t < 11) {
                 const t = a.plugin.t, pos = { x: (a.position.x+b.position.x)/2, y: (a.position.y+b.position.y)/2 };
                 C.remove(engine.world, [a, b]);
                 spawnFruit(pos.x, pos.y, t + 1, false);
                 st.score += (t+1)*10; st.wallet += (t+1)*10;
                 if(!st.found.includes(t+1)) st.found.push(t+1);
-                updUI(); save();
+                playSound('pop'); updUI(); save();
             }
         });
     });
 
-    setupInputs();
+    setInterval(() => { cycleIdx = (cycleIdx + 1) % 12; renderStore(); }, 1000);
+    setupEvents();
     loop();
 }
 
 function resize() {
-    const w = window.innerWidth, h = window.innerHeight;
-    canvas.width = w * devicePixelRatio; canvas.height = h * devicePixelRatio;
-    ctx.scale(devicePixelRatio * (w/V_W), devicePixelRatio * (h/V_H));
-    updateBounds();
-}
-
-function updateBounds() {
-    C.clear(engine.world, false);
-    const floor = B.rectangle(500, 950, 1000, 100, { isStatic: true });
-    const wallL = B.rectangle(-10, 500, 20, 1000, { isStatic: true });
-    const wallR = B.rectangle(1010, 500, 20, 1000, { isStatic: true });
-    C.add(engine.world, [floor, wallL, wallR]);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    DL = 165; FY = H - 100;
+    if(engine) {
+        if(floor) C.remove(engine.world, [floor, wallL, wallR]);
+        floor = B.rectangle(W/2, FY + 50, W, 100, { isStatic: true, friction: 0.5 });
+        wallL = B.rectangle(-10, H/2, 20, H*2, { isStatic: true });
+        wallR = B.rectangle(W+10, H/2, 20, H*2, { isStatic: true });
+        C.add(engine.world, [floor, wallL, wallR]);
+    }
 }
 
 function spawnFruit(x, y, t, isDrop) {
-    const b = B.circle(x, y, SIZES[t], { restitution:0.2, plugin:{t:t} });
+    if(isDead) return;
+    const b = B.circle(x, y, SIZES[t], { restitution: 0.3, friction: 0.1, plugin: { t: t } });
     C.add(engine.world, b);
     if(isDrop) {
         curIdx = nextIdx; nextIdx = Math.floor(Math.random()*5);
@@ -169,138 +166,144 @@ function spawnFruit(x, y, t, isDrop) {
 
 function loop() {
     E.update(engine, 16);
-    ctx.clearRect(0,0,V_W,V_H);
+    ctx.clearRect(0, 0, W, H);
+    document.body.style.background = THEMES[st.eq.th];
     
-    // Death Line
-    ctx.setLineDash([10, 10]); ctx.strokeStyle = "red";
-    ctx.beginPath(); ctx.moveTo(0, 165); ctx.lineTo(1000, 165); ctx.stroke(); ctx.setLineDash([]);
+    // Death line
+    ctx.setLineDash([5,5]); ctx.strokeStyle="red"; ctx.beginPath(); ctx.moveTo(0, DL); ctx.lineTo(W, DL); ctx.stroke(); ctx.setLineDash([]);
 
     const now = Date.now();
     C.allBodies(engine.world).forEach(b => {
-        if(!b.plugin) return;
-        const r = b.circleRadius, t = b.plugin.t;
+        if(b.isStatic || !b.plugin) return;
+        if(b.position.y - b.circleRadius < DL && b.speed < 0.2) {
+            if(!b.tm) b.tm = now;
+            if(now - b.tm > 2000 && !isDead) { isDead = true; document.getElementById('game-over').style.display='flex'; }
+        } else b.tm = null;
+        
         ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-        
-        ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
-        ctx.fillStyle = "#fff"; ctx.fill();
-        ctx.strokeStyle = st.eq.ot === 'rainbow' ? `hsl(${now/5%360},100%,50%)` : "#333";
-        ctx.lineWidth = 4; ctx.stroke();
-        
-        ctx.font = `${r*1.2}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText(SKINS[st.eq.sk][t], 0, 0);
+        ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = st.eq.ot === 'rainbow' ? `hsl(${now/10%360},100%,50%)` : (st.eq.ot === 'def' ? "#333" : st.eq.ot);
+        ctx.stroke();
+        ctx.font = `${b.circleRadius*1.2}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(SKINS[st.eq.sk][b.plugin.t], 0, 2);
         ctx.restore();
     });
 
-    if(activeDrag) {
-        ctx.beginPath(); ctx.arc(dragPos.x, dragPos.y, activeDrag === 'bomb' ? 80 : 20, 0, Math.PI*2);
-        ctx.setLineDash([5,5]); ctx.strokeStyle = "#333"; ctx.stroke();
-    } else if(canDrop) {
-        ctx.globalAlpha = 0.3; ctx.font = "50px serif"; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX - 25, 140); ctx.globalAlpha = 1;
+    if(canDrop && !activeDrag && !isDead) {
+        ctx.globalAlpha=0.3; ctx.font="40px serif"; ctx.textAlign="center";
+        ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, DL-20); ctx.globalAlpha=1;
     }
 
+    if(activeDrag) {
+        ctx.beginPath(); ctx.arc(dragPos.x, dragPos.y, activeDrag==='bomb'?80:20, 0, Math.PI*2);
+        ctx.strokeStyle = "#333"; ctx.setLineDash([5,5]); ctx.stroke();
+    }
     requestAnimationFrame(loop);
 }
 
-function setupInputs() {
-    const handleMove = (e) => {
-        const p = e.touches ? e.touches[0] : e;
-        const rect = canvas.getBoundingClientRect();
-        const x = (p.clientX - rect.left) * (V_W / rect.width);
-        const y = (p.clientY - rect.top) * (V_H / rect.height);
-        dragPos = {x, y};
-        if(!activeDrag) lastX = Math.max(50, Math.min(950, x));
-    };
-
-    const handleEnd = (e) => {
-        if(activeDrag) {
-            processPowerUp(dragPos.x, dragPos.y);
-            activeDrag = null;
-            document.querySelectorAll('.pwr-btn').forEach(b => b.classList.remove('dragging'));
-        } else if(canDrop) {
-            spawnFruit(lastX, 165, curIdx, true);
+function setupEvents() {
+    const startDrag = (e) => {
+        const btn = e.target.closest('.pwr-btn[data-type]');
+        if(!btn || isDead) return;
+        const type = btn.dataset.type;
+        if(st.wallet >= PWR_COSTS[type]) {
+            activeDrag = type;
+            btn.classList.add('dragging');
+            if(audioCtx) audioCtx.resume();
         }
     };
 
-    canvas.addEventListener('mousemove', handleMove);
-    canvas.addEventListener('mouseup', handleEnd);
-    canvas.addEventListener('touchstart', e => { e.preventDefault(); handleMove(e); }, {passive:false});
-    canvas.addEventListener('touchend', e => { e.preventDefault(); handleEnd(e); }, {passive:false});
+    window.addEventListener('touchstart', startDrag);
+    window.addEventListener('mousedown', startDrag);
 
-    document.querySelectorAll('.pwr-btn[data-type]').forEach(btn => {
-        btn.addEventListener('touchstart', (e) => {
-            const type = btn.dataset.type;
-            const cost = type === 'bomb' ? 500 : type === 'wipe' ? 1000 : 1500;
-            if(st.wallet >= cost) {
-                activeDrag = type;
-                btn.classList.add('dragging');
-            } else showToast();
-        });
+    window.addEventListener('touchmove', e => {
+        const p = e.touches[0];
+        if(activeDrag) { e.preventDefault(); dragPos = {x: p.clientX, y: p.clientY}; }
+        else { lastX = Math.max(20, Math.min(W-20, p.clientX)); }
+    }, {passive: false});
+
+    window.addEventListener('mousemove', e => {
+        if(activeDrag) dragPos = {x: e.clientX, y: e.clientY};
+        else lastX = Math.max(20, Math.min(W-20, e.clientX));
     });
-}
 
-function processPowerUp(x, y) {
-    const bodies = C.allBodies(engine.world).filter(b => b.plugin);
-    let cost = 0;
-    if(activeDrag === 'bomb') {
-        bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position, {x,y})) < 80) C.remove(engine.world, b); });
-        cost = 500;
-    } else {
-        const target = bodies.find(b => M.Bounds.contains(b.bounds, {x, y}));
-        if(target) {
-            const t = target.plugin.t;
-            if(activeDrag === 'wipe') {
-                bodies.forEach(b => { if(b.plugin.t === t) C.remove(engine.world, b); });
-                cost = 1000;
-            } else if(activeDrag === 'evo' && t < 11) {
-                bodies.forEach(b => { if(b.plugin.t === t) { const p = b.position; C.remove(engine.world, b); spawnFruit(p.x, p.y, t+1, false); } });
-                cost = 1500;
+    const endDrag = (e) => {
+        if(activeDrag) {
+            const x = dragPos.x, y = dragPos.y;
+            const bodies = C.allBodies(engine.world).filter(b => b.plugin);
+            let used = false;
+            if(activeDrag === 'bomb') {
+                bodies.forEach(b => { if(M.Vector.magnitude(M.Vector.sub(b.position,{x,y})) < 80) { C.remove(engine.world,b); used=true; }});
+            } else {
+                const target = bodies.find(b => M.Bounds.contains(b.bounds, {x,y}));
+                if(target) {
+                    const t = target.plugin.t;
+                    if(activeDrag === 'wipe') bodies.forEach(b => { if(b.plugin.t === t) { C.remove(engine.world,b); used=true; }});
+                    if(activeDrag === 'evo' && t < 11) bodies.forEach(b => { if(b.plugin.t === t) { 
+                        const p = b.position; C.remove(engine.world,b); spawnFruit(p.x,p.y,t+1,false); used=true; 
+                    }});
+                }
             }
+            if(used) { st.wallet -= PWR_COSTS[activeDrag]; playSound('pop'); updUI(); save(); }
+            activeDrag = null; document.querySelectorAll('.pwr-btn').forEach(b=>b.classList.remove('dragging'));
+        } else if(!e.target.closest('.ui-panel') && !e.target.closest('.modal') && !isDead && canDrop) {
+            spawnFruit(lastX, DL, curIdx, true);
         }
-    }
-    if(cost > 0) { st.wallet -= cost; updUI(); save(); }
+    };
+    window.addEventListener('touchend', endDrag);
+    window.addEventListener('mouseup', endDrag);
 }
 
 function renderStore() {
-    const container = document.getElementById('store-container'); container.innerHTML = '';
-    document.getElementById('shop-wallet').innerText = '$' + st.wallet;
-    
-    const cats = [
+    const container = document.getElementById('store-container');
+    if(!document.getElementById('shop-modal').classList.contains('open')) return;
+    container.innerHTML = '';
+    document.getElementById('shop-wallet').innerText = st.wallet;
+
+    const config = [
         {t: 'Skins', k: 'sk', d: SKINS, c: 1500},
         {t: 'Themes', k: 'th', d: THEMES, c: 500},
-        {t: 'Borders', k: 'bd', d: BORDERS, c: 500}
+        {t: 'Borders', k: 'bd', d: BORDERS, c: 500},
+        {t: 'Outlines', k: 'ot', d: OUTLINES, c: 1000}
     ];
 
-    cats.forEach(cat => {
-        container.innerHTML += `<h3 style="margin:15px 0 10px">${cat.t}</h3><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" id="grid-${cat.k}"></div>`;
-        const grid = document.getElementById(`grid-${cat.k}`);
+    config.forEach(cat => {
+        container.innerHTML += `<h3 style="margin:15px 0 5px">${cat.t}</h3><div class="grid" id="grid-${cat.k}"></div>`;
+        const g = document.getElementById(`grid-${cat.k}`);
         Object.keys(cat.d).forEach(item => {
-            const id = `${cat.k}_${item}`;
-            const owned = st.owned.includes(id);
-            const eq = st.eq[cat.k] === item;
+            const id = cat.k + '_' + item;
+            const isOwned = st.owned.includes(id);
+            const val = cat.k === 'ot' ? OUTLINES[item] : item;
+            const isEq = st.eq[cat.k] === val;
             const card = document.createElement('div');
-            card.className = `card ${eq ? 'equipped' : ''}`;
+            card.className = `card ${isEq ? 'equipped' : ''}`;
             
-            // Skin Cycling Logic for Store
-            let displayIcon = cat.k === 'sk' ? cat.d[item][0] : "🎨";
-            card.innerHTML = `<div class="preview-swatch" id="prev-${id}">${displayIcon}</div><b>${item}</b><br><small>${eq?'Equipped':owned?'Owned':'$'+cat.c}</small>`;
-            
-            if(cat.k === 'sk') {
-                let idx = 0;
-                setInterval(() => {
-                    idx = (idx + 1) % 12;
-                    const p = document.getElementById(`prev-${id}`);
-                    if(p) p.innerText = cat.d[item][idx];
-                }, 1000);
-            }
+            let preview = '';
+            if(cat.k === 'sk') preview = `<div class="preview-swatch">${SKINS[item][cycleIdx]}</div>`;
+            else if(cat.k === 'th') preview = `<div class="preview-swatch" style="background:${cat.d[item]}"></div>`;
+            else if(cat.k === 'bd') preview = `<div class="preview-swatch" style="border-color:${cat.d[item]}"></div>`;
+            else preview = `<div class="preview-swatch ${item==='Rainbow'?'rainbow-outline-active':''}" style="background:${item==='White'?'#fff':item==='Black'?'#000':'transparent'}"></div>`;
 
+            card.innerHTML = `${preview}<b>${item}</b><div style="font-size:12px">${isEq?'EQUIPPED':isOwned?'OWNED':'$'+cat.c}</div>`;
             card.onclick = () => {
-                if(owned) { st.eq[cat.k] = item; }
-                else if(st.wallet >= cat.c) { st.wallet -= cat.c; st.owned.push(id); st.eq[cat.k] = item; }
-                save(); renderStore(); updUI();
+                if(isOwned) { st.eq[cat.k] = val; }
+                else if(st.wallet >= cat.c) { st.wallet -= cat.c; st.owned.push(id); st.eq[cat.k] = val; }
+                else { showToast(); return; }
+                save(); updUI(); renderStore();
             };
-            grid.appendChild(card);
+            g.appendChild(card);
         });
     });
+}
+
+function playSound(type) {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.setValueAtTime(type==='pop'?400:200, audioCtx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.1);
 }
 
 function updUI() {
@@ -308,17 +311,22 @@ function updUI() {
     document.getElementById('wallet-ui').innerText = '$' + st.wallet;
     document.getElementById('next-preview').innerText = SKINS[st.eq.sk][nextIdx];
     const pb = document.getElementById('prog-bar'); pb.innerHTML = '';
-    for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.includes(i)?1:0.1}; font-size:18px">${SKINS[st.eq.sk][i]}</div>`;
+    for(let i=0; i<12; i++) pb.innerHTML += `<div style="opacity:${st.found.includes(i)?1:0.1}">${SKINS[st.eq.sk][i]}</div>`;
+    document.querySelectorAll('.pwr-btn[data-type]').forEach(b => b.classList.toggle('locked', st.wallet < PWR_COSTS[b.dataset.type]));
 }
 
-function toggleModal(id) {
-    const m = document.getElementById(id);
-    const isO = m.classList.contains('open');
-    document.querySelectorAll('.modal').forEach(x => x.classList.remove('open'));
-    if(!isO) { m.classList.add('open'); if(id === 'shop-modal') renderStore(); }
+function toggleFull() {
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
+    else document.exitFullscreen();
 }
+
 function showToast() { const t = document.getElementById('toast'); t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
-function save() { localStorage.setItem('fm_v133', JSON.stringify(st)); }
+function toggleModal(id) { document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open')); document.getElementById(id).classList.add('open'); if(id==='shop-modal') renderStore(); }
+function restartGame() { isDead=false; st.score=0; st.found=[0]; document.getElementById('game-over').style.display='none'; C.clear(engine.world, false); resize(); updUI(); }
+function save() { localStorage.setItem('fm_v134', JSON.stringify(st)); }
+function load() { const d = localStorage.getItem('fm_v134'); if(d) Object.assign(st, JSON.parse(d)); }
+
+window.onload = init;
 </script>
 </body>
 </html>
