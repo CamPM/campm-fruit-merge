@@ -3,62 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Fruit Merge v1.4.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
-        :root { --accent: #2ecc71; --ui-bg: rgba(255,255,255,0.9); }
+        :root { --accent: #2ecc71; --bg: #f0f0f0; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; }
-        body { overflow: hidden; font-family: 'Arial Black', sans-serif; height: 100vh; background: #f0f0f0; touch-action: none; position: fixed; }
+        body { overflow: hidden; font-family: 'Arial Black', sans-serif; height: 100vh; width: 100vw; position: fixed; touch-action: none; background: var(--bg); }
         canvas { display: block; width: 100%; height: 100%; }
-        .safe-top { position: absolute; top: env(safe-area-inset-top); width: 100%; padding: 10px 20px; z-index: 1000; pointer-events: none; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--ui-bg); border: 3px solid #333; border-radius: 15px; padding: 10px; pointer-events: auto; }
-        .float-util { position: absolute; top: calc(env(safe-area-inset-top) + 80px); width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; }
-        .circ-btn { width: 45px; height: 45px; border-radius: 50%; background: var(--ui-bg); border: 2px solid #333; display: grid; place-items: center; pointer-events: auto; font-size: 20px; }
-        .bot-bar { position: absolute; bottom: 0; width: 100%; height: 100px; padding: 0 20px 20px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 1000; pointer-events: none; }
-        .btn-grp { display: flex; gap: 10px; pointer-events: auto; }
-        .pwr-btn { width: 55px; height: 55px; border-radius: 15px; border: 3px solid #333; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; position: relative; }
-        .shop-btn { width: 100px; height: 55px; background: #3498db; color: white; border-radius: 15px; border: 3px solid #333; display: grid; place-items: center; pointer-events: auto; }
-        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 2000; border-radius: 20px; border: 4px solid #333; flex-direction: column; overflow: hidden; pointer-events: auto; }
+        .ui { position: absolute; z-index: 1000; pointer-events: none; width: 100%; }
+        .top-bar { top: 0; padding: env(safe-area-inset-top) 20px 10px; background: rgba(255,255,255,0.9); border-bottom: 3px solid #333; pointer-events: auto; display: flex; justify-content: space-between; align-items: center; }
+        .float-btn { position: absolute; top: 110px; width: 40px; height: 40px; background: rgba(255,255,255,0.8); border: 2px solid #333; border-radius: 50%; display: grid; place-items: center; pointer-events: auto; z-index: 1100; }
+        .bot-bar { bottom: 0; padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,0.9); border-top: 3px solid #333; pointer-events: auto; display: flex; justify-content: space-between; align-items: center; }
+        .pwr-grp { display: flex; gap: 10px; }
+        .pwr-btn { width: 50px; height: 50px; border-radius: 15px; border: 2px solid #333; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; position: relative; }
+        .pwr-btn::after { content: attr(data-p); position: absolute; top: -12px; font-size: 10px; background: #333; color: #fff; padding: 2px 4px; border-radius: 4px; }
+        .shop-btn { width: 80px; height: 50px; background: #3498db; color: #fff; border-radius: 15px; border: 2px solid #333; display: grid; place-items: center; font-size: 14px; }
+        .modal { display: none; position: absolute; inset: 20px; background: white; z-index: 2000; border-radius: 25px; border: 4px solid #333; flex-direction: column; pointer-events: auto; }
         .modal.open { display: flex; }
-        .modal-header { padding: 15px; background: #eee; display: flex; justify-content: space-between; font-weight: bold; border-bottom: 3px solid #333; }
-        .modal-body { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .cat-head { grid-column: 1 / -1; background: #333; color: white; padding: 5px 10px; border-radius: 5px; margin-top: 10px; position: sticky; top: 0; z-index: 5; }
-        .card { border: 2px solid #ddd; border-radius: 12px; padding: 10px; text-align: center; font-size: 12px; }
-        .card.eq { border-color: var(--accent); background: #eaffea; }
-        .swatch { width: 35px; height: 35px; border-radius: 50%; margin: 0 auto 5px; border: 2px solid #333; }
-        .bouncy-txt { position: absolute; font-size: 32px; color: #f1c40f; text-shadow: 3px 3px #000; animation: bounceUp 0.8s ease-out forwards; pointer-events: none; z-index: 1500; font-family: 'Arial Black'; }
-        @keyframes bounceUp { 0% { transform: scale(0.5) translateY(0); opacity:1; } 50% { transform: scale(1.2) translateY(-40px); } 100% { transform: scale(1) translateY(-80px); opacity:0; } }
+        .modal-body { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-head { grid-column: 1 / -1; background: #eee; padding: 5px 10px; border-radius: 8px; font-size: 12px; position: sticky; top: 0; z-index: 10; margin-top: 10px; }
+        .card { border: 2px solid #eee; border-radius: 15px; padding: 8px; text-align: center; font-size: 12px; }
+        .card.eq { border-color: var(--accent); background: #f0fff0; }
+        .floating-text { position: absolute; font-size: 28px; color: #f1c40f; text-shadow: 2px 2px #000; animation: up 0.8s ease-out forwards; pointer-events: none; }
+        @keyframes up { to { transform: translateY(-80px) scale(1.2); opacity: 0; } }
     </style>
 </head>
 <body>
-<div id="ui-layer">
-    <div class="safe-top"><div class="top-bar"><div>SCORE<br><span id="cur-s">0</span></div><div id="next-box" style="font-size:30px"></div><div>BEST<br><span id="best-s">0</span></div></div></div>
-    <div class="float-util">
-        <div class="circ-btn" onclick="toggleMute()" id="m-btn">🔊</div>
-        <div style="text-align:center; pointer-events:auto;"><div id="p-bar" style="background:white; border:2px solid #333; padding:5px; border-radius:10px; font-size:12px;"></div><div id="wallet" style="color:#2ecc71; text-shadow:1px 1px #000;">$0</div></div>
-        <div class="circ-btn" onclick="toggleF()">⛶</div>
+<div id="toast-layer" class="ui" style="inset:0"></div>
+<div id="game-over" class="modal" style="justify-content:center; align-items:center; text-align:center;">
+    <h1>GAME OVER</h1><p id="final-stats"></p>
+    <button onclick="restart()" style="margin-top:20px; padding:15px 40px; background:var(--accent); border:none; border-radius:15px; color:white; font-size:20px">RETRY</button>
+</div>
+<div class="ui top-bar">
+    <div>SCORE<br><span id="cur-s" style="font-size:22px">0</span></div>
+    <div id="next-box" style="width:55px; height:55px; border:3px solid #333; border-radius:50%; display:grid; place-items:center; font-size:32px; background:#fff"></div>
+    <div style="text-align:right">BEST<br><span id="best-s" style="font-size:22px">0</span></div>
+</div>
+<div class="float-btn" style="left:20px" onclick="toggleMute()" id="m-btn">🔊</div>
+<div class="float-btn" style="right:20px" onclick="toggleF()" id="fs-btn">⛶</div>
+<div style="position:absolute; top:95px; width:100%; text-align:center; z-index:1001">
+    <div id="p-bar" style="display:inline-flex; gap:3px; background:rgba(255,255,255,0.8); padding:5px; border:2px solid #333; border-radius:12px;"></div>
+    <div id="wallet" style="color:#27ae60; font-size:20px; text-shadow:1px 1px #fff; margin-top:5px">$0</div>
+</div>
+<div class="ui bot-bar">
+    <div class="pwr-grp">
+        <div class="pwr-btn" data-t="bomb" data-p="$50" style="background:#e67e22">💣</div>
+        <div class="pwr-btn" data-t="wipe" data-p="$75" style="background:#9b59b6">🧹</div>
+        <div class="pwr-btn" data-t="evo" data-p="$150" style="background:#f1c40f">🪄</div>
     </div>
-    <div class="bot-bar">
-        <div class="btn-grp">
-            <div class="pwr-btn" data-t="bomb" style="background:#e67e22">💣<small>$50</small></div>
-            <div class="pwr-btn" data-t="wipe" style="background:#9b59b6">🧹<small>$75</small></div>
-            <div class="pwr-btn" data-t="evo" style="background:#f1c40f">🪄<small>$150</small></div>
-        </div>
-        <div class="shop-btn" onclick="toggleM('shop-mod')">SHOP</div>
-    </div>
+    <div class="shop-btn" onclick="toggleM('shop-mod')">SHOP</div>
 </div>
 <div id="shop-mod" class="modal">
-    <div class="modal-header"><span>STORE ($<span id="cash">0</span>)</span><span onclick="toggleM('shop-mod')">✕</span></div>
+    <div style="padding:15px; border-bottom:2px solid #eee; display:flex; justify-content:space-between; align-items:center"><b>STORE ($<span id="cash">0</span>)</b><b onclick="toggleM('shop-mod')" style="font-size:24px">×</b></div>
     <div class="modal-body" id="shop-content"></div>
 </div>
 <canvas id="c"></canvas>
+
 <script>
-const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite, R=M.Render;
-const T_COLORS = ["#add8e6","#87cefa","#00bfff","#1e90ff","#4169e1","#0000ff","#4b0082","#8b00ff","#9400d3","#9932cc","#ba55d3","#ff00ff"];
-const SKINS = { Space:["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"], Weather:["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"], Ocean:["🐟","🐙","🦐","🦑","🐡","🐠","🦈","🐋","🐬","🐳","🐚","🌊"], Nature:["🌱","🌿","☘️","🍄","🍀","🍃","🍂","🍁","🌵","🌴","🌲","🌳"], Music:["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"], Animals:["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], Dessert:["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"] };
-const HARDNESS = { Space:[0.2,0.1], Weather:[0.3,0.08], Ocean:[0.4,0.05], Nature:[0.5,0.04], Music:[0.6,0.03], Animals:[0.7,0.02], Fruit:[0.5,0.02], Dessert:[0.8,0.01] };
-let st = { score:0, best:0, wallet:200, muted:false, eq:{sk:'Fruit', th:'#f0f0f0', bd:'#333', ot:'#000', hb:'Tiered'}, owned:['sk_Fruit','th_#f0f0f0','bd_#333','ot_#000','hb_Tiered'], found:[0] };
-let engine, canvas, ctx, W, H, nextIdx=0, curIdx=0, canDrop=true, lastX=150, activeP=null, dragP={x:0,y:0}, combo=1, lastM=0;
+const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite;
+const SKINS = { 
+    Space: ["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"],
+    Weather: ["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"],
+    Ocean: ["🐚","🦀","🦞","🐟","🐙","🐬","🦈","🐋","🐳","🦑","🐡","🦐"],
+    Nature: ["🌱","🌿","☘️","🍄","🍃","🍂","🍁","🌵","🌴","🌲","🌳","🌻"],
+    Music: ["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"],
+    Animals: ["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"],
+    Fruit: ["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"],
+    Dessert: ["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"]
+};
+const TIER_COLORS = ["#3498db","#2ecc71","#f1c40f","#e67e22","#e74c3c","#9b59b6","#1abc9c","#d35400","#c0392b","#8e44ad","#27ae60","#f39c12"];
+const THEMES = { Mellow:"#FDF6E3", Midnight:"#1a1b26", Matcha:"#E8F5E9", Lavender:"#F3E5F5", Sky:"#E1F5FE" };
+const BORDERS = { Slate:"#657B83", Gold:"#DAA520", Neon:"#B026FF", Red:"#DC143C" };
+const OUTLINES = { Default:"def", Rainbow:"rainbow", White:"white", Black:"black" };
+const HITBOXES = { Tiered:"tier", Transparent:"trans", White:"white", Rainbow:"rainbow" };
+const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
+const WORDS = { Space:["GALACTIC!","SUPERNOVA!"], Fruit:["JUICY!","FRESH!"], Dessert:["SWEET!","YUM!"] };
+
+let st = { score:0, best:0, wallet:100, muted:false, eq:{sk:'Fruit', th:'Mellow', bd:'Slate', ot:'def', hb:'tier'}, owned:['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_def', 'hb_tier'], found:[0] };
+let engine, canvas, ctx, W, H, nextIdx=1, curIdx=0, canDrop=true, lastX=150, isDead=false, isPaused=false, activeP=null, dragP={x:0,y:0}, combo=1, lastM=0, aCtx;
 
 function init() {
     load(); canvas=document.getElementById('c'); ctx=canvas.getContext('2d');
@@ -69,95 +92,148 @@ function init() {
             if(a.plugin?.t!==undefined && a.plugin.t===b.plugin.t && a.plugin.t<11) {
                 const t=a.plugin.t, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
                 C.remove(engine.world, [a,b]); const nf=spawnF(pos.x, pos.y, t+1, false);
-                nf.sq = 1.5; combo=(Date.now()-lastM<1500)?Math.min(5, combo+1):1; lastM=Date.now();
-                if(combo>1) floatT(pos.x, pos.y, combo); st.score+=(t+1)*10*combo; st.wallet+=(t+1)*20*combo;
+                nf.sq = 1.5; const now=Date.now(); combo=(now-lastM<1500)?Math.min(5, combo+1):1; lastM=now;
+                if(combo>1) floatT(pos.x, pos.y); st.score+=(t+1)*10*combo; st.wallet+=(t+1)*20*combo;
                 if(st.score>st.best) st.best=st.score; if(!st.found.includes(t+1)) st.found.push(t+1);
                 updUI(); save(); playS(600);
             }
         });
     });
-    setupIn(); loop(); nextIdx=Math.floor(Math.random()*5); updUI();
+    setupIn(); loop();
+}
+
+function getPhys() {
+    const s = st.eq.sk;
+    if(s==='Space') return {r:0.2, f:0.1};
+    if(s==='Weather') return {r:0.3, f:0.08};
+    if(s==='Ocean') return {r:0.4, f:0.06};
+    if(s==='Nature') return {r:0.5, f:0.04};
+    if(s==='Music') return {r:0.6, f:0.03};
+    if(s==='Animals') return {r:0.7, f:0.02};
+    if(s==='Fruit') return {r:0.75, f:0.015};
+    return {r:0.85, f:0.01};
 }
 
 function spawnF(x,y,t,isD) {
-    const h = HARDNESS[st.eq.sk];
-    const b=B.circle(x,y,[18,24,30,38,46,55,65,76,88,102,118,135][t],{restitution:h[0], friction:h[1], plugin:{t:t}});
-    b.sq = 1.5; C.add(engine.world, b);
-    if(isD){ curIdx=nextIdx; nextIdx=Math.floor(Math.random()*5); canDrop=false; setTimeout(()=>canDrop=true, 600); updUI(); }
+    const p = getPhys();
+    const b=B.circle(x,y,SIZES[t],{restitution:p.r, friction:p.f, plugin:{t:t}}); C.add(engine.world, b);
+    if(isD){ curIdx=nextIdx; nextIdx=Math.floor(Math.random()*5); canDrop=false; setTimeout(()=>canDrop=true, 500); updUI(); }
     return b;
 }
 
-function setupIn() {
-    const getX=e=>(e.touches?e.touches[0].clientX:e.clientX), getY=e=>(e.touches?e.touches[0].clientY:e.clientY);
-    window.addEventListener('touchstart', e=>{ if(e.target.dataset.t) activeP=e.target.dataset.t; });
-    window.addEventListener('mousedown', e=>{ if(e.target.dataset.t) activeP=e.target.dataset.t; });
-    window.addEventListener('touchmove', e=>{ if(activeP) dragP={x:getX(e),y:getY(e)}; else lastX=getX(e); });
-    window.addEventListener('mousemove', e=>{ if(activeP) dragP={x:getX(e),y:getY(e)}; else lastX=getX(e); });
-    window.addEventListener('touchend', e=>{ if(activeP) releaseP(dragP.x,dragP.y); else if(canDrop&&!e.target.closest('.modal')) spawnF(Math.max(40,Math.min(W-40,lastX)), 150, curIdx, true); });
-    window.addEventListener('mouseup', e=>{ if(activeP) releaseP(dragP.x,dragP.y); else if(canDrop&&!e.target.closest('.modal')) spawnF(Math.max(40,Math.min(W-40,lastX)), 150, curIdx, true); });
-}
-
-function releaseP(x,y){
-    const cost = activeP==='bomb'?50:activeP==='wipe'?75:150;
-    if(st.wallet<cost){ activeP=null; return; }
-    const bodies = C.allBodies(engine.world).filter(b=>b.plugin); let used=false;
-    if(activeP==='bomb'){ bodies.forEach(b=>{ if(M.Vector.magnitude(M.Vector.sub(b.position,{x,y}))<80){ C.remove(engine.world,b); used=true; } }); }
-    else { const t = bodies.find(b=>M.Bounds.contains(b.bounds,{x,y})); if(t){
-        bodies.forEach(b=>{ if(b.plugin.t===t.plugin.t){ 
-            if(activeP==='evo' && b.plugin.t<11) spawnF(b.position.x, b.position.y, b.plugin.t+1, false);
-            C.remove(engine.world, b); used=true; 
-        }});
-    }}
-    if(used){ st.wallet-=cost; save(); updUI(); playS(300); } activeP=null;
-}
-
 function loop() {
-    E.update(engine, 16); ctx.clearRect(0,0,W,H); document.body.style.background=st.eq.th;
-    ctx.fillStyle=st.eq.bd; ctx.fillRect(0,0,15,H); ctx.fillRect(W-15,0,15,H);
+    if(!isPaused) E.update(engine, 16); ctx.clearRect(0,0,W,H); document.body.style.background=THEMES[st.eq.th];
+    ctx.fillStyle=BORDERS[st.eq.bd]; ctx.fillRect(0,0,15,H); ctx.fillRect(W-15,0,15,H);
+    ctx.setLineDash([5,5]); ctx.strokeStyle="red"; ctx.beginPath(); ctx.moveTo(0,165); ctx.lineTo(W,165); ctx.stroke(); ctx.setLineDash([]);
+    const now=Date.now();
     C.allBodies(engine.world).forEach(b => {
-        if(!b.plugin) return; ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
-        if(b.sq>1) b.sq -= 0.02; ctx.scale(b.sq, b.sq);
-        let hb = st.eq.hb==='Tiered'?T_COLORS[b.plugin.t]+'88':st.eq.hb==='White'?'#ffffff88':st.eq.hb==='Rainbow'?`hsla(${Date.now()/10%360},70%,70%,0.5)`:'transparent';
-        ctx.fillStyle=hb; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
-        ctx.strokeStyle=st.eq.ot; ctx.lineWidth=3;
-        if(activeP && (activeP==='bomb'?M.Vector.magnitude(M.Vector.sub(b.position, dragP))<80 : M.Bounds.contains(b.bounds, dragP))){
-            ctx.strokeStyle=`rgba(255,215,0,${0.5+0.5*Math.sin(Date.now()/100)})`; ctx.lineWidth=6;
+        if(!b.plugin) return;
+        if(b.position.y-b.circleRadius<165 && b.speed<0.2){ if(!b.tm) b.tm=now; if(now-b.tm>2000) isDead=true; } else b.tm=null;
+        ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+        if(b.sq>1) b.sq -= 0.05; ctx.scale(b.sq||1, b.sq||1);
+        
+        // Hitbox Drawing
+        let hb = st.eq.hb;
+        if(hb==='tier') ctx.fillStyle = TIER_COLORS[b.plugin.t] + "99";
+        else if(hb==='white') ctx.fillStyle = "#ffffff99";
+        else if(hb==='rainbow') ctx.fillStyle = `hsla(${now/10%360},70%,70%,0.6)`;
+        else ctx.fillStyle = "transparent";
+        
+        ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
+
+        // Outline & Pulse
+        let dist = M.Vector.magnitude(M.Vector.sub(b.position, dragP));
+        let inPwr = activeP && (activeP==='bomb'?dist<80:dist<SIZES[b.plugin.t]+10);
+        if(inPwr){ ctx.strokeStyle="gold"; ctx.lineWidth=6; ctx.shadowBlur=20; ctx.shadowColor="gold"; }
+        else {
+            ctx.lineWidth=4;
+            if(st.eq.ot==='rainbow') ctx.strokeStyle=`hsl(${now/10%360},100%,50%)`;
+            else ctx.strokeStyle=st.eq.ot==='def'?'#333':st.eq.ot;
         }
-        ctx.stroke(); ctx.font=`${b.circleRadius*1.2}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText(SKINS[st.eq.sk][b.plugin.t], 0, 0); ctx.restore();
+        ctx.stroke();
+
+        ctx.font=`${b.circleRadius*1.1}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(SKINS[st.eq.sk][b.plugin.t], 0, 0); ctx.restore(); ctx.shadowBlur=0;
     });
-    if(activeP){ ctx.beginPath(); ctx.setLineDash([5,5]); ctx.strokeStyle="#333";
+
+    if(canDrop && !activeP && !isDead){ ctx.globalAlpha=0.4; ctx.font="40px serif"; ctx.textAlign="center"; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, 145); ctx.globalAlpha=1; }
+    if(activeP) {
+        ctx.beginPath(); ctx.strokeStyle="rgba(0,0,0,0.5)"; ctx.setLineDash([2,2]);
         if(activeP==='bomb') ctx.arc(dragP.x, dragP.y, 80, 0, Math.PI*2);
         else { ctx.moveTo(dragP.x-20, dragP.y); ctx.lineTo(dragP.x+20, dragP.y); ctx.moveTo(dragP.x, dragP.y-20); ctx.lineTo(dragP.x, dragP.y+20); }
-        ctx.stroke(); ctx.setLineDash([]);
+        ctx.stroke();
     }
+    if(isDead){ document.getElementById('game-over').style.display='flex'; document.getElementById('final-stats').innerText=`Score: ${st.score}`; }
     requestAnimationFrame(loop);
 }
 
-function floatT(x,y,c){ const e=document.createElement('div'); e.className='bouncy-txt'; e.style.left=x+'px'; e.style.top=y+'px'; e.innerText=`X${c}`; document.body.appendChild(e); setTimeout(()=>e.remove(), 800); }
-function toggleM(id){ const m=document.getElementById(id); m.classList.toggle('open'); if(id==='shop-mod') renderS(); }
-function updUI(){ document.getElementById('cur-s').innerText=st.score; document.getElementById('best-s').innerText=st.best; document.getElementById('wallet').innerText='$'+st.wallet; document.getElementById('next-box').innerText=SKINS[st.eq.sk][nextIdx]; const pb=document.getElementById('p-bar'); pb.innerHTML=''; for(let i=0; i<12; i++) pb.innerHTML+=`<span style="opacity:${st.found.includes(i)?1:0.1}">${SKINS[st.eq.sk][i]}</span>`; }
-function renderS(){
-    const c=document.getElementById('shop-content'); c.innerHTML=''; document.getElementById('cash').innerText=st.wallet;
-    const cats=[{n:'Skins',k:'sk',d:SKINS,p:1500},{n:'Hitboxes',k:'hb',d:{Tiered:1,White:1,Transparent:1,Rainbow:1},p:1000},{n:'Outlines',k:'ot',d:{Black:'#000',Gold:'#ffd700',Neon:'#0f0',White:'#fff'},p:500},{n:'Backgrounds',k:'th',d:{Gray:'#f0f0f0',Midnight:'#1a1a2e',Forest:'#1b4332',Rose:'#fff0f5'},p:750},{n:'Borders',k:'bd',d:{Dark:'#333',Gold:'#daa520',Ruby:'#900',Steel:'#777'},p:500}];
-    cats.forEach(cat=>{
-        const h=document.createElement('div'); h.className='cat-head'; h.innerText=cat.n; c.appendChild(h);
-        Object.keys(cat.d).forEach(k=>{
-            const id=cat.k+'_'+(cat.k==='th'||cat.k==='bd'||cat.k==='ot'?cat.d[k]:k), isO=st.owned.includes(id), isE=st.eq[cat.k]===(cat.k==='th'||cat.k==='bd'||cat.k==='ot'?cat.d[k]:k);
+function renderS() {
+    const cont=document.getElementById('shop-content'); cont.innerHTML='';
+    const groups = [
+        {h:'SKINS',k:'sk',d:SKINS,c:1500},
+        {h:'HITBOXES',k:'hb',d:HITBOXES,c:1000},
+        {h:'OUTLINES',k:'ot',d:OUTLINES,c:2000},
+        {h:'BACKGROUNDS',k:'th',d:THEMES,c:750},
+        {h:'BORDERS',k:'bd',d:BORDERS,c:500}
+    ];
+    groups.forEach(g => {
+        cont.innerHTML += `<div class="shop-head">${g.h}</div>`;
+        Object.keys(g.d).forEach(k => {
+            const id=g.k+'_'+k, val=g.d[k], isE=st.eq[g.k]===(g.k==='sk'||g.k==='th'||g.k==='bd'?k:val), isO=st.owned.includes(id);
             const card=document.createElement('div'); card.className=`card ${isE?'eq':''}`;
-            card.innerHTML=`<div class="swatch" style="background:${cat.k==='th'?cat.d[k]:cat.k==='bd'?cat.d[k]:'#fff'}; border:2px solid ${cat.k==='ot'?cat.d[k]:'#333'}"></div>${k}<br>${isE?'EQ':isO?'OWN':'$'+cat.p}`;
-            card.onclick=()=>{ if(isO)st.eq[cat.k]=(cat.k==='th'||cat.k==='bd'||cat.k==='ot'?cat.d[k]:k); else if(st.wallet>=cat.p){ st.wallet-=cat.p; st.owned.push(id); st.eq[cat.k]=(cat.k==='th'||cat.k==='bd'||cat.k==='ot'?cat.d[k]:k); } save(); renderS(); updUI(); };
-            c.appendChild(card);
+            card.innerHTML=`<b>${k}</b><br>${isE?'Equipped':isO?'Own':'$'+g.c}`;
+            card.onclick=()=>{ if(isO)st.eq[g.k]=(g.k==='sk'||g.k==='th'||g.k==='bd'?k:val); else if(st.wallet>=g.c){st.wallet-=g.c; st.owned.push(id); st.eq[g.k]=(g.k==='sk'||g.k==='th'||g.k==='bd'?k:val);} updUI(); renderS(); save(); };
+            cont.appendChild(card);
         });
     });
 }
-function resize(){ W=window.innerWidth; H=window.innerHeight; canvas.width=W; canvas.height=H; C.clear(engine.world, false); C.add(engine.world,[B.rectangle(W/2,H+240,W,500,{isStatic:true}),B.rectangle(-7,H/2,15,H,{isStatic:true}),B.rectangle(W+7,H/2,15,H,{isStatic:true})]); }
-function playS(f){ if(st.muted)return; const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(); const g=a.createGain(); o.frequency.setValueAtTime(f,a.currentTime); o.frequency.exponentialRampToValueAtTime(10,a.currentTime+0.1); g.gain.setValueAtTime(0.05,a.currentTime); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.1); }
+
+function resize() {
+    W=window.innerWidth; H=window.innerHeight; canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    C.clear(engine.world, false);
+    C.add(engine.world, [B.rectangle(W/2, H+240, W, 500, {isStatic:true}), B.rectangle(7.5, H/2, 15, H*2, {isStatic:true}), B.rectangle(W-7.5, H/2, 15, H*2, {isStatic:true})]);
+}
+function setupIn() {
+    const getX=e=>(e.touches?e.touches[0].clientX:e.clientX), getY=e=>(e.touches?e.touches[0].clientY:e.clientY);
+    const move=e=>{ if(isPaused)return; if(activeP) dragP={x:getX(e), y:getY(e)}; else lastX=Math.max(40,Math.min(W-40,getX(e))); if(!e.target.closest('.modal')) e.preventDefault(); };
+    const end=e=>{ if(isPaused)return; if(activeP) releaseP(dragP.x, dragP.y); else if(canDrop && !isDead && !e.target.closest('.ui')) spawnF(lastX, 165, curIdx, true); };
+    window.addEventListener('touchstart', e=>{ if(e.target.dataset.t) activeP=e.target.dataset.t; if(!aCtx) aCtx = new (window.AudioContext||window.webkitAudioContext)(); }, {passive:false});
+    window.addEventListener('mousedown', e=>{ if(e.target.dataset.t) activeP=e.target.dataset.t; if(!aCtx) aCtx = new (window.AudioContext||window.webkitAudioContext)(); });
+    window.addEventListener('touchmove', move, {passive:false}); window.addEventListener('mousemove', move);
+    window.addEventListener('touchend', end); window.addEventListener('mouseup', end);
+}
+function releaseP(x,y) {
+    const type=activeP; activeP=null; const price=type==='bomb'?50:type==='wipe'?75:150;
+    if(st.wallet<price) return;
+    const bodies=C.allBodies(engine.world).filter(b=>b.plugin); let used=false;
+    if(type==='bomb'){ bodies.forEach(b=>{ if(M.Vector.magnitude(M.Vector.sub(b.position,{x,y}))<80) C.remove(engine.world,b); }); used=true; }
+    else { const target=bodies.find(b=>M.Bounds.contains(b.bounds,{x,y})); if(target){
+        if(type==='wipe') bodies.forEach(b=>{ if(b.plugin.t===target.plugin.t) C.remove(engine.world, b); });
+        if(type==='evo' && target.plugin.t<11) bodies.forEach(b=>{ if(b.plugin.t===target.plugin.t){ const p=b.position; C.remove(engine.world, b); spawnF(p.x, p.y, target.plugin.t+1, false); } });
+        used=true;
+    }}
+    if(used){ st.wallet-=price; updUI(); save(); playS(300); }
+}
+function floatT(x,y){ 
+    const e=document.createElement('div'); e.className='floating-text'; e.style.left=x+'px'; e.style.top=y+'px';
+    e.innerText="X"+combo; document.getElementById('toast-layer').appendChild(e); setTimeout(()=>e.remove(), 800);
+}
+function updUI(){
+    document.getElementById('cur-s').innerText=st.score; document.getElementById('best-s').innerText=st.best;
+    document.getElementById('wallet').innerText='$'+st.wallet; document.getElementById('cash').innerText=st.wallet;
+    document.getElementById('next-box').innerText=SKINS[st.eq.sk][nextIdx];
+    const pb=document.getElementById('p-bar'); pb.innerHTML='';
+    for(let i=0; i<12; i++) pb.innerHTML+=`<span style="opacity:${st.found.includes(i)?1:0.1}">${SKINS[st.eq.sk][i]}</span>`;
+}
+function playS(f){ if(st.muted || !aCtx)return; const o=aCtx.createOscillator(); const g=aCtx.createGain(); o.frequency.setValueAtTime(f,aCtx.currentTime); o.frequency.exponentialRampToValueAtTime(10,aCtx.currentTime+0.1); g.gain.setValueAtTime(0.05,aCtx.currentTime); o.connect(g); g.connect(aCtx.destination); o.start(); o.stop(aCtx.currentTime+0.1); }
 function toggleMute(){ st.muted=!st.muted; document.getElementById('m-btn').innerText=st.muted?'🔇':'🔊'; save(); }
 function toggleF(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
-function save(){ localStorage.setItem('fm_142', JSON.stringify(st)); }
-function load(){ const d=localStorage.getItem('fm_142'); if(d) Object.assign(st, JSON.parse(d)); }
-window.onload=init;
+function toggleM(id){ const m=document.getElementById(id); m.classList.toggle('open'); isPaused=m.classList.contains('open'); if(id==='shop-mod') renderS(); }
+function restart(){ st.score=0; st.found=[0]; isDead=false; document.getElementById('game-over').style.display='none'; resize(); updUI(); }
+function save(){ localStorage.setItem('fm_v142', JSON.stringify(st)); }
+function load(){ const d=localStorage.getItem('fm_v142'); if(d) Object.assign(st, JSON.parse(d)); }
+window.onload=init; window.onresize=resize;
 </script>
 </body>
 </html>
