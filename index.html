@@ -120,10 +120,14 @@ function resize() {
     ]);
 }
 
-function spawnF(x,y,t,isD) {
+    function spawnF(x,y,t,isD) {
     const hard = ['Space','Nature','Shapes'].includes(st.eq.sk)?0.2:['Animals','Dessert'].includes(st.eq.sk)?0.8:0.5;
     const b=B.circle(x,y,SIZES[t],{restitution:hard, friction:0.02, plugin:{t:t}}); C.add(engine.world, b);
-    if(isD){ curIdx=nextIdx; nextIdx=Math.floor(Math.random()*5); canDrop=false; setTimeout(()=>canDrop=true, 500); updUI(); }
+    if(isD){ 
+        curIdx=nextIdx; 
+        nextIdx=Math.floor(Math.random()*5); // Only tiers 0-4
+        canDrop=false; setTimeout(()=>canDrop=true, 500); updUI(); 
+    }
     return b;
 }
 
@@ -180,7 +184,7 @@ function loop() {
 function renderS() {
     const cont=document.getElementById('shop-content'); cont.innerHTML='';
     document.getElementById('cash').innerText=st.wallet;
-    const cats=[{n:'Outlines',k:'ot',d:OUTLINES,c:2000},{n:'Skins',k:'sk',d:SKINS,c:1500},{n:'Themes',k:'th',d:THEMES,c:750},{n:'Borders',k:'bd',d:BORDERS,c:500}];
+    const cats=[{n:'Skins',k:'sk',d:SKINS,c:1500},{n:'Outlines',k:'ot',d:OUTLINES,c:2000},{n:'Themes',k:'th',d:THEMES,c:750},{n:'Borders',k:'bd',d:BORDERS,c:500}];
     cats.forEach(cat=>{
         Object.keys(cat.d).forEach(k=>{
             const id=cat.k+'_'+k, val=(cat.k==='ot'?cat.d[k]:k), isE=st.eq[cat.k]===val, isO=st.owned.includes(id);
