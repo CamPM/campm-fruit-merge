@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Fruit Merge v1.40 Obsidian</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        :root { --accent: #2ecc71; --bg: #f0f0f0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0; }
+        body { overflow: hidden; font-family: 'Arial Black', sans-serif; height: 100vh; width: 100vw; position: fixed; touch-action: none; background: var(--bg); }
+        canvas { display: block; width: 100%; height: 100%; }
+        .ui { position: absolute; z-index: 1000; pointer-events: none; width: 100%; }
+        
+        /* iPhone Notch Support */
+        .top-bar { top: 0; padding-top: env(safe-area-inset-top); background: rgba(255,255,255,0.95); border-bottom: 3px solid #333; pointer-events: auto; padding-left: 20px; padding-right: 20px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .bot-bar { bottom: 0; padding-bottom: env(safe-area-inset-bottom); height: auto; min-height: 90px; background: rgba(255,255,255,0.95); border-top: 3px solid #333; pointer-events: auto; display: flex; align-items: center; justify-content: space-evenly; }
+        
+        .pwr-btn { width: 48px; height: 48px; border-radius: 12px; border: 2px solid #333; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; pointer-events: auto; position: relative; margin: 10px 0; }
+        .pwr-btn::after { content: attr(data-p); position: absolute; bottom: -15px; font-size: 10px; color: #333; }
+        
+        .modal { display: none; position: absolute; inset: 15px; margin-top: env(safe-area-inset-top); margin-bottom: env(safe-area-inset-bottom); background: white; z-index: 2000; border-radius: 20px; border: 4px solid #333; flex-direction: column; pointer-events: auto; }
+        .modal.open { display: flex; }
+        .modal-body { flex: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .card { border: 2px solid #eee; border-radius: 15px; padding: 10px; text-align: center; font-size: 12px; }
+        .card.eq { border-color: var(--accent); background: #f0fff0; }
+        .swatch { width: 40px; height: 40px; border-radius: 50%; margin: 0 auto 5px; border: 2px solid #333; display: flex; align-items: center; justify-content: center; animation: bounce 2s infinite; }
+        
+        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+        #toast-layer { position: absolute; pointer-events: none; inset: 0; z-index: 1500; }
+        
+        .floating-text { position: absolute; font-size: 32px; color: #ffeb3b; text-shadow: 3px 3px #e74c3c, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; animation: bounce-out 1s forwards; font-family: 'Arial Black', sans-serif; }
+        @keyframes bounce-out { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { opacity: 1; transform: scale(1.2) rotate(10deg); } 100% { transform: translateY(-100px) scale(1) rotate(0deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+<div id="toast-layer"></div>
+<div id="game-over" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.9); z-index:5000; color:white; flex-direction:column; align-items:center; justify-content:center;">
+    <h1>GAME OVER</h1><p>Score: <span id="gs">0</span> | Best: <span id="hs">0</span></p>
+    <button onclick="restart()" style="margin-top:20px; padding:10px 30px; background:var(--accent); border:none; border-radius:10px; color:white;">RETRY</button>
+</div>
+
+<div class="ui top-bar">
+    <div style="font-size:12px">SCORE<br><span id="cur-s" style="font-size:20px">0</span></div>
+    <div id="next-box" style="width:50px; height:50px; border:2px solid #333; border-radius:50%; display:grid; place-items:center; font-size:28px; background:#fff"></div>
+    <div style="font-size:12px; text-align:right">BEST<br><span id="best-s" style="font-size:20px">0</span></div>
+</div>
+
+<div style="position:absolute; top:calc(85px + env(safe-area-inset-top)); width:100%; text-align:center; z-index:1001">
+    <div id="p-bar" style="display:inline-flex; gap:3px; background:#fff; padding:5px; border:2px solid #333; border-radius:10px;"></div>
+    <div id="wallet" style="color:var(--accent); font-size:18px; text-shadow:1px 1px #000;">$0</div>
+</div>
+
+<div class="ui bot-bar">
+    <div class="pwr-btn" data-t="bomb" data-p="$50" style="background:#e67e22">💣</div>
+    <div class="pwr-btn" data-t="wipe" data-p="$75" style="background:#9b59b6">🧹</div>
+    <div class="pwr-btn" data-t="evo" data-p="$150" style="background:#f1c40f">🪄</div>
+    <div class="pwr-btn" onclick="toggleM('help-mod')" style="background:#95a5a6">?</div>
+    <div id="fs-btn" class="pwr-btn" onclick="toggleF()" style="background:#34495e; display:none">⛶</div>
+    <div class="pwr-btn" onclick="toggleMute()" id="m-btn" style="background:#eee">🔊</div>
+    <div class="pwr-btn" onclick="toggleM('shop-mod')" style="background:#3498db; width:65px">SHOP</div>
+</div>
+
+<div id="shop-mod" class="modal">
+    <div style="padding:15px; border-bottom:2px solid #eee; display:flex; justify-content:space-between"><b>SHOP ($<span id="cash">0</span>)</b><b onclick="toggleM('shop-mod')">✕</b></div>
+    <div class="modal-body" id="shop-content"></div>
+</div>
+
+<div id="help-mod" class="modal">
+    <div style="padding:15px; border-bottom:2px solid #eee; font-weight:bold;">HELP & GAME GUIDE</div>
+    <div class="modal-body" style="display:block; line-height:1.5; font-size: 14px;">
+        <p><b>🎮 The Goal:</b> Merge identical items to reach the final Tier 12! Don't let items stack above the red line.</p><br>
+        <p><b>✨ Vibe-Logic:</b> Each skin has unique physics! <b>Space/Nature</b> are heavy/stable. <b>Animals/Dessert</b> are bouncy/unpredictable.</p><br>
+        <p><b>💣 Power-Ups:</b><br>• <b>Bomb:</b> Clears area.<br>• <b>Wipe:</b> Removes ALL items of a specific tier.<br>• <b>Evo:</b> Instantly upgrades one item.</p><br>
+        <p><b>💰 Store & Economy:</b> Earn cash by merging. Higher tiers + combo multipliers = more $$$ for new Skins and Outlines!</p><br>
+        <p><b>📱 Fullscreen:</b> Tap 'Add to Home Screen' for a notch-safe, immersive experience.</p>
+        <button onclick="toggleM('help-mod')" style="margin-top:20px; width:100%; padding:15px; background:#333; color:#fff; border:none; border-radius:12px; font-weight:bold;">START PLAYING</button>
+    </div>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+const M=Matter, E=M.Engine, B=M.Bodies, C=M.Composite;
+const SKINS = { 
+    Fruit:["🍒","🍓","🍇","🍊","🍎","🍐","🍑","🍍","🍈","🍉","🥥","🥝"], 
+    Animals:["🐞","🐸","🐢","🦆","🐒","🦉","🐧","🐺","🦓","🦍","🐘","🐋"], 
+    Music:["🪕","🪗","🎸","🎹","🎺","🎻","🥁","🎷","🎙️","📻","🎧","🎵"], 
+    Weather:["☁️","🌦️","⛈️","🌩️","🌨️","❄️","🌬️","💨","🌪️","🌫️","🌈","☀️"], 
+    Space:["🌑","☄️","🛰️","🚀","🛸","👾","🔭","🌌","🪐","☀️","🌀","👽"], 
+    Nature:["🌱","🌿","☘️","🍄","🍃","🍂","🍁","🌵","🌴","🌲","🌳","🌻"], 
+    Dessert:["🍬","🍪","🍩","🍫","🍮","🍦","🧁","🍰","🥧","🥞","🧇","🎂"], 
+    Shapes:["🔺","🟡","🟩","🔷","⭐","🛑","💎","🌙","🌀","💠","⬛","⚪"] 
+};
+const WORDS = { Fruit:["JUICY!","FRESH!"], Space:["SUPERNOVA!","GALACTIC!"], Animals:["WILD!","ROAR!"], Music:["GROOVY!","BEAT!"], Weather:["STORM!","FLASH!"], Nature:["BLOOM!","EARTHY!"], Dessert:["SWEET!","YUM!"], Shapes:["SHARP!","PERFECT!"] };
+const THEMES = { Mellow:"#FDF6E3", Midnight:"#1a1b26", Matcha:"#E8F5E9", Lavender:"#F3E5F5", Sky:"#E1F5FE", Rose:"#FFF1F0" };
+const BORDERS = { Slate:"#657B83", Gold:"#DAA520", Neon:"#B026FF", Red:"#DC143C", Black:"#000000", Silver:"#C0C0C0" };
+const OUTLINES = { Default:"def", Rainbow:"rainbow", White:"white", Black:"black" };
+const SIZES = [18, 24, 30, 38, 46, 55, 65, 76, 88, 102, 118, 135];
+const TIER_COLORS = ["#3498db", "#2ecc71", "#f1c40f", "#e67e22", "#e74c3c", "#9b59b6", "#1abc9c", "#d35400", "#c0392b", "#8e44ad", "#27ae60", "#f39c12"];
+
+let st = { score:0, best:0, wallet:100, muted:false, eq:{sk:'Fruit', th:'Mellow', bd:'Slate', ot:'def'}, owned:['sk_Fruit', 'th_Mellow', 'bd_Slate', 'ot_def'], found:[0] };
+let engine, canvas, ctx, W, H, nextIdx=1, curIdx=0, canDrop=true, lastX=150, isDead=false, isPaused=false, activeP=null, dragP={x:0,y:0}, combo=1, lastM=0, skinC=0;
+
+function init() {
+    load(); canvas=document.getElementById('c'); ctx=canvas.getContext('2d');
+    if(!/iPad|iPhone|iPod/.test(navigator.userAgent)) document.getElementById('fs-btn').style.display='flex';
+    engine=E.create({gravity:{y:1.2}}); resize();
+    M.Events.on(engine, 'collisionStart', e => {
+        e.pairs.forEach(p => {
+            const a=p.bodyA, b=p.bodyB;
+            if(a.plugin?.t!==undefined && a.plugin.t===b.plugin.t && a.plugin.t<11) {
+                const t=a.plugin.t, pos={x:(a.position.x+b.position.x)/2, y:(a.position.y+b.position.y)/2};
+                C.remove(engine.world, [a,b]); const nf=spawnF(pos.x, pos.y, t+1, false);
+                nf.sq = 1.5; const now=Date.now(); combo=(now-lastM<1500)?Math.min(5, combo+1):1; lastM=now;
+                if(combo>1) floatT(pos.x, pos.y); st.score+=(t+1)*10*combo; st.wallet+=(t+1)*20*combo;
+                if(st.score>st.best) st.best=st.score; if(!st.found.includes(t+1)) st.found.push(t+1);
+                updUI(); save(); playS(600);
+            }
+        });
+    });
+    setupIn(); loop();
+    setInterval(()=>{ skinC=(skinC+1)%12; if(!isPaused) renderS(); }, 800);
+}
+
+function resize() {
+    W=window.innerWidth; H=window.innerHeight; canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    C.clear(engine.world, false);
+    C.add(engine.world, [
+        B.rectangle(W/2, H-100+250, W, 500, {isStatic:true}),
+        B.rectangle(7.5, H/2, 15, H*2, {isStatic:true}),
+        B.rectangle(W-7.5, H/2, 15, H*2, {isStatic:true})
+    ]);
+}
+
+function spawnF(x,y,t,isD) {
+    const phys = ['Space','Nature','Shapes'].includes(st.eq.sk)?{r:0.2,f:0.1}:['Animals','Dessert'].includes(st.eq.sk)?{r:0.8,f:0.01}:{r:0.5,f:0.02};
+    const b=B.circle(x,y,SIZES[t],{restitution:phys.r, friction:phys.f, plugin:{t:t}}); C.add(engine.world, b);
+    if(isD){ 
+        curIdx=nextIdx; 
+        nextIdx=Math.floor(Math.random()*5); // CLAMPED TO TIER 5
+        canDrop=false; setTimeout(()=>canDrop=true, 500); updUI(); 
+    }
+    return b;
+}
+
+function setupIn() {
+    const getX=e=>(e.touches?e.touches[0].clientX:e.clientX), getY=e=>(e.touches?e.touches[0].clientY:e.clientY);
+    const move=e=>{ if(isPaused)return; if(activeP) dragP={x:getX(e), y:getY(e)}; else lastX=Math.max(40,Math.min(W-40,getX(e))); if(!e.target.closest('.modal')) e.preventDefault(); };
+    const end=e=>{ if(isPaused)return; if(activeP) releaseP(dragP.x, dragP.y); else if(canDrop && !isDead && !e.target.closest('.ui')) spawnF(lastX, 165, curIdx, true); };
+    window.addEventListener('touchstart', e=>{ if(e.target.dataset.t) activeP=e.target.dataset.t; }, {passive:false});
+    window.addEventListener('mousedown', e=>{ if(e.target.dataset.t) activeP=e.target.dataset.t; });
+    window.addEventListener('touchmove', move, {passive:false}); window.addEventListener('mousemove', move);
+    window.addEventListener('touchend', end); window.addEventListener('mouseup', end);
+}
+
+function releaseP(x,y) {
+    const type=activeP; activeP=null; const price=type==='bomb'?50:type==='wipe'?75:150;
+    if(st.wallet<price) return;
+    const bodies=C.allBodies(engine.world).filter(b=>b.plugin); let used=false;
+    if(type==='bomb'){ bodies.forEach(b=>{ if(M.Vector.magnitude(M.Vector.sub(b.position,{x,y}))<80) C.remove(engine.world,b); }); used=true; }
+    else { const target=bodies.find(b=>M.Bounds.contains(b.bounds,{x,y})); if(target){
+        if(type==='wipe') bodies.forEach(b=>{ if(b.plugin.t===target.plugin.t) C.remove(engine.world, b); });
+        if(type==='evo' && target.plugin.t<11) bodies.forEach(b=>{ if(b.plugin.t===target.plugin.t){ const p=b.position; C.remove(engine.world, b); spawnF(p.x, p.y, target.plugin.t+1, false); } });
+        used=true;
+    }}
+    if(used){ st.wallet-=price; updUI(); save(); playS(300); }
+}
+
+function loop() {
+    if(!isPaused) E.update(engine, 16); ctx.clearRect(0,0,W,H); document.body.style.background=THEMES[st.eq.th];
+    ctx.fillStyle=BORDERS[st.eq.bd]; ctx.fillRect(0,0,15,H); ctx.fillRect(W-15,0,15,H);
+    ctx.setLineDash([5,5]); ctx.strokeStyle="red"; ctx.beginPath(); ctx.moveTo(0,165); ctx.lineTo(W,165); ctx.stroke(); ctx.setLineDash([]);
+    const now=Date.now();
+    
+    C.allBodies(engine.world).forEach(b => {
+        if(!b.plugin) return;
+        if(b.position.y-b.circleRadius<165 && b.speed<0.2){ if(!b.tm) b.tm=now; if(now-b.tm>2000) isDead=true; } else b.tm=null;
+        ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+        if(b.sq>1) b.sq -= 0.05; ctx.scale(b.sq||1, b.sq||1);
+        ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(0,0,b.circleRadius,0,Math.PI*2); ctx.fill();
+        
+        let dist = M.Vector.magnitude(M.Vector.sub(b.position, dragP));
+        let isTarg = activeP && (activeP==='bomb'?dist<80:dist<SIZES[b.plugin.t]+10);
+        
+        if(isTarg) {
+            ctx.lineWidth = 6 + Math.sin(now/150)*2; 
+            ctx.strokeStyle = `rgba(255, 215, 0, ${0.5 + Math.sin(now/150)*0.5})`;
+            ctx.shadowBlur = 15; ctx.shadowColor = "gold";
+        } else {
+            ctx.lineWidth = 4; ctx.shadowBlur = 8;
+            let ot = st.eq.ot;
+            if(ot==='def') { ctx.strokeStyle = TIER_COLORS[b.plugin.t]; ctx.shadowColor = TIER_COLORS[b.plugin.t]; }
+            else if(ot==='rainbow') { ctx.strokeStyle = `hsl(${now/10%360},100%,50%)`; ctx.shadowColor = `hsl(${now/10%360},100%,50%)`; }
+            else { ctx.strokeStyle = ot; ctx.shadowColor = ot; }
+        }
+        ctx.stroke(); ctx.font=`${b.circleRadius*1.2}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(SKINS[st.eq.sk][b.plugin.t], 0, 0); ctx.restore(); ctx.shadowBlur=0;
+    });
+    
+    if(canDrop && !activeP && !isDead){ ctx.globalAlpha=0.4; ctx.font="40px serif"; ctx.textAlign="center"; ctx.fillText(SKINS[st.eq.sk][curIdx], lastX, 145); ctx.globalAlpha=1; }
+    if(activeP) { ctx.beginPath(); ctx.strokeStyle="rgba(255,215,0,0.3)"; ctx.setLineDash([5,5]); ctx.arc(dragP.x, dragP.y, activeP==='bomb'?80:25, 0, Math.PI*2); ctx.stroke(); }
+    if(isDead){ document.getElementById('game-over').style.display='flex'; document.getElementById('gs').innerText=st.score; document.getElementById('hs').innerText=st.best; }
+    requestAnimationFrame(loop);
+}
+
+function renderS() {
+    const cont=document.getElementById('shop-content'); cont.innerHTML='';
+    document.getElementById('cash').innerText=st.wallet;
+    const cats=[{n:'Skins',k:'sk',d:SKINS,c:1500},{n:'Outlines',k:'ot',d:OUTLINES,c:2000},{n:'Backgrounds',k:'th',d:THEMES,c:750},{n:'Borders',k:'bd',d:BORDERS,c:500}];
+    cats.forEach(cat=>{
+        Object.keys(cat.d).forEach(k=>{
+            const id=cat.k+'_'+k, val=(cat.k==='ot'?cat.d[k]:k), isE=st.eq[cat.k]===val, isO=st.owned.includes(id);
+            const card=document.createElement('div'); card.className=`card ${isE?'eq':''}`;
+            let p = cat.k==='sk'?cat.d[k][skinC]:(cat.k==='ot'&&k==='Rainbow'?'🌈':'');
+            let s = `background:${cat.k==='th'?cat.d[k]:'white'}; border-color:${cat.k==='bd'?cat.d[k]:'#333'}`;
+            card.innerHTML=`<div class="swatch" style="${s}">${p}</div><small>${k}</small><br><small>${isE?'EQ':isO?'OWN':'$'+cat.c}</small>`;
+            card.onclick=()=>{ if(isO)st.eq[cat.k]=val; else if(st.wallet>=cat.c){st.wallet-=cat.c; st.owned.push(id); st.eq[cat.k]=val;} updUI(); renderS(); save(); };
+            cont.appendChild(card);
+        });
+    });
+}
+
+function floatT(x,y){ 
+    const e=document.createElement('div'); e.className='floating-text'; e.style.left=x+'px'; e.style.top=y+'px';
+    const list=WORDS[st.eq.sk]; e.innerText=list[Math.floor(Math.random()*list.length)]+" X"+combo;
+    document.getElementById('toast-layer').appendChild(e); setTimeout(()=>e.remove(), 1000);
+}
+
+function updUI(){
+    document.getElementById('cur-s').innerText=st.score; document.getElementById('best-s').innerText=st.best;
+    document.getElementById('wallet').innerText='$'+st.wallet; document.getElementById('next-box').innerText=SKINS[st.eq.sk][nextIdx];
+    const pb=document.getElementById('p-bar'); pb.innerHTML='';
+    for(let i=0; i<12; i++) pb.innerHTML+=`<span style="opacity:${st.found.includes(i)?1:0.1}">${SKINS[st.eq.sk][i]}</span>`;
+}
+
+function playS(f){ if(st.muted)return; try{const a=new AudioContext(); const o=a.createOscillator(); const g=a.createGain(); o.frequency.setValueAtTime(f,a.currentTime); o.frequency.exponentialRampToValueAtTime(10,a.currentTime+0.1); g.gain.setValueAtTime(0.05,a.currentTime); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.1);}catch(e){} }
+function toggleMute(){ st.muted=!st.muted; document.getElementById('m-btn').innerText=st.muted?'🔇':'🔊'; save(); }
+function toggleF(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+function toggleM(id){ const m=document.getElementById(id); m.classList.toggle('open'); isPaused=m.classList.contains('open'); if(id==='shop-mod') renderS(); }
+function restart(){ st.score=0; st.found=[0]; isDead=false; document.getElementById('game-over').style.display='none'; resize(); updUI(); }
+function save(){ localStorage.setItem('fm_v140_obsidian', JSON.stringify(st)); }
+function load(){ const d=localStorage.getItem('fm_v140_obsidian'); if(d) Object.assign(st, JSON.parse(d)); }
+window.onload=init;
+</script>
+</body>
+</html>
