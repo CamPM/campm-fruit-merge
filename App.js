@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import GameContainer from './GameContainer';
-import Shop from './Shop';
-import Help from './Help';
-import Settings from './Settings';
-import { CosmeticState, GameState } from './types';
-import { THEMES, EMOJI_SETS, PRICING, COMBO_PHRASES, GAME_HEIGHT, GAME_WIDTH } from './constants';
+import GameContainer from './GameContainer.js';
+import Shop from './Shop.js';
+import Help from './Help.js';
+import Settings from './Settings.js';
+import { CosmeticState, GameState } from './types.js';
+import { THEMES, EMOJI_SETS, PRICING, COMBO_PHRASES, GAME_HEIGHT, GAME_WIDTH } from './constants.js';
 
 const App: React.FC = () => {
   const [showShop, setShowShop] = useState(false);
