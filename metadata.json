@@ -1,5 +1,0 @@
-{
-  "name": "Fruit Merge",
-  "description": "A high-fidelity merge game with physics scaling, multiple cosmetic skins, power-ups, and a polished PWA-ready interface built with Matter.js.",
-  "requestFramePermissions": []
-}
